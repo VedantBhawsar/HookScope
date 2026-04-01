@@ -7,7 +7,12 @@
     "dev": "turbo dev",
     "lint": "turbo lint",
     "format": "turbo format",
-    "typecheck": "turbo typecheck"
+    "typecheck": "turbo typecheck",
+    "db:generate": "turbo run prisma:generate --filter=@workspace/db",
+    "db:migrate:dev": "turbo run prisma:migrate:dev --filter=@workspace/db",
+    "db:migrate:deploy": "turbo run prisma:migrate:deploy --filter=@workspace/db",
+    "db:push": "turbo run db:push --filter=@workspace/db",
+    "db:studio": "turbo run prisma:studio --filter=@workspace/db"
   },
   "devDependencies": {
     "@workspace/eslint-config": "workspace:*",

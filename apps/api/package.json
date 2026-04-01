@@ -1,0 +1,25 @@
+{
+  "name": "api",
+  "module": "index.ts",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "prisma:generate": "prisma generate",
+    "prisma:migrate:dev": "prisma migrate dev",
+    "prisma:studio": "prisma studio"
+  },
+  "dependencies": {
+    "@workspace/db": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/bun": "latest",
+    "@types/express": "^5.0.6",
+    "prisma": "^7.0.0"
+  },
+  "prisma": {
+    "schema": "../../packages/db/prisma/schema.prisma"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  }
+}

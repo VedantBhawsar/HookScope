@@ -19,6 +19,22 @@
     "dev": {
       "cache": false,
       "persistent": true
+    },
+    "prisma:generate": {
+      "cache": false
+    },
+    "prisma:migrate:dev": {
+      "cache": false
+    },
+    "prisma:migrate:deploy": {
+      "cache": false
+    },
+    "prisma:studio": {
+      "cache": false,
+      "persistent": true
+    },
+    "db:push": {
+      "cache": false
     }
   }
 }
