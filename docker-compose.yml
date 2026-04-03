@@ -1,0 +1,97 @@
+name: webhook-observability
+
+services:
+  # ─── Infrastructure ───────────────────────────────────────────────────────────
+
+  postgres:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: webhook_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d webhook_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  localstack:
+    image: localstack/localstack:3.8.1
+    restart: unless-stopped
+    ports:
+      - "4566:4566"
+    environment:
+      # Restrict to only the services we need (community edition)
+      SERVICES: s3
+      AWS_DEFAULT_REGION: us-east-1
+      # Hostname used to construct S3 URLs inside docker network
+      LOCALSTACK_HOST: localstack:4566
+      DEBUG: 0
+    volumes:
+      - localstack_data:/var/lib/localstack
+      - ./infra/localstack/init:/etc/localstack/init/ready.d
+      - /var/run/docker.sock:/var/run/docker.sock
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4566/_localstack/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 15s
+
+  # ─── Applications ─────────────────────────────────────────────────────────────
+
+  # ingestion:
+  #   build:
+  #     context: .
+  #     dockerfile: apps/ingestion/Dockerfile
+  #   restart: unless-stopped
+  #   ports:
+  #     - "3001:3001"
+  #   environment:
+  #     NODE_ENV: production
+  #     PORT: 3001
+  #     HOST: 0.0.0.0
+  #     LOG_LEVEL: info
+  #     REDIS_URL: redis://redis:6379
+  #     S3_ENDPOINT: http://localstack:4566
+  #     S3_BUCKET: webhooks
+  #     AWS_REGION: us-east-1
+  #     # LocalStack accepts any non-empty credentials
+  #     AWS_ACCESS_KEY_ID: test
+  #     AWS_SECRET_ACCESS_KEY: test
+  #   depends_on:
+  #     redis:
+  #       condition: service_healthy
+  #     localstack:
+  #       condition: service_healthy
+  #   healthcheck:
+  #     test: ["CMD", "curl", "-f", "http://localhost:3001/health"]
+  #     interval: 10s
+  #     timeout: 5s
+  #     retries: 5
+  #     start_period: 15s
+
+volumes:
+  postgres_data:
+  redis_data:
+  localstack_data:
