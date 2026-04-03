@@ -4,6 +4,8 @@
   "type": "module",
   "private": true,
   "scripts": {
+    "lint": "eslint",
+    "format": "prettier --write \"**/*.{ts,js}\"",
     "postinstall": "prisma generate --schema ./prisma/schema.prisma",
     "prisma:generate": "prisma generate --schema ./prisma/schema.prisma",
     "prisma:migrate:dev": "prisma migrate dev --schema ./prisma/schema.prisma",
@@ -21,7 +23,9 @@
   },
   "devDependencies": {
     "@types/pg": "^8.20.0",
+    "@workspace/eslint-config": "workspace:*",
     "@workspace/typescript-config": "workspace:*",
+    "eslint": "^9.39.2",
     "prisma": "^7.0.0",
     "typescript": "^5.9.3"
   },
