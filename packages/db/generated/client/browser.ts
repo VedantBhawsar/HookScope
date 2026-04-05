@@ -17,4 +17,52 @@ import * as Prisma from './internal/prismaNamespaceBrowser.js'
 export { Prisma }
 export * as $Enums from './enums.js'
 export * from './enums.js';
-
+/**
+ * Model User
+ * 
+ */
+export type User = Prisma.UserModel
+/**
+ * Model Project
+ * 
+ */
+export type Project = Prisma.ProjectModel
+/**
+ * Model Endpoint
+ * 
+ */
+export type Endpoint = Prisma.EndpointModel
+/**
+ * Model WebhookEvent
+ * 
+ */
+export type WebhookEvent = Prisma.WebhookEventModel
+/**
+ * Model Delivery
+ * 
+ */
+export type Delivery = Prisma.DeliveryModel
+/**
+ * Model EventLog
+ * Append-only audit trail — one row per notable state change or delivery outcome.
+ * For high-volume logging (>1M rows/day) consider offloading to ClickHouse/ELK;
+ * keep this table for critical state only.
+ */
+export type EventLog = Prisma.EventLogModel
+/**
+ * Model Usage
+ * Aggregated monthly event counts per user.
+ * Avoids expensive COUNT(*) on webhook_events for quota enforcement.
+ * Pattern: increment on ingest, compare against plan.eventsPerMonth on request.
+ */
+export type Usage = Prisma.UsageModel
+/**
+ * Model Plan
+ * Static tier definitions — one row per plan, rarely mutated.
+ */
+export type Plan = Prisma.PlanModel
+/**
+ * Model Subscription
+ * 
+ */
+export type Subscription = Prisma.SubscriptionModel

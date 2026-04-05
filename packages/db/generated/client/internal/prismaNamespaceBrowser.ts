@@ -51,7 +51,15 @@ export const AnyNull = runtime.AnyNull
 
 
 export const ModelName = {
-
+  User: 'User',
+  Project: 'Project',
+  Endpoint: 'Endpoint',
+  WebhookEvent: 'WebhookEvent',
+  Delivery: 'Delivery',
+  EventLog: 'EventLog',
+  Usage: 'Usage',
+  Plan: 'Plan',
+  Subscription: 'Subscription'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -68,4 +76,160 @@ export const TransactionIsolationLevel = runtime.makeStrictEnum({
 } as const)
 
 export type TransactionIsolationLevel = (typeof TransactionIsolationLevel)[keyof typeof TransactionIsolationLevel]
+
+
+export const UserScalarFieldEnum = {
+  id: 'id',
+  name: 'name',
+  email: 'email',
+  apiKeyHash: 'apiKeyHash',
+  apiKeyPrefix: 'apiKeyPrefix',
+  createdAt: 'createdAt'
+} as const
+
+export type UserScalarFieldEnum = (typeof UserScalarFieldEnum)[keyof typeof UserScalarFieldEnum]
+
+
+export const ProjectScalarFieldEnum = {
+  id: 'id',
+  userId: 'userId',
+  name: 'name',
+  description: 'description',
+  deletedAt: 'deletedAt',
+  createdAt: 'createdAt'
+} as const
+
+export type ProjectScalarFieldEnum = (typeof ProjectScalarFieldEnum)[keyof typeof ProjectScalarFieldEnum]
+
+
+export const EndpointScalarFieldEnum = {
+  id: 'id',
+  projectId: 'projectId',
+  name: 'name',
+  tokenHash: 'tokenHash',
+  source: 'source',
+  destinationUrl: 'destinationUrl',
+  signingSecret: 'signingSecret',
+  verifySignature: 'verifySignature',
+  deletedAt: 'deletedAt',
+  createdAt: 'createdAt'
+} as const
+
+export type EndpointScalarFieldEnum = (typeof EndpointScalarFieldEnum)[keyof typeof EndpointScalarFieldEnum]
+
+
+export const WebhookEventScalarFieldEnum = {
+  id: 'id',
+  endpointId: 'endpointId',
+  eventId: 'eventId',
+  source: 'source',
+  eventType: 'eventType',
+  signature: 'signature',
+  payloadUrl: 'payloadUrl',
+  status: 'status',
+  sourceIp: 'sourceIp',
+  deletedAt: 'deletedAt',
+  createdAt: 'createdAt',
+  version: 'version'
+} as const
+
+export type WebhookEventScalarFieldEnum = (typeof WebhookEventScalarFieldEnum)[keyof typeof WebhookEventScalarFieldEnum]
+
+
+export const DeliveryScalarFieldEnum = {
+  id: 'id',
+  webhookEventId: 'webhookEventId',
+  destinationUrl: 'destinationUrl',
+  status: 'status',
+  responseCode: 'responseCode',
+  responseBodyUrl: 'responseBodyUrl',
+  latencyMs: 'latencyMs',
+  retryCount: 'retryCount',
+  isReplay: 'isReplay',
+  errorCode: 'errorCode',
+  nextRetryAt: 'nextRetryAt',
+  ackedAt: 'ackedAt',
+  createdAt: 'createdAt',
+  version: 'version'
+} as const
+
+export type DeliveryScalarFieldEnum = (typeof DeliveryScalarFieldEnum)[keyof typeof DeliveryScalarFieldEnum]
+
+
+export const EventLogScalarFieldEnum = {
+  id: 'id',
+  webhookEventId: 'webhookEventId',
+  deliveryId: 'deliveryId',
+  status: 'status',
+  message: 'message',
+  createdAt: 'createdAt'
+} as const
+
+export type EventLogScalarFieldEnum = (typeof EventLogScalarFieldEnum)[keyof typeof EventLogScalarFieldEnum]
+
+
+export const UsageScalarFieldEnum = {
+  id: 'id',
+  userId: 'userId',
+  month: 'month',
+  eventCount: 'eventCount',
+  updatedAt: 'updatedAt'
+} as const
+
+export type UsageScalarFieldEnum = (typeof UsageScalarFieldEnum)[keyof typeof UsageScalarFieldEnum]
+
+
+export const PlanScalarFieldEnum = {
+  id: 'id',
+  tier: 'tier',
+  eventsPerMonth: 'eventsPerMonth',
+  retentionDays: 'retentionDays',
+  endpointLimit: 'endpointLimit',
+  priceCents: 'priceCents',
+  createdAt: 'createdAt'
+} as const
+
+export type PlanScalarFieldEnum = (typeof PlanScalarFieldEnum)[keyof typeof PlanScalarFieldEnum]
+
+
+export const SubscriptionScalarFieldEnum = {
+  id: 'id',
+  userId: 'userId',
+  planId: 'planId',
+  status: 'status',
+  stripeCustomerId: 'stripeCustomerId',
+  stripeSubscriptionId: 'stripeSubscriptionId',
+  currentPeriodStart: 'currentPeriodStart',
+  currentPeriodEnd: 'currentPeriodEnd',
+  cancelAtPeriodEnd: 'cancelAtPeriodEnd',
+  lastSyncedAt: 'lastSyncedAt',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type SubscriptionScalarFieldEnum = (typeof SubscriptionScalarFieldEnum)[keyof typeof SubscriptionScalarFieldEnum]
+
+
+export const SortOrder = {
+  asc: 'asc',
+  desc: 'desc'
+} as const
+
+export type SortOrder = (typeof SortOrder)[keyof typeof SortOrder]
+
+
+export const QueryMode = {
+  default: 'default',
+  insensitive: 'insensitive'
+} as const
+
+export type QueryMode = (typeof QueryMode)[keyof typeof QueryMode]
+
+
+export const NullsOrder = {
+  first: 'first',
+  last: 'last'
+} as const
+
+export type NullsOrder = (typeof NullsOrder)[keyof typeof NullsOrder]
 
