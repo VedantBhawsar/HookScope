@@ -1,30 +1,28 @@
 import type { FastifyPluginAsync } from "fastify"
 
 const healthRoute: FastifyPluginAsync = async (fastify) => {
-  fastify.get(
-    "/health",
-    {
-      schema: {
-        response: {
-          200: {
-            type: "object",
-            properties: {
-              status: { type: "string" },
-              timestamp: { type: "string" },
-              uptime: { type: "number" },
-            },
-          },
+  const healthResponseSchema = {
+    response: {
+      200: {
+        type: "object",
+        properties: {
+          status: { type: "string" },
+          timestamp: { type: "string" },
+          uptime: { type: "number" },
         },
       },
     },
-    async (_request, _reply) => {
-      return {
-        status: "ok",
-        timestamp: new Date().toISOString(),
-        uptime: process.uptime(),
-      }
+  } as const
+
+  const handler = async () => {
+    return {
+      status: "ok",
+      timestamp: new Date().toISOString(),
+      uptime: process.uptime(),
     }
-  )
+  }
+  
+  fastify.get("/health-check", { schema: healthResponseSchema }, handler)
 }
 
 export default healthRoute

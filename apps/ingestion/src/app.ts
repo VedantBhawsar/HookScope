@@ -47,6 +47,7 @@ export async function buildApp(env: Env): Promise<FastifyInstance> {
 
   // ─── Routes ────────────────────────────────────────────────────────────────
   await fastify.register(healthRoute)
+  await fastify.register(healthRoute, { prefix: "/api/v1" })
   await fastify.register(ingestRoute, { prefix: "/api/v1" })
   await fastify.register(stripeRoute, { prefix: "/api/v1" })
 
