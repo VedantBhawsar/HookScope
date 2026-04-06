@@ -19,18 +19,18 @@ enum SourceProvider {
 }
 
 enum EventStatus {
-  RECEIVED    // Ingested at the proxy boundary
-  PROCESSING  // Being routed / validated
-  DELIVERED   // At least one delivery succeeded
-  FAILED      // All delivery attempts exhausted
+  RECEIVED // Ingested at the proxy boundary
+  PROCESSING // Being routed / validated
+  DELIVERED // At least one delivery succeeded
+  FAILED // All delivery attempts exhausted
   DEAD_LETTER // Needs manual review / replay
 }
 
 enum DeliveryStatus {
-  PENDING   // Queued, not yet attempted
-  SUCCESS   // Destination responded 2xx
-  FAILED    // Non-2xx or network error
-  RETRYING  // Scheduled for another attempt
+  PENDING // Queued, not yet attempted
+  SUCCESS // Destination responded 2xx
+  FAILED // Non-2xx or network error
+  RETRYING // Scheduled for another attempt
 }
 
 /// Machine-readable error codes for retry logic and alerting dashboards.
@@ -52,6 +52,15 @@ enum LogStatus {
   SUCCESS
 }
 
+enum LogType {
+  EVENT_RECEIVED
+  SIGNATURE_VERIFIED
+  DELIVERY_ATTEMPT
+  DELIVERY_SUCCESS
+  DELIVERY_FAILED
+  RETRY_SCHEDULED
+}
+
 enum PlanTier {
   FREE
   PRO
@@ -66,11 +75,17 @@ enum SubscriptionStatus {
   UNPAID
 }
 
+enum VerificationMode {
+  NONE
+  OPTIONAL
+  STRICT
+}
+
 // ─── Identity ─────────────────────────────────────────────────────────────────
 
 model User {
-  id   String @id @default(uuid())
-  name String
+  id    String @id @default(uuid())
+  name  String
   email String @unique
 
   /// SHA-256 hash of the raw API key — raw key is never persisted.
@@ -91,16 +106,16 @@ model User {
 // ─── Projects ─────────────────────────────────────────────────────────────────
 
 model Project {
-  id          String    @id @default(uuid())
-  userId      String    @map("user_id")
-  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id          String     @id @default(uuid())
+  userId      String     @map("user_id")
+  user        User       @relation(fields: [userId], references: [id], onDelete: Cascade)
   name        String
   description String?
   /// Soft delete — rows are hidden from queries, not physically removed.
-  deletedAt   DateTime? @map("deleted_at")
-  createdAt   DateTime  @default(now()) @map("created_at")
-
-  endpoints Endpoint[]
+  deletedAt   DateTime?  @map("deleted_at")
+  createdAt   DateTime   @default(now()) @map("created_at")
+  updatedAt   DateTime   @updatedAt @map("updated_at")
+  endpoints   Endpoint[]
 
   @@index([userId])
   @@map("projects")
@@ -112,18 +127,27 @@ model Endpoint {
   id        String  @id @default(uuid())
   projectId String  @map("project_id")
   project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  name      String
 
-  /// SHA-256 hash of the raw token shown to the user once at creation.
-  /// Fixed-length hash = faster index lookup than arbitrary-length strings.
+  name String
+
   tokenHash String @unique @map("token_hash")
 
-  source          SourceProvider
-  destinationUrl  String         @map("destination_url")
-  signingSecret   String?        @map("signing_secret")
-  verifySignature Boolean        @default(false) @map("verify_signature")
+  source SourceProvider
 
-  /// Soft delete — retains historical event linkage after endpoint removal.
+  destinationUrl String @map("destination_url")
+
+  verificationMode VerificationMode @default(NONE) @map("verification_mode")
+
+  signingSecret   String? @map("signing_secret")
+  signatureHeader String? @map("signature_header")
+  signatureType   String? @map("signature_type")
+  timestampHeader String? @map("timestamp_header")
+  toleranceSec    Int?    @map("tolerance_sec")
+
+  eventFilters Json? @map("event_filters")
+
+  status String @default("active")
+
   deletedAt DateTime? @map("deleted_at")
   createdAt DateTime  @default(now()) @map("created_at")
 
@@ -152,7 +176,7 @@ model WebhookEvent {
 
   /// Extracted provider signature header (e.g. Stripe-Signature value).
   /// Stored for re-verification and audit — keeps headers Json out of queries.
-  signature String?
+  signature Json?
 
   /// S3 URL to the full raw payload — keeps this table lean.
   payloadUrl String @map("payload_url")
@@ -163,6 +187,10 @@ model WebhookEvent {
   /// Soft delete — physical removal deferred to retention job.
   deletedAt DateTime? @map("deleted_at")
   createdAt DateTime  @default(now()) @map("created_at")
+
+  // 
+  lastStatusCode Int?    @map("last_status_code")
+  lastError      String? @map("last_error")
 
   /// Optimistic locking counter — increment on every status transition.
   /// App layer: UPDATE ... SET status=X, version=N+1 WHERE id=Y AND version=N
@@ -207,7 +235,11 @@ model Delivery {
   /// Timestamp polled by the retry scheduler — replaces ad-hoc retryCount checks.
   nextRetryAt DateTime? @map("next_retry_at")
 
-  ackedAt   DateTime? @map("acked_at")
+  // Some endpoint require manual acknowledgment to mark a delivery as successful (e.g. Stripe's event replay). This allows us to separate "pending retry" from "success but waiting for ack".
+  ackedAt   DateTime?
+  ackStatus String? // success | failed
+
+
   createdAt DateTime  @default(now()) @map("created_at")
 
   /// Optimistic locking — prevents concurrent workers from double-delivering.
@@ -241,6 +273,9 @@ model EventLog {
 
   /// Bounded enum — prevents unbounded string values that break aggregation.
   status  LogStatus
+
+  // type = action or outcome being logged — e.g. "EVENT_RECEIVED", "DELIVERY_SUCCESS", "SIGNATURE_VERIFIED". This allows filtering logs by type without scanning the message text.
+  type LogType
   message String
 
   createdAt DateTime @default(now()) @map("created_at")
