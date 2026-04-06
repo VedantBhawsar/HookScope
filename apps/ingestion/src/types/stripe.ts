@@ -24,7 +24,8 @@ export interface StripeWebhookEvent {
 }
 
 export interface StripeIngestResponse {
-  received: true
-  id: string
-  type: string
+  received: boolean
+  eventId?: string
+  type?: string
+  duplicate?: boolean
 }

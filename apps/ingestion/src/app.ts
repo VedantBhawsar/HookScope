@@ -7,6 +7,7 @@ import type { Env } from "./config/env.js"
 import redisPlugin from "./plugins/redis.js"
 import s3Plugin from "./plugins/s3.js"
 import prismaPlugin from "./plugins/prisma.js"
+import rawBodyPlugin from "./plugins/raw-body.js"
 import healthRoute from "./routes/health.js"
 import ingestRoute from "./routes/ingest.js"
 import stripeRoute from "./routes/stripe.js"
@@ -31,6 +32,7 @@ export async function buildApp(env: Env): Promise<FastifyInstance> {
   await fastify.register(sensible)
 
   // ─── Infrastructure plugins ────────────────────────────────────────────────
+  await fastify.register(rawBodyPlugin)
   await fastify.register(prismaPlugin)
   await fastify.register(redisPlugin, { url: env.REDIS_URL })
 
