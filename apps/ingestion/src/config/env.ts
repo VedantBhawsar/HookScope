@@ -62,7 +62,7 @@ export function loadEnv(): Env {
 
   return {
     NODE_ENV: nodeEnv,
-    PORT: optionalInt("PORT", 3001),
+    PORT: optionalInt("PORT", 5001),
     HOST: optional("HOST", "0.0.0.0"),
     LOG_LEVEL: logLevel as Env["LOG_LEVEL"],
     REDIS_URL: optional("REDIS_URL", "redis://localhost:6379"),

@@ -1,8 +1,8 @@
 {
   "info": {
     "_postman_id": "c7f9091d-58a0-46b8-bcff-70f3ef91d43e",
-    "name": "Webhook Observability API - Auth",
-    "description": "Auth endpoints for apps/api. Uses cookie-based auth (`at` + `rt`) set by login/register/refresh.",
+    "name": "Webhook Observability API",
+    "description": "Auth + Project endpoints for apps/api. Uses cookie-based auth (`at` + `rt`) set by login/register/refresh.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "item": [
@@ -48,12 +48,13 @@
                   "",
                   "pm.test('Response has user and tokens', function () {",
                   "  const body = pm.response.json();",
-                  "  pm.expect(body).to.have.property('user');",
-                  "  pm.expect(body.user).to.have.property('id');",
-                  "  pm.expect(body.user).to.have.property('email');",
-                  "  pm.expect(body).to.have.property('tokens');",
-                  "  pm.expect(body.tokens).to.have.property('accessToken');",
-                  "  pm.expect(body.tokens).to.have.property('expiresIn');",
+                  "  pm.expect(body.success).to.eql(true);",
+                  "  pm.expect(body.data).to.have.property('user');",
+                  "  pm.expect(body.data.user).to.have.property('id');",
+                  "  pm.expect(body.data.user).to.have.property('email');",
+                  "  pm.expect(body.data).to.have.property('tokens');",
+                  "  pm.expect(body.data.tokens).to.have.property('accessToken');",
+                  "  pm.expect(body.data.tokens).to.have.property('expiresIn');",
                   "});",
                   "",
                   "pm.test('Set-Cookie is present', function () {",
@@ -61,9 +62,9 @@
                   "});",
                   "",
                   "const body = pm.response.json();",
-                  "pm.collectionVariables.set('authUserId', body.user.id);",
-                  "pm.collectionVariables.set('authUserEmail', body.user.email);",
-                  "pm.collectionVariables.set('accessToken', body.tokens.accessToken);"
+                  "pm.collectionVariables.set('authUserId', body.data.user.id);",
+                  "pm.collectionVariables.set('authUserEmail', body.data.user.email);",
+                  "pm.collectionVariables.set('accessToken', body.data.tokens.accessToken);"
                 ]
               }
             }
@@ -108,15 +109,16 @@
                   "",
                   "pm.test('Response has user and tokens', function () {",
                   "  const body = pm.response.json();",
-                  "  pm.expect(body.user.email).to.eql(pm.collectionVariables.get('authEmail'));",
-                  "  pm.expect(body.tokens).to.have.property('accessToken');",
-                  "  pm.expect(body.tokens).to.have.property('expiresIn');",
+                  "  pm.expect(body.success).to.eql(true);",
+                  "  pm.expect(body.data.user.email).to.eql(pm.collectionVariables.get('authEmail'));",
+                  "  pm.expect(body.data.tokens).to.have.property('accessToken');",
+                  "  pm.expect(body.data.tokens).to.have.property('expiresIn');",
                   "});",
                   "",
                   "const body = pm.response.json();",
-                  "pm.collectionVariables.set('authUserId', body.user.id);",
-                  "pm.collectionVariables.set('authUserEmail', body.user.email);",
-                  "pm.collectionVariables.set('accessToken', body.tokens.accessToken);"
+                  "pm.collectionVariables.set('authUserId', body.data.user.id);",
+                  "pm.collectionVariables.set('authUserEmail', body.data.user.email);",
+                  "pm.collectionVariables.set('accessToken', body.data.tokens.accessToken);"
                 ]
               }
             }
@@ -152,12 +154,13 @@
                   "",
                   "pm.test('Response contains tokens', function () {",
                   "  const body = pm.response.json();",
-                  "  pm.expect(body.tokens).to.have.property('accessToken');",
-                  "  pm.expect(body.tokens).to.have.property('expiresIn');",
+                  "  pm.expect(body.success).to.eql(true);",
+                  "  pm.expect(body.data.tokens).to.have.property('accessToken');",
+                  "  pm.expect(body.data.tokens).to.have.property('expiresIn');",
                   "});",
                   "",
                   "const body = pm.response.json();",
-                  "pm.collectionVariables.set('accessToken', body.tokens.accessToken);"
+                  "pm.collectionVariables.set('accessToken', body.data.tokens.accessToken);"
                 ]
               }
             }
@@ -193,8 +196,9 @@
                   "",
                   "pm.test('Response includes authenticated user', function () {",
                   "  const body = pm.response.json();",
-                  "  pm.expect(body).to.have.property('user');",
-                  "  pm.expect(body.user).to.have.property('email');",
+                  "  pm.expect(body.success).to.eql(true);",
+                  "  pm.expect(body.data).to.have.property('user');",
+                  "  pm.expect(body.data.user).to.have.property('email');",
                   "});"
                 ]
               }
@@ -225,8 +229,15 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test('Status is 204 No Content', function () {",
-                  "  pm.response.to.have.status(204);",
+                  "pm.test('Status is 200 OK', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response uses standard envelope', function () {",
+                  "  const body = pm.response.json();",
+                  "  pm.expect(body.success).to.eql(true);",
+                  "  pm.expect(body).to.have.property('message');",
+                  "  pm.expect(body).to.have.property('data');",
                   "});"
                 ]
               }
@@ -257,8 +268,248 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test('Status is 204 No Content', function () {",
-                  "  pm.response.to.have.status(204);",
+                  "pm.test('Status is 200 OK', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response uses standard envelope', function () {",
+                  "  const body = pm.response.json();",
+                  "  pm.expect(body.success).to.eql(true);",
+                  "  pm.expect(body).to.have.property('message');",
+                  "  pm.expect(body).to.have.property('data');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Projects",
+      "item": [
+        {
+          "name": "Create Project",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Postman Demo Project\",\n  \"description\": \"Project created from Postman collection\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/projects",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "projects"
+              ]
+            },
+            "description": "Creates a new project for the authenticated user. Requires valid auth cookies."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 201 Created', function () {",
+                  "  pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "const body = pm.response.json();",
+                  "pm.test('Project has id', function () {",
+                  "  pm.expect(body.success).to.eql(true);",
+                  "  pm.expect(body.data).to.have.property('id');",
+                  "});",
+                  "pm.collectionVariables.set('projectId', body.data.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "List Projects",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/projects?page=1&limit=10&search=demo",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "projects"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                },
+                {
+                  "key": "search",
+                  "value": "demo"
+                }
+              ]
+            },
+            "description": "Lists projects for the authenticated user."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200 OK', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response is an array', function () {",
+                  "  const body = pm.response.json();",
+                  "  pm.expect(body.success).to.eql(true);",
+                  "  pm.expect(body.data).to.have.property('data');",
+                  "  pm.expect(Array.isArray(body.data.data)).to.eql(true);",
+                  "  pm.expect(body.data).to.have.property('pagination');",
+                  "  pm.expect(body.data.pagination).to.have.property('page');",
+                  "  pm.expect(body.data.pagination).to.have.property('limit');",
+                  "  pm.expect(body.data.pagination).to.have.property('total');",
+                  "  pm.expect(body.data.pagination).to.have.property('totalPages');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get Project By Id",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/projects/{{projectId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "projects",
+                "{{projectId}}"
+              ]
+            },
+            "description": "Fetches a project by id for the authenticated user."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200 OK', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response id matches projectId', function () {",
+                  "  const body = pm.response.json();",
+                  "  pm.expect(body.success).to.eql(true);",
+                  "  pm.expect(body.data.id).to.eql(pm.collectionVariables.get('projectId'));",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Update Project",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Postman Demo Project Updated\",\n  \"description\": \"Updated from Postman\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/projects/{{projectId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "projects",
+                "{{projectId}}"
+              ]
+            },
+            "description": "Updates an existing project for the authenticated user."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200 OK', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response has updated name', function () {",
+                  "  const body = pm.response.json();",
+                  "  pm.expect(body.success).to.eql(true);",
+                  "  pm.expect(body.data.name).to.eql('Postman Demo Project Updated');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Delete Project",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/projects/{{projectId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "projects",
+                "{{projectId}}"
+              ]
+            },
+            "description": "Soft-deletes the selected project for the authenticated user."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200 OK', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response uses standard envelope', function () {",
+                  "  const body = pm.response.json();",
+                  "  pm.expect(body.success).to.eql(true);",
+                  "  pm.expect(body).to.have.property('message');",
+                  "  pm.expect(body).to.have.property('data');",
                   "});"
                 ]
               }
@@ -291,6 +542,10 @@
     },
     {
       "key": "accessToken",
+      "value": ""
+    },
+    {
+      "key": "projectId",
       "value": ""
     }
   ]

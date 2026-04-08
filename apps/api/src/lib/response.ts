@@ -1,11 +1,27 @@
 import type { Response } from "express"
 
-export const json = (res: Response, data: unknown, status = 200): void => {
-  res.status(status).json(data)
+type ApiResponse<T> = {
+  success: boolean
+  message: string
+  data: T | null
+}
+
+export const json = (res: Response, data: unknown, status = 200, message = "Success"): void => {
+  const payload: ApiResponse<unknown> = {
+    success: true,
+    message,
+    data,
+  }
+  res.status(status).json(payload)
 }
 
 export const error = (res: Response, message: string, status = 500): void => {
-  res.status(status).json({ error: message })
+  const payload: ApiResponse<null> = {
+    success: false,
+    message,
+    data: null,
+  }
+  res.status(status).json(payload)
 }
 
 export const notFound = (res: Response, message = "Not found"): void => {
@@ -16,12 +32,12 @@ export const badRequest = (res: Response, message = "Bad request"): void => {
   error(res, message, 400)
 }
 
-export const created = (res: Response, data: unknown): void => {
-  json(res, data, 201)
+export const created = (res: Response, data: unknown, message = "Created"): void => {
+  json(res, data, 201, message)
 }
 
-export const noContent = (res: Response): void => {
-  res.status(204).send()
+export const noContent = (res: Response, message = "Success"): void => {
+  json(res, null, 200, message)
 }
 
 export const unauthorized = (res: Response, message = "Unauthorized"): void => {

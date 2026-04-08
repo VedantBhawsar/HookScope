@@ -4,9 +4,9 @@
   "type": "module",
   "private": true,
   "scripts": {
-    "dev": "bun --watch src/server.ts",
-    "start": "bun src/server.ts",
-    "build": "tsc --noEmit",
+    "dev": "bun --watch index.ts",
+    "build": "bun build ./index.ts --outdir ./dist --target bun",
+    "start": "bun ./dist/index.js",
     "typecheck": "tsc --noEmit",
     "lint": "eslint",
     "format": "prettier --write \"**/*.{ts,js}\""

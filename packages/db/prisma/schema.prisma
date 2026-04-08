@@ -88,19 +88,43 @@ model User {
   name  String
   email String @unique
 
-  /// SHA-256 hash of the raw API key — raw key is never persisted.
-  apiKeyHash   String @unique @map("api_key_hash")
-  /// First N chars of the raw key (e.g. "sk_live_ab12") for fast two-step lookup:
-  /// filter by prefix first, then compare hashes.
-  apiKeyPrefix String @map("api_key_prefix")
+  /// Argon2id hash — required for all users. API keys live on Endpoint, not here.
+  passwordHash String @map("password_hash")
 
   createdAt DateTime @default(now()) @map("created_at")
 
-  projects     Project[]
-  subscription Subscription?
+  projects      Project[]
+  subscription  Subscription?
+  refreshTokens RefreshToken[]
 
-  @@index([apiKeyPrefix])
   @@map("users")
+}
+
+// ─── Auth ─────────────────────────────────────────────────────────────────────
+
+/// Persisted refresh tokens — enables server-side revocation and theft detection.
+/// Raw token is never stored; only its SHA-256 hash is persisted.
+model RefreshToken {
+  id        String @id @default(uuid())
+  userId    String @map("user_id")
+  user      User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  /// SHA-256 of the raw opaque token — O(1) lookup without exposing the secret.
+  tokenHash String @unique @map("token_hash")
+
+  /// All tokens issued from the same login share a family ID.
+  /// If a revoked token is re-presented, invalidate the entire family (theft detection).
+  family String
+
+  expiresAt DateTime  @map("expires_at")
+  createdAt DateTime  @default(now()) @map("created_at")
+
+  /// Null means valid. Set on explicit logout or theft detection.
+  revokedAt DateTime? @map("revoked_at")
+
+  @@index([userId])
+  @@index([family])
+  @@map("refresh_tokens")
 }
 
 // ─── Projects ─────────────────────────────────────────────────────────────────

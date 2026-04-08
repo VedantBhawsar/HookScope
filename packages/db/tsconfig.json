@@ -1,7 +1,9 @@
 {
   "extends": "@workspace/typescript-config/base.json",
   "compilerOptions": {
-    "baseUrl": ".",
+    "paths": {
+      "*": ["./*"]
+    },
     "ignoreDeprecations": "6.0"
   },
   "include": ["src/**/*.ts", "generated/**/*.ts"],

@@ -1,7 +1,9 @@
 import express from "express"
 import cookieParser from "cookie-parser"
 import { authRouter } from "./routes/auth.router"
+import { projectRouter } from "./routes/project.router"
 import { webhookRouter } from "./routes/webhook.router"
+import { json } from "./lib/response"
 
 const startServer = () => {
   const app = express()
@@ -9,8 +11,9 @@ const startServer = () => {
   app.use(express.json())
   app.use(cookieParser())
 
-  app.get("/", (_req, res) => res.json({ status: "ok" }))
+  app.get("/", (_req, res) => json(res, { status: "ok" }))
   app.use("/api/auth", authRouter)
+  app.use("/api/projects", projectRouter)
   app.use("/api/webhooks", webhookRouter)
 
   const PORT = 5000

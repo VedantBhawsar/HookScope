@@ -1,8 +1,9 @@
 {
   "extends": "@workspace/typescript-config/nextjs.json",
   "compilerOptions": {
-    "baseUrl": "./",
+    "ignoreDeprecations": "5.0",
     "paths": {
+      "*": ["./*"],
       "@/*": ["./*"],
       "@workspace/ui/*": ["../../packages/ui/src/*"]
     },
