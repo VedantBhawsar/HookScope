@@ -1,0 +1,297 @@
+{
+  "info": {
+    "_postman_id": "c7f9091d-58a0-46b8-bcff-70f3ef91d43e",
+    "name": "Webhook Observability API - Auth",
+    "description": "Auth endpoints for apps/api. Uses cookie-based auth (`at` + `rt`) set by login/register/refresh.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Register",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Postman User\",\n  \"email\": \"{{authEmail}}\",\n  \"password\": \"{{authPassword}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/register",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "register"
+              ]
+            },
+            "description": "Creates a new user and sets auth cookies (`at`, `rt`)."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 201 Created', function () {",
+                  "  pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "pm.test('Response has user and tokens', function () {",
+                  "  const body = pm.response.json();",
+                  "  pm.expect(body).to.have.property('user');",
+                  "  pm.expect(body.user).to.have.property('id');",
+                  "  pm.expect(body.user).to.have.property('email');",
+                  "  pm.expect(body).to.have.property('tokens');",
+                  "  pm.expect(body.tokens).to.have.property('accessToken');",
+                  "  pm.expect(body.tokens).to.have.property('expiresIn');",
+                  "});",
+                  "",
+                  "pm.test('Set-Cookie is present', function () {",
+                  "  pm.expect(pm.response.headers.get('Set-Cookie')).to.exist;",
+                  "});",
+                  "",
+                  "const body = pm.response.json();",
+                  "pm.collectionVariables.set('authUserId', body.user.id);",
+                  "pm.collectionVariables.set('authUserEmail', body.user.email);",
+                  "pm.collectionVariables.set('accessToken', body.tokens.accessToken);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Login",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{authEmail}}\",\n  \"password\": \"{{authPassword}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "login"
+              ]
+            },
+            "description": "Logs in an existing user and sets auth cookies (`at`, `rt`)."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200 OK', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response has user and tokens', function () {",
+                  "  const body = pm.response.json();",
+                  "  pm.expect(body.user.email).to.eql(pm.collectionVariables.get('authEmail'));",
+                  "  pm.expect(body.tokens).to.have.property('accessToken');",
+                  "  pm.expect(body.tokens).to.have.property('expiresIn');",
+                  "});",
+                  "",
+                  "const body = pm.response.json();",
+                  "pm.collectionVariables.set('authUserId', body.user.id);",
+                  "pm.collectionVariables.set('authUserEmail', body.user.email);",
+                  "pm.collectionVariables.set('accessToken', body.tokens.accessToken);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Refresh",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/refresh",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "refresh"
+              ]
+            },
+            "description": "Rotates refresh token and returns fresh token pair. Requires `rt` cookie from prior auth call."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200 OK', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response contains tokens', function () {",
+                  "  const body = pm.response.json();",
+                  "  pm.expect(body.tokens).to.have.property('accessToken');",
+                  "  pm.expect(body.tokens).to.have.property('expiresIn');",
+                  "});",
+                  "",
+                  "const body = pm.response.json();",
+                  "pm.collectionVariables.set('accessToken', body.tokens.accessToken);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Me",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/me",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "me"
+              ]
+            },
+            "description": "Returns authenticated user. Requires valid `at` cookie."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200 OK', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response includes authenticated user', function () {",
+                  "  const body = pm.response.json();",
+                  "  pm.expect(body).to.have.property('user');",
+                  "  pm.expect(body.user).to.have.property('email');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Logout",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/logout",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "logout"
+              ]
+            },
+            "description": "Revokes current refresh token (if present) and clears auth cookies."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 204 No Content', function () {",
+                  "  pm.response.to.have.status(204);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Logout All Devices",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/logout-all",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "logout-all"
+              ]
+            },
+            "description": "Revokes all refresh tokens for the authenticated user and clears cookies. Requires valid `at` cookie."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 204 No Content', function () {",
+                  "  pm.response.to.have.status(204);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:5000"
+    },
+    {
+      "key": "authEmail",
+      "value": "postman.user@example.com"
+    },
+    {
+      "key": "authPassword",
+      "value": "Password123!"
+    },
+    {
+      "key": "authUserId",
+      "value": ""
+    },
+    {
+      "key": "authUserEmail",
+      "value": ""
+    },
+    {
+      "key": "accessToken",
+      "value": ""
+    }
+  ]
+}

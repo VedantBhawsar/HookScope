@@ -1,26 +1,33 @@
-export function json(data: unknown, status = 200): Response {
-  return new Response(JSON.stringify(data), {
-    status,
-    headers: { "Content-Type": "application/json" },
-  })
+import type { Response } from "express"
+
+export const json = (res: Response, data: unknown, status = 200): void => {
+  res.status(status).json(data)
 }
 
-export function error(message: string, status = 500): Response {
-  return json({ error: message }, status)
+export const error = (res: Response, message: string, status = 500): void => {
+  res.status(status).json({ error: message })
 }
 
-export function notFound(message = "Not found"): Response {
-  return error(message, 404)
+export const notFound = (res: Response, message = "Not found"): void => {
+  error(res, message, 404)
 }
 
-export function badRequest(message = "Bad request"): Response {
-  return error(message, 400)
+export const badRequest = (res: Response, message = "Bad request"): void => {
+  error(res, message, 400)
 }
 
-export function created(data: unknown): Response {
-  return json(data, 201)
+export const created = (res: Response, data: unknown): void => {
+  json(res, data, 201)
 }
 
-export function noContent(): Response {
-  return new Response(null, { status: 204 })
+export const noContent = (res: Response): void => {
+  res.status(204).send()
+}
+
+export const unauthorized = (res: Response, message = "Unauthorized"): void => {
+  error(res, message, 401)
+}
+
+export const conflict = (res: Response, message = "Conflict"): void => {
+  error(res, message, 409)
 }

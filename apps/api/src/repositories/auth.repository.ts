@@ -1,0 +1,56 @@
+import { prisma } from "@workspace/db/client"
+
+export class AuthRepository {
+  findUserByEmail(email: string) {
+    return prisma.user.findUnique({ where: { email } })
+  }
+
+  findUserById(id: string) {
+    return prisma.user.findUnique({ where: { id } })
+  }
+
+  createUser(data: { name: string; email: string; passwordHash: string }) {
+    return prisma.user.create({
+      data: { name: data.name, email: data.email, passwordHash: data.passwordHash },
+    })
+  }
+
+  createRefreshToken(data: {
+    userId: string
+    tokenHash: string
+    family: string
+    expiresAt: Date
+  }) {
+    return prisma.refreshToken.create({ data })
+  }
+
+  findRefreshToken(tokenHash: string) {
+    return prisma.refreshToken.findUnique({
+      where: { tokenHash },
+      include: { user: true },
+    })
+  }
+
+  revokeRefreshToken(id: string) {
+    return prisma.refreshToken.update({
+      where: { id },
+      data: { revokedAt: new Date() },
+    })
+  }
+
+  /** Revoke all tokens in a family — called on theft detection. */
+  revokeTokenFamily(family: string) {
+    return prisma.refreshToken.updateMany({
+      where: { family, revokedAt: null },
+      data: { revokedAt: new Date() },
+    })
+  }
+
+  /** Revoke all active tokens for a user — "logout all devices". */
+  revokeAllUserTokens(userId: string) {
+    return prisma.refreshToken.updateMany({
+      where: { userId, revokedAt: null },
+      data: { revokedAt: new Date() },
+    })
+  }
+}

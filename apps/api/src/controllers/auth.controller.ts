@@ -1,0 +1,97 @@
+import type { Request, Response } from "express"
+import { badRequest, conflict, created, error, json, noContent, unauthorized } from "../lib/response"
+import { REFRESH_TOKEN_COOKIE, clearAuthCookies, setAuthCookies } from "../lib/cookies"
+import type { AuthService } from "../services/auth.service"
+import type { AuthResponse, LoginDto, RegisterDto } from "../types/auth"
+
+export class AuthController {
+  constructor(private readonly service: AuthService) {}
+
+  register = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const body = req.body as Partial<RegisterDto>
+      if (!body.name || !body.email || !body.password) {
+        return badRequest(res, "name, email, and password are required")
+      }
+      if (body.password.length < 8) {
+        return badRequest(res, "password must be at least 8 characters")
+      }
+
+      const result = await this.service.register(body as RegisterDto)
+      setAuthCookies(res, result.tokens.accessToken, result.refreshToken)
+      created(res, { user: result.user, tokens: result.tokens })
+    } catch (err) {
+      if (err instanceof Error && err.message === "EMAIL_TAKEN") {
+        return conflict(res, "Email is already registered")
+      }
+      console.error("[AuthController.register]", err)
+      error(res, "Registration failed")
+    }
+  }
+
+  login = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const body = req.body as Partial<LoginDto>
+      if (!body.email || !body.password) {
+        return badRequest(res, "email and password are required")
+      }
+
+      const result = await this.service.login(body as LoginDto)
+      setAuthCookies(res, result.tokens.accessToken, result.refreshToken)
+      json(res, { user: result.user, tokens: result.tokens })
+    } catch (err) {
+      if (err instanceof Error && err.message === "INVALID_CREDENTIALS") {
+        return unauthorized(res, "Invalid email or password")
+      }
+      console.error("[AuthController.login]", err)
+      error(res, "Login failed")
+    }
+  }
+
+  refresh = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const rawRefreshToken = req.cookies[REFRESH_TOKEN_COOKIE] as string | undefined
+      if (!rawRefreshToken) return unauthorized(res, "Missing refresh token")
+
+      const result = await this.service.refresh(rawRefreshToken)
+      if (!result) return unauthorized(res, "Invalid or expired refresh token")
+
+      setAuthCookies(res, result.tokens.accessToken, result.refreshToken)
+      json(res, { user: result.user, tokens: result.tokens })
+    } catch (err) {
+      console.error("[AuthController.refresh]", err)
+      error(res, "Token refresh failed")
+    }
+  }
+
+  logout = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const rawRefreshToken = req.cookies[REFRESH_TOKEN_COOKIE] as string | undefined
+      if (rawRefreshToken) await this.service.logout(rawRefreshToken)
+      clearAuthCookies(res)
+      noContent(res)
+    } catch (err) {
+      console.error("[AuthController.logout]", err)
+      error(res, "Logout failed")
+    }
+  }
+
+  logoutAll = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const userId = (req as Request & { user: { userId: string } }).user?.userId
+      if (!userId) return unauthorized(res)
+      await this.service.logoutAllDevices(userId)
+      clearAuthCookies(res)
+      noContent(res)
+    } catch (err) {
+      console.error("[AuthController.logoutAll]", err)
+      error(res, "Logout failed")
+    }
+  }
+
+  me = async (req: Request, res: Response): Promise<void> => {
+    const user = (req as Request & { user?: AuthResponse["user"] & { userId: string } }).user
+    if (!user) return unauthorized(res)
+    json(res, { user })
+  }
+}

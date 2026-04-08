@@ -1,78 +1,67 @@
-import {
-  badRequest,
-  created,
-  error,
-  json,
-  noContent,
-  notFound,
-} from "../lib/response"
+import type { Request, Response } from "express"
+import { badRequest, created, error, json, noContent, notFound } from "../lib/response"
 import type { WebhookService } from "../services/webhook.service"
 import type { CreateWebhookDto, UpdateWebhookDto } from "../types/webhook"
-
-type BunRequest = Request & { params: Record<string, string> }
 
 export class WebhookController {
   constructor(private readonly service: WebhookService) {}
 
-  list = async (_req: Request): Promise<Response> => {
+  list = async (_req: Request, res: Response): Promise<void> => {
     try {
       const result = await this.service.getAll()
-      return json(result)
+      json(res, result)
     } catch (err) {
       console.error("[WebhookController.list]", err)
-      return error("Failed to fetch webhooks")
+      error(res, "Failed to fetch webhooks")
     }
   }
 
-  getById = async (req: BunRequest): Promise<Response> => {
+  getById = async (req: Request<{ id: string }>, res: Response): Promise<void> => {
     try {
-      const id = req.params["id"]
-      if (!id) return badRequest("Missing 'id' param")
+      const { id } = req.params
       const webhook = await this.service.getById(id)
-      if (!webhook) return notFound(`Webhook '${id}' not found`)
-      return json(webhook)
+      if (!webhook) return notFound(res, `Webhook '${id}' not found`)
+      json(res, webhook)
     } catch (err) {
       console.error("[WebhookController.getById]", err)
-      return error("Failed to fetch webhook")
+      error(res, "Failed to fetch webhook")
     }
   }
 
-  create = async (req: Request): Promise<Response> => {
+  create = async (req: Request, res: Response): Promise<void> => {
     try {
-      const body = (await req.json()) as CreateWebhookDto
-      if (!body.url) return badRequest("'url' is required")
+      const body = req.body as CreateWebhookDto
+      if (!body.url) return badRequest(res, "'url' is required")
       const webhook = await this.service.create(body)
-      return created(webhook)
+      created(res, webhook)
     } catch (err) {
       console.error("[WebhookController.create]", err)
-      return error("Failed to create webhook")
+      error(res, "Failed to create webhook")
     }
   }
 
-  update = async (req: BunRequest): Promise<Response> => {
+  update = async (req: Request<{ id: string }>, res: Response): Promise<void> => {
     try {
-      const id = req.params["id"]
-      if (!id) return badRequest("Missing 'id' param")
-      const body = (await req.json()) as UpdateWebhookDto
+      const { id } = req.params
+      const body = req.body as UpdateWebhookDto
       const webhook = await this.service.update(id, body)
-      if (!webhook) return notFound(`Webhook '${id}' not found`)
-      return json(webhook)
+      if (!webhook) return notFound(res, `Webhook '${id}' not found`)
+      json(res, webhook)
     } catch (err) {
       console.error("[WebhookController.update]", err)
-      return error("Failed to update webhook")
+      error(res, "Failed to update webhook")
     }
   }
 
-  delete = async (req: BunRequest): Promise<Response> => {
+  delete = async (req: Request<{ id: string }>, res: Response): Promise<void> => {
     try {
-      const id = req.params["id"]
-      if (!id) return badRequest("Missing 'id' param")
+      const { id } = req.params
       const deleted = await this.service.delete(id)
-      if (!deleted) return notFound(`Webhook '${id}' not found`)
-      return noContent()
+      if (!deleted) return notFound(res, `Webhook '${id}' not found`)
+      noContent(res)
     } catch (err) {
       console.error("[WebhookController.delete]", err)
-      return error("Failed to delete webhook")
+      error(res, "Failed to delete webhook")
     }
   }
 }
