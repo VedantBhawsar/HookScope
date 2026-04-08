@@ -1,33 +1,60 @@
-import type { IWebhookRepository } from "../repositories/webhook.repository"
+import type { WebhookRepository } from "../repositories/webhook.repository"
 import type {
-  CreateWebhookDto,
-  UpdateWebhookDto,
-  Webhook,
-  WebhookListResult,
+  WebhookEventListQuery,
+  DeliveryListQuery,
+  EventLogListQuery,
+  PaginatedWebhookEventList,
+  PaginatedDeliveryList,
+  PaginatedEventLogList,
 } from "../types/webhook"
 
 export class WebhookService {
-  constructor(private readonly repository: IWebhookRepository) {}
+  constructor(private readonly repository: WebhookRepository) {}
 
-  async getAll(): Promise<WebhookListResult> {
-    return this.repository.findAll()
+  async listByUser(userId: string, query: WebhookEventListQuery): Promise<PaginatedWebhookEventList> {
+    const { total, data } = await this.repository.findAllByUserId(userId, query)
+    return {
+      data,
+      pagination: {
+        page: query.page,
+        limit: query.limit,
+        total,
+        totalPages: Math.max(1, Math.ceil(total / query.limit)),
+      },
+    }
   }
 
-  async getById(id: string): Promise<Webhook | null> {
-    return this.repository.findById(id)
+  getById(id: string, userId: string) {
+    return this.repository.findByIdAndUserId(id, userId)
   }
 
-  async create(data: CreateWebhookDto): Promise<Webhook> {
-    // TODO: add validation / business rules before persisting
-    return this.repository.create(data)
+  async listDeliveries(eventId: string, userId: string, query: DeliveryListQuery): Promise<PaginatedDeliveryList> {
+    const { total, data } = await this.repository.findDeliveriesByEventId(eventId, userId, query)
+    return {
+      data,
+      pagination: {
+        page: query.page,
+        limit: query.limit,
+        total,
+        totalPages: Math.max(1, Math.ceil(total / query.limit)),
+      },
+    }
   }
 
-  async update(id: string, data: UpdateWebhookDto): Promise<Webhook | null> {
-    // TODO: add validation / business rules before persisting
-    return this.repository.update(id, data)
+  async listLogs(eventId: string, userId: string, query: EventLogListQuery): Promise<PaginatedEventLogList> {
+    const { total, data } = await this.repository.findLogsByEventId(eventId, userId, query)
+    return {
+      data,
+      pagination: {
+        page: query.page,
+        limit: query.limit,
+        total,
+        totalPages: Math.max(1, Math.ceil(total / query.limit)),
+      },
+    }
   }
 
-  async delete(id: string): Promise<boolean> {
-    return this.repository.delete(id)
+  retry(eventId: string, userId: string) {
+    return this.repository.createRetryDelivery(eventId, userId)
   }
 }

@@ -1,67 +1,134 @@
 import type { Request, Response } from "express"
-import { badRequest, created, error, json, noContent, notFound } from "../lib/response"
+import { badRequest, created, error, json, notFound } from "../lib/response"
+import type { AuthenticatedRequest } from "../middleware/require-auth"
 import type { WebhookService } from "../services/webhook.service"
-import type { CreateWebhookDto, UpdateWebhookDto } from "../types/webhook"
+import { EventStatus, SourceProvider, DeliveryStatus } from "@workspace/db"
+
+const VALID_EVENT_STATUSES = new Set(Object.values(EventStatus))
+const VALID_SOURCE_PROVIDERS = new Set(Object.values(SourceProvider))
+const VALID_DELIVERY_STATUSES = new Set(Object.values(DeliveryStatus))
 
 export class WebhookController {
   constructor(private readonly service: WebhookService) {}
 
-  list = async (_req: Request, res: Response): Promise<void> => {
+  list = async (req: Request, res: Response): Promise<void> => {
     try {
-      const result = await this.service.getAll()
+      const { userId } = (req as AuthenticatedRequest).user
+      const pageRaw = req.query.page as string | undefined
+      const limitRaw = req.query.limit as string | undefined
+      const searchRaw = req.query.search as string | undefined
+      const projectId = req.query.projectId as string | undefined
+      const endpointId = req.query.endpointId as string | undefined
+      const statusRaw = req.query.status as string | undefined
+      const sourceRaw = req.query.source as string | undefined
+
+      const page = pageRaw ? Number(pageRaw) : 1
+      const limit = limitRaw ? Number(limitRaw) : 20
+      if (!Number.isInteger(page) || page < 1) {
+        return badRequest(res, "'page' must be a positive integer")
+      }
+      if (!Number.isInteger(limit) || limit < 1 || limit > 100) {
+        return badRequest(res, "'limit' must be an integer between 1 and 100")
+      }
+
+      if (statusRaw && !VALID_EVENT_STATUSES.has(statusRaw as EventStatus)) {
+        return badRequest(res, `'status' must be one of: ${[...VALID_EVENT_STATUSES].join(", ")}`)
+      }
+      if (sourceRaw && !VALID_SOURCE_PROVIDERS.has(sourceRaw as SourceProvider)) {
+        return badRequest(res, `'source' must be one of: ${[...VALID_SOURCE_PROVIDERS].join(", ")}`)
+      }
+
+      const result = await this.service.listByUser(userId, {
+        page,
+        limit,
+        search: searchRaw?.trim() || undefined,
+        projectId,
+        endpointId,
+        status: statusRaw as EventStatus | undefined,
+        source: sourceRaw as SourceProvider | undefined,
+      })
       json(res, result)
     } catch (err) {
       console.error("[WebhookController.list]", err)
-      error(res, "Failed to fetch webhooks")
+      error(res, "Failed to fetch webhook events")
     }
   }
 
   getById = async (req: Request<{ id: string }>, res: Response): Promise<void> => {
     try {
-      const { id } = req.params
-      const webhook = await this.service.getById(id)
-      if (!webhook) return notFound(res, `Webhook '${id}' not found`)
-      json(res, webhook)
+      const { userId } = (req as unknown as AuthenticatedRequest).user
+      const event = await this.service.getById(req.params.id, userId)
+      if (!event) return notFound(res, `Webhook event '${req.params.id}' not found`)
+      json(res, event)
     } catch (err) {
       console.error("[WebhookController.getById]", err)
-      error(res, "Failed to fetch webhook")
+      error(res, "Failed to fetch webhook event")
     }
   }
 
-  create = async (req: Request, res: Response): Promise<void> => {
+  listDeliveries = async (req: Request<{ id: string }>, res: Response): Promise<void> => {
     try {
-      const body = req.body as CreateWebhookDto
-      if (!body.url) return badRequest(res, "'url' is required")
-      const webhook = await this.service.create(body)
-      created(res, webhook)
+      const { userId } = (req as unknown as AuthenticatedRequest).user
+      const pageRaw = req.query.page as string | undefined
+      const limitRaw = req.query.limit as string | undefined
+      const statusRaw = req.query.status as string | undefined
+
+      const page = pageRaw ? Number(pageRaw) : 1
+      const limit = limitRaw ? Number(limitRaw) : 20
+      if (!Number.isInteger(page) || page < 1) {
+        return badRequest(res, "'page' must be a positive integer")
+      }
+      if (!Number.isInteger(limit) || limit < 1 || limit > 100) {
+        return badRequest(res, "'limit' must be an integer between 1 and 100")
+      }
+      if (statusRaw && !VALID_DELIVERY_STATUSES.has(statusRaw as DeliveryStatus)) {
+        return badRequest(res, `'status' must be one of: ${[...VALID_DELIVERY_STATUSES].join(", ")}`)
+      }
+
+      const result = await this.service.listDeliveries(req.params.id, userId, {
+        page,
+        limit,
+        status: statusRaw as DeliveryStatus | undefined,
+      })
+      json(res, result)
     } catch (err) {
-      console.error("[WebhookController.create]", err)
-      error(res, "Failed to create webhook")
+      console.error("[WebhookController.listDeliveries]", err)
+      error(res, "Failed to fetch deliveries")
     }
   }
 
-  update = async (req: Request<{ id: string }>, res: Response): Promise<void> => {
+  listLogs = async (req: Request<{ id: string }>, res: Response): Promise<void> => {
     try {
-      const { id } = req.params
-      const body = req.body as UpdateWebhookDto
-      const webhook = await this.service.update(id, body)
-      if (!webhook) return notFound(res, `Webhook '${id}' not found`)
-      json(res, webhook)
+      const { userId } = (req as unknown as AuthenticatedRequest).user
+      const pageRaw = req.query.page as string | undefined
+      const limitRaw = req.query.limit as string | undefined
+
+      const page = pageRaw ? Number(pageRaw) : 1
+      const limit = limitRaw ? Number(limitRaw) : 50
+      if (!Number.isInteger(page) || page < 1) {
+        return badRequest(res, "'page' must be a positive integer")
+      }
+      if (!Number.isInteger(limit) || limit < 1 || limit > 100) {
+        return badRequest(res, "'limit' must be an integer between 1 and 100")
+      }
+
+      const result = await this.service.listLogs(req.params.id, userId, { page, limit })
+      json(res, result)
     } catch (err) {
-      console.error("[WebhookController.update]", err)
-      error(res, "Failed to update webhook")
+      console.error("[WebhookController.listLogs]", err)
+      error(res, "Failed to fetch event logs")
     }
   }
 
-  delete = async (req: Request<{ id: string }>, res: Response): Promise<void> => {
+  retry = async (req: Request<{ id: string }>, res: Response): Promise<void> => {
     try {
-      const { id } = req.params
-      const deleted = await this.service.delete(id)
-      if (!deleted) return notFound(res, `Webhook '${id}' not found`)
-      noContent(res)
+      const { userId } = (req as unknown as AuthenticatedRequest).user
+      const delivery = await this.service.retry(req.params.id, userId)
+      if (!delivery) return notFound(res, `Webhook event '${req.params.id}' not found`)
+      created(res, delivery, "Retry delivery created")
     } catch (err) {
-      console.error("[WebhookController.delete]", err)
-      error(res, "Failed to delete webhook")
+      console.error("[WebhookController.retry]", err)
+      error(res, "Failed to retry webhook event")
     }
   }
 }
