@@ -1,0 +1,196 @@
+import type { Request, Response } from "express"
+import { badRequest, created, error, json, noContent, notFound } from "../lib/response"
+import type { AuthenticatedRequest } from "../middleware/require-auth"
+import type { EndpointService } from "../services/endpoint.service"
+import type { CreateEndpointDto, UpdateEndpointDto } from "../types/endpoint"
+import { SourceProvider, VerificationMode } from "@workspace/db"
+
+const VALID_SOURCES = new Set(Object.values(SourceProvider))
+const VALID_VERIFICATION_MODES = new Set(Object.values(VerificationMode))
+const VALID_STATUSES = new Set(["active", "paused"])
+
+export class EndpointController {
+  constructor(private readonly service: EndpointService) {}
+
+  /**
+   * Shared ownership guard — returns false and sends 404 if project not owned.
+   */
+  private async ensureOwnership(req: Request, res: Response): Promise<string | null> {
+    const { userId } = (req as unknown as AuthenticatedRequest).user
+    const projectId = req.params.projectId as string
+    if (!projectId) {
+      notFound(res, "Project not found")
+      return null
+    }
+    const isOwner = await this.service.verifyOwnership(projectId, userId)
+    if (!isOwner) {
+      notFound(res, `Project '${projectId}' not found`)
+      return null
+    }
+    return projectId
+  }
+
+  list = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const projectId = await this.ensureOwnership(req, res)
+      if (!projectId) return
+
+      const pageRaw = req.query.page as string | undefined
+      const limitRaw = req.query.limit as string | undefined
+      const searchRaw = req.query.search as string | undefined
+      const sourceRaw = req.query.source as string | undefined
+      const statusRaw = req.query.status as string | undefined
+
+      const page = pageRaw ? Number(pageRaw) : 1
+      const limit = limitRaw ? Number(limitRaw) : 10
+      if (!Number.isInteger(page) || page < 1) {
+        return badRequest(res, "'page' must be a positive integer")
+      }
+      if (!Number.isInteger(limit) || limit < 1 || limit > 100) {
+        return badRequest(res, "'limit' must be an integer between 1 and 100")
+      }
+      if (sourceRaw && !VALID_SOURCES.has(sourceRaw as SourceProvider)) {
+        return badRequest(res, `'source' must be one of: ${[...VALID_SOURCES].join(", ")}`)
+      }
+      if (statusRaw && !VALID_STATUSES.has(statusRaw)) {
+        return badRequest(res, `'status' must be one of: ${[...VALID_STATUSES].join(", ")}`)
+      }
+
+      const result = await this.service.listByProject(projectId, {
+        page,
+        limit,
+        search: searchRaw?.trim() || undefined,
+        source: sourceRaw as SourceProvider | undefined,
+        status: statusRaw,
+      })
+      json(res, result)
+    } catch (err) {
+      console.error("[EndpointController.list]", err)
+      error(res, "Failed to fetch endpoints")
+    }
+  }
+
+  getById = async (req: Request<{ projectId: string; id: string }>, res: Response): Promise<void> => {
+    try {
+      const projectId = await this.ensureOwnership(req, res)
+      if (!projectId) return
+
+      const endpoint = await this.service.getById(req.params.id, projectId)
+      if (!endpoint) return notFound(res, `Endpoint '${req.params.id}' not found`)
+      json(res, endpoint)
+    } catch (err) {
+      console.error("[EndpointController.getById]", err)
+      error(res, "Failed to fetch endpoint")
+    }
+  }
+
+  create = async (req: Request<{ projectId: string }>, res: Response): Promise<void> => {
+    try {
+      const projectId = await this.ensureOwnership(req, res)
+      if (!projectId) return
+
+      const body = req.body as CreateEndpointDto
+
+      if (!body.name?.trim()) return badRequest(res, "'name' is required")
+      if (!body.source) return badRequest(res, "'source' is required")
+      if (!VALID_SOURCES.has(body.source)) {
+        return badRequest(res, `'source' must be one of: ${[...VALID_SOURCES].join(", ")}`)
+      }
+      if (!body.destinationUrl?.trim()) return badRequest(res, "'destinationUrl' is required")
+
+      try {
+        new URL(body.destinationUrl)
+      } catch {
+        return badRequest(res, "'destinationUrl' must be a valid URL")
+      }
+
+      if (body.verificationMode && !VALID_VERIFICATION_MODES.has(body.verificationMode)) {
+        return badRequest(res, `'verificationMode' must be one of: ${[...VALID_VERIFICATION_MODES].join(", ")}`)
+      }
+
+      if (body.verificationMode === "STRICT" && !body.signingSecret?.trim()) {
+        return badRequest(res, "'signingSecret' is required when verificationMode is STRICT")
+      }
+
+      if (body.toleranceSec !== undefined && (typeof body.toleranceSec !== "number" || body.toleranceSec < 0)) {
+        return badRequest(res, "'toleranceSec' must be a non-negative number")
+      }
+
+      const endpoint = await this.service.create(projectId, body)
+      created(res, endpoint)
+    } catch (err) {
+      console.error("[EndpointController.create]", err)
+      error(res, "Failed to create endpoint")
+    }
+  }
+
+  update = async (req: Request<{ projectId: string; id: string }>, res: Response): Promise<void> => {
+    try {
+      const projectId = await this.ensureOwnership(req, res)
+      if (!projectId) return
+
+      const body = req.body as UpdateEndpointDto
+
+      if (body.destinationUrl !== undefined) {
+        if (!body.destinationUrl.trim()) return badRequest(res, "'destinationUrl' cannot be empty")
+        try {
+          new URL(body.destinationUrl)
+        } catch {
+          return badRequest(res, "'destinationUrl' must be a valid URL")
+        }
+      }
+
+      if (body.verificationMode && !VALID_VERIFICATION_MODES.has(body.verificationMode)) {
+        return badRequest(res, `'verificationMode' must be one of: ${[...VALID_VERIFICATION_MODES].join(", ")}`)
+      }
+
+      if (body.status !== undefined && !VALID_STATUSES.has(body.status)) {
+        return badRequest(res, `'status' must be one of: ${[...VALID_STATUSES].join(", ")}`)
+      }
+
+      if (body.toleranceSec !== undefined && (typeof body.toleranceSec !== "number" || body.toleranceSec < 0)) {
+        return badRequest(res, "'toleranceSec' must be a non-negative number")
+      }
+
+      const endpoint = await this.service.update(req.params.id, projectId, body)
+      if (!endpoint) return notFound(res, `Endpoint '${req.params.id}' not found`)
+      json(res, endpoint)
+    } catch (err) {
+      console.error("[EndpointController.update]", err)
+      error(res, "Failed to update endpoint")
+    }
+  }
+
+  updateStatus = async (req: Request<{ projectId: string; id: string }>, res: Response): Promise<void> => {
+    try {
+      const projectId = await this.ensureOwnership(req, res)
+      if (!projectId) return
+
+      const { status } = req.body as { status?: unknown }
+      if (!status || !VALID_STATUSES.has(status as string)) {
+        return badRequest(res, `'status' must be one of: ${[...VALID_STATUSES].join(", ")}`)
+      }
+
+      const endpoint = await this.service.toggleStatus(req.params.id, projectId, status as string)
+      if (!endpoint) return notFound(res, `Endpoint '${req.params.id}' not found`)
+      json(res, endpoint)
+    } catch (err) {
+      console.error("[EndpointController.updateStatus]", err)
+      error(res, "Failed to update endpoint status")
+    }
+  }
+
+  delete = async (req: Request<{ projectId: string; id: string }>, res: Response): Promise<void> => {
+    try {
+      const projectId = await this.ensureOwnership(req, res)
+      if (!projectId) return
+
+      const deleted = await this.service.softDelete(req.params.id, projectId)
+      if (!deleted) return notFound(res, `Endpoint '${req.params.id}' not found`)
+      noContent(res)
+    } catch (err) {
+      console.error("[EndpointController.delete]", err)
+      error(res, "Failed to delete endpoint")
+    }
+  }
+}

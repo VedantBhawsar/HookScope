@@ -519,6 +519,325 @@
       ]
     },
     {
+      "name": "Endpoints",
+      "item": [
+        {
+          "name": "Create Endpoint",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Stripe Endpoint\",\n  \"source\": \"STRIPE\",\n  \"destinationUrl\": \"https://example.com/webhooks/stripe\",\n  \"verificationMode\": \"NONE\",\n  \"signingSecret\": null,\n  \"signatureHeader\": null,\n  \"signatureType\": null,\n  \"timestampHeader\": null,\n  \"toleranceSec\": null,\n  \"eventFilters\": null\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/projects/{{projectId}}/endpoints",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "projects",
+                "{{projectId}}",
+                "endpoints"
+              ]
+            },
+            "description": "Creates a new endpoint under a project. Returns the raw URL token once (never stored). Requires project ownership."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 201 Created', function () {",
+                  "  pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "pm.test('Endpoint has id and token', function () {",
+                  "  const body = pm.response.json();",
+                  "  pm.expect(body.success).to.eql(true);",
+                  "  pm.expect(body.data).to.have.property('id');",
+                  "  pm.expect(body.data).to.have.property('token');",
+                  "  pm.expect(body.data).to.have.property('source');",
+                  "  pm.expect(body.data).to.have.property('destinationUrl');",
+                  "  pm.expect(body.data).to.have.property('verificationMode');",
+                  "});",
+                  "",
+                  "const body = pm.response.json();",
+                  "pm.collectionVariables.set('endpointId', body.data.id);",
+                  "pm.collectionVariables.set('endpointToken', body.data.token);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "List Endpoints",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/projects/{{projectId}}/endpoints?page=1&limit=10",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "projects",
+                "{{projectId}}",
+                "endpoints"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                },
+                {
+                  "key": "search",
+                  "value": "",
+                  "disabled": true
+                },
+                {
+                  "key": "source",
+                  "value": "STRIPE",
+                  "disabled": true
+                },
+                {
+                  "key": "status",
+                  "value": "active",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Lists endpoints for a project. Supports pagination, text search on name/destinationUrl, and filtering by source and status."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200 OK', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response has paginated data', function () {",
+                  "  const body = pm.response.json();",
+                  "  pm.expect(body.success).to.eql(true);",
+                  "  pm.expect(body.data).to.have.property('data');",
+                  "  pm.expect(Array.isArray(body.data.data)).to.eql(true);",
+                  "  pm.expect(body.data).to.have.property('pagination');",
+                  "  pm.expect(body.data.pagination).to.have.property('page');",
+                  "  pm.expect(body.data.pagination).to.have.property('limit');",
+                  "  pm.expect(body.data.pagination).to.have.property('total');",
+                  "  pm.expect(body.data.pagination).to.have.property('totalPages');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get Endpoint By Id",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/projects/{{projectId}}/endpoints/{{endpointId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "projects",
+                "{{projectId}}",
+                "endpoints",
+                "{{endpointId}}"
+              ]
+            },
+            "description": "Fetches a single endpoint with event count. Requires project ownership."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200 OK', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Endpoint has expected fields', function () {",
+                  "  const body = pm.response.json();",
+                  "  pm.expect(body.success).to.eql(true);",
+                  "  pm.expect(body.data).to.have.property('id');",
+                  "  pm.expect(body.data).to.have.property('name');",
+                  "  pm.expect(body.data).to.have.property('source');",
+                  "  pm.expect(body.data).to.have.property('destinationUrl');",
+                  "  pm.expect(body.data).to.have.property('verificationMode');",
+                  "  pm.expect(body.data).to.have.property('status');",
+                  "  pm.expect(body.data).to.have.property('_count');",
+                  "  pm.expect(body.data._count).to.have.property('events');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Update Endpoint",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Stripe Endpoint Updated\",\n  \"destinationUrl\": \"https://example.com/webhooks/stripe/v2\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/projects/{{projectId}}/endpoints/{{endpointId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "projects",
+                "{{projectId}}",
+                "endpoints",
+                "{{endpointId}}"
+              ]
+            },
+            "description": "Updates an existing endpoint. Requires project ownership."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200 OK', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Endpoint has updated fields', function () {",
+                  "  const body = pm.response.json();",
+                  "  pm.expect(body.success).to.eql(true);",
+                  "  pm.expect(body.data.name).to.eql('Stripe Endpoint Updated');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Delete Endpoint",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/projects/{{projectId}}/endpoints/{{endpointId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "projects",
+                "{{projectId}}",
+                "endpoints",
+                "{{endpointId}}"
+              ]
+            },
+            "description": "Soft-deletes an endpoint. Requires project ownership."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200 OK', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response uses standard envelope', function () {",
+                  "  const body = pm.response.json();",
+                  "  pm.expect(body.success).to.eql(true);",
+                  "  pm.expect(body).to.have.property('message');",
+                  "  pm.expect(body).to.have.property('data');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Update Endpoint Status",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"paused\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/projects/{{projectId}}/endpoints/{{endpointId}}/status",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "projects",
+                "{{projectId}}",
+                "endpoints",
+                "{{endpointId}}",
+                "status"
+              ]
+            },
+            "description": "Toggles endpoint status. Accepts `active` or `paused`. Requires project ownership."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200 OK', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Endpoint status updated', function () {",
+                  "  const body = pm.response.json();",
+                  "  pm.expect(body.success).to.eql(true);",
+                  "  pm.expect(body.data).to.have.property('status');",
+                  "  pm.expect(['active', 'paused']).to.include(body.data.status);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
       "name": "Webhook Events",
       "item": [
         {
@@ -935,6 +1254,14 @@
     },
     {
       "key": "projectId",
+      "value": ""
+    },
+    {
+      "key": "endpointId",
+      "value": ""
+    },
+    {
+      "key": "endpointToken",
       "value": ""
     },
     {
