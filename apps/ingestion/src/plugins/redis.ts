@@ -1,26 +1,23 @@
 import fp from "fastify-plugin"
 import type { FastifyPluginAsync } from "fastify"
 import { getRedisClient } from "@workspace/redis"
-import type { RedisConfig } from "@workspace/redis"
+import type { Redis, RedisConfig } from "@workspace/redis"
 
 declare module "fastify" {
   interface FastifyInstance {
-    redis: ReturnType<typeof getRedisClient>
+    redis: Redis
   }
 }
 
 interface RedisPluginOptions extends RedisConfig {}
 
-const redisPlugin: FastifyPluginAsync<RedisPluginOptions> = async (
-  fastify,
-  opts
-) => {
+const redisPlugin: FastifyPluginAsync<RedisPluginOptions> = async (fastify, opts) => {
   const client = getRedisClient(opts)
 
   fastify.decorate("redis", client)
 
-  fastify.addHook("onClose", () => {
-    client.close()
+  fastify.addHook("onClose", async () => {
+    await client.quit()
   })
 
   fastify.log.info("Redis client connected")
