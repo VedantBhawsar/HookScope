@@ -2,11 +2,48 @@
 
 import * as React from "react"
 import { useRouter } from "next/navigation"
-import { ArrowRight, FolderKanban, LoaderCircle, Pencil, Search, Trash2 } from "lucide-react"
+import {
+  ArrowRight,
+  ChevronDown,
+  Clock,
+  FolderOpen,
+  LoaderCircle,
+  LogOut,
+  Pencil,
+  Plus,
+  Search,
+  Trash2,
+  Webhook,
+} from "lucide-react"
 import { Badge } from "@workspace/ui/components/badge"
 import { Button } from "@workspace/ui/components/button"
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@workspace/ui/components/dialog"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@workspace/ui/components/dropdown-menu"
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectLabel,
+  SelectTrigger,
+  SelectValue,
+} from "@workspace/ui/components/select"
 import { getRequestErrorMessage } from "@/lib/http"
-import { useMeQuery } from "@/hooks/use-auth"
+import { useLogoutMutation, useMeQuery } from "@/hooks/use-auth"
+import { useEndpointsQuery } from "@/hooks/use-endpoints"
 import {
   useCreateProjectMutation,
   useDeleteProjectMutation,
@@ -14,6 +51,54 @@ import {
   useUpdateProjectMutation,
   type ProjectRecord,
 } from "@/hooks/use-projects"
+import { ThemeToggle } from "@/components/theme-toggle"
+import {
+  clearActiveEndpointForProject,
+  getActiveEndpointForProject,
+  setActiveEndpointForProject,
+} from "@/lib/endpoint-selection"
+
+const LAST_OPENED_KEY = "last_opened_project"
+
+function getLastOpenedProject(): { id: string; name: string } | null {
+  try {
+    const raw = localStorage.getItem(LAST_OPENED_KEY)
+    if (!raw) return null
+    return JSON.parse(raw) as { id: string; name: string }
+  } catch {
+    return null
+  }
+}
+
+function setLastOpenedProject(project: { id: string; name: string }) {
+  try {
+    localStorage.setItem(LAST_OPENED_KEY, JSON.stringify(project))
+  } catch {
+    //
+  }
+}
+
+function getGreeting(): string {
+  const hour = new Date().getHours()
+  if (hour < 12) return "Good morning"
+  if (hour < 17) return "Good afternoon"
+  return "Good evening"
+}
+
+function UserAvatar({ name }: { name: string }) {
+  const initials = name
+    .split(" ")
+    .slice(0, 2)
+    .map((w) => w[0])
+    .join("")
+    .toUpperCase()
+
+  return (
+    <span className="flex size-7 items-center justify-center rounded-full bg-primary text-[11px] font-semibold text-primary-foreground">
+      {initials}
+    </span>
+  )
+}
 
 export function ProjectsWorkspace() {
   const router = useRouter()
@@ -22,15 +107,35 @@ export function ProjectsWorkspace() {
   const createProjectMutation = useCreateProjectMutation()
   const updateProjectMutation = useUpdateProjectMutation()
   const deleteProjectMutation = useDeleteProjectMutation()
+  const logoutMutation = useLogoutMutation()
 
   const [searchTerm, setSearchTerm] = React.useState("")
+
+  // Create dialog
+  const [createOpen, setCreateOpen] = React.useState(false)
   const [projectName, setProjectName] = React.useState("")
   const [projectDescription, setProjectDescription] = React.useState("")
-  const [editingProjectId, setEditingProjectId] = React.useState<string | null>(null)
+
+  // Edit dialog
+  const [editProject, setEditProject] = React.useState<ProjectRecord | null>(null)
   const [editName, setEditName] = React.useState("")
   const [editDescription, setEditDescription] = React.useState("")
 
+  // Last opened
+  const [lastOpened, setLastOpened] = React.useState<{ id: string; name: string } | null>(null)
+
+  React.useEffect(() => {
+    setLastOpened(getLastOpenedProject())
+  }, [])
+
   const projects = projectsQuery.data?.data ?? []
+  const lastOpenedProject = React.useMemo(() => {
+    if (!lastOpened) return null
+    return projects.find((project) => project.id === lastOpened.id) ?? null
+  }, [lastOpened, projects])
+  const endpointsQuery = useEndpointsQuery(lastOpenedProject?.id ?? null)
+  const endpoints = endpointsQuery.data?.data ?? []
+  const [selectedEndpointId, setSelectedEndpointId] = React.useState<string | null>(null)
   const user = meQuery.data?.user
 
   React.useEffect(() => {
@@ -57,8 +162,27 @@ export function ProjectsWorkspace() {
     })
   }, [projects, searchTerm])
 
-  const openProjectDashboard = (projectId: string) => {
-    router.push(`/dashboard/${encodeURIComponent(projectId)}`)
+  const openProjectDashboard = (project: ProjectRecord) => {
+    setLastOpenedProject({ id: project.id, name: project.name })
+    setLastOpened({ id: project.id, name: project.name })
+    router.push(`/dashboard/${encodeURIComponent(project.id)}`)
+  }
+
+  const handleLogout = async () => {
+    try {
+      await logoutMutation.mutateAsync()
+      router.replace("/auth/login")
+    } catch {
+      router.replace("/auth/login")
+    }
+  }
+
+  // Create dialog handlers
+  const openCreateDialog = () => {
+    setProjectName("")
+    setProjectDescription("")
+    createProjectMutation.reset()
+    setCreateOpen(true)
   }
 
   const onCreateProject = async (event: React.FormEvent<HTMLFormElement>) => {
@@ -70,249 +194,532 @@ export function ProjectsWorkspace() {
         description: projectDescription.trim() || undefined,
       })
 
+      setCreateOpen(false)
       setProjectName("")
       setProjectDescription("")
+      setLastOpenedProject({ id: project.id, name: project.name })
       router.push(`/dashboard/${encodeURIComponent(project.id)}`)
     } catch {
-      // Mutation error message is shown below.
+      //
     }
   }
 
-  const startEditing = (project: ProjectRecord) => {
-    setEditingProjectId(project.id)
+  // Edit dialog handlers
+  const openEditDialog = (project: ProjectRecord) => {
+    setEditProject(project)
     setEditName(project.name)
     setEditDescription(project.description ?? "")
+    updateProjectMutation.reset()
   }
 
-  const cancelEditing = () => {
-    setEditingProjectId(null)
+  const closeEditDialog = () => {
+    setEditProject(null)
     setEditName("")
     setEditDescription("")
   }
 
-  const saveProject = async (projectId: string) => {
+  const saveProject = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    if (!editProject) return
+
     try {
       await updateProjectMutation.mutateAsync({
-        id: projectId,
+        id: editProject.id,
         name: editName.trim(),
         description: editDescription.trim() || undefined,
       })
-      cancelEditing()
+      closeEditDialog()
     } catch {
-      // Mutation error message is shown below.
+      //
     }
   }
 
   const deleteProject = async (projectId: string) => {
     try {
       await deleteProjectMutation.mutateAsync(projectId)
-      if (editingProjectId === projectId) {
-        cancelEditing()
-      }
+      if (editProject?.id === projectId) closeEditDialog()
     } catch {
-      // Mutation error message is shown below.
+      //
     }
   }
 
+  const setSelectedEndpointById = (endpointId: string) => {
+    if (!lastOpenedProject?.id) return
+
+    const endpoint = endpoints.find((item) => item.id === endpointId)
+    if (!endpoint) return
+
+    setSelectedEndpointId(endpoint.id)
+    setActiveEndpointForProject(lastOpenedProject.id, {
+      id: endpoint.id,
+      name: endpoint.name,
+    })
+  }
+
+  React.useEffect(() => {
+    if (!lastOpenedProject?.id) {
+      setSelectedEndpointId(null)
+      return
+    }
+
+    if (endpointsQuery.isLoading) return
+
+    if (endpoints.length === 0) {
+      clearActiveEndpointForProject(lastOpenedProject.id)
+      setSelectedEndpointId(null)
+      return
+    }
+
+    const storedSelection = getActiveEndpointForProject(lastOpenedProject.id)
+    const storedEndpointExists = storedSelection
+      ? endpoints.some((endpoint) => endpoint.id === storedSelection.id)
+      : false
+
+    if (storedSelection && storedEndpointExists) {
+      setSelectedEndpointId(storedSelection.id)
+      return
+    }
+
+    const fallbackEndpoint = endpoints[0]
+    if (!fallbackEndpoint) {
+      setSelectedEndpointId(null)
+      return
+    }
+
+    setSelectedEndpointId(fallbackEndpoint.id)
+    setActiveEndpointForProject(lastOpenedProject.id, {
+      id: fallbackEndpoint.id,
+      name: fallbackEndpoint.name,
+    })
+  }, [endpoints, endpointsQuery.isLoading, lastOpenedProject?.id])
+
   if (meQuery.isLoading) {
     return (
-      <section className="flex min-h-screen items-center justify-center">
-        <div className="inline-flex items-center gap-2 text-sm text-muted-foreground">
-          <LoaderCircle className="size-4 animate-spin" />
-          Loading workspace...
-        </div>
-      </section>
+      <div className="flex min-h-screen items-center justify-center">
+        <LoaderCircle className="size-5 animate-spin text-muted-foreground" />
+      </div>
     )
   }
 
-  return (
-    <section className="min-h-screen bg-background px-4 py-8 sm:px-6 lg:px-8">
-      <div className="mx-auto w-full max-w-7xl space-y-6">
-        <header className="rounded-2xl border border-border bg-card p-6 shadow-sm">
-          <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Projects</p>
-          <h1 className="mt-2 font-heading text-3xl font-semibold">Project Operations Workspace</h1>
-          <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
-            Manage your projects in one place, then open any project dashboard with a route-based context.
-          </p>
-        </header>
+  const selectedEndpoint = endpoints.find((endpoint) => endpoint.id === selectedEndpointId) ?? null
 
-        <div className="grid gap-4 xl:grid-cols-[2fr_1fr]">
-          <article className="rounded-2xl border border-border bg-card p-5 shadow-sm">
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-              <div>
-                <h2 className="font-heading text-xl font-semibold">All Projects</h2>
-                <p className="text-sm text-muted-foreground">{projects.length} total projects</p>
+  const firstName = user?.name.split(" ")[0] ?? ""
+  const companyName = user?.onboarding.companyName
+
+  return (
+    <div className="flex min-h-screen flex-col bg-background">
+      {/* ── Top navigation bar ── */}
+      <header className="sticky top-0 z-40 flex h-14 items-center gap-4 border-b border-border bg-background/95 px-4 backdrop-blur-sm sm:px-6">
+        {/* Brand */}
+        <div className="flex items-center gap-2.5">
+          <div className="flex size-7 items-center justify-center rounded-lg bg-primary">
+            <Webhook className="size-4 text-primary-foreground" />
+          </div>
+          <span className="hidden text-sm font-semibold tracking-tight sm:block">HookBase</span>
+        </div>
+
+        {/* Spacer */}
+        <div className="flex-1" />
+
+        {/* Right side controls */}
+        <ThemeToggle />
+
+        {user ? (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button
+                type="button"
+                className="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm transition-colors hover:bg-muted focus:outline-none"
+              >
+                <UserAvatar name={user.name} />
+                <span className="hidden max-w-[140px] truncate font-medium sm:block">{user.name}</span>
+                <ChevronDown className="size-3.5 text-muted-foreground" />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-56">
+              <DropdownMenuLabel className="font-normal">
+                <div className="flex flex-col gap-0.5">
+                  <span className="text-sm font-medium leading-none">{user.name}</span>
+                  <span className="text-xs text-muted-foreground">{user.email}</span>
+                </div>
+              </DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                className="cursor-pointer text-destructive focus:text-destructive"
+                onSelect={handleLogout}
+                disabled={logoutMutation.isPending}
+              >
+                {logoutMutation.isPending ? (
+                  <LoaderCircle className="size-4 animate-spin" />
+                ) : (
+                  <LogOut className="size-4" />
+                )}
+                Sign out
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        ) : null}
+      </header>
+
+      {/* ── Page body ── */}
+      <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-10 sm:px-6">
+        {/* Greeting */}
+        <div className="mb-8">
+          <h1 className="text-2xl font-semibold tracking-tight">
+            {getGreeting()}{firstName ? `, ${firstName}` : ""}.
+          </h1>
+          <p className="mt-1 text-sm text-muted-foreground">
+            {companyName
+              ? `${companyName} · Webhook observability workspace`
+              : "Select a project to open its dashboard, or create a new one."}
+          </p>
+        </div>
+
+        {/* Last opened hero */}
+        {lastOpenedProject ? (
+          <div className="mb-6 flex items-center justify-between rounded-xl border border-border bg-card px-5 py-4 shadow-sm">
+            <div className="flex items-center gap-3">
+              <div className="flex size-9 items-center justify-center rounded-lg border border-border bg-muted">
+                <Clock className="size-4 text-muted-foreground" />
               </div>
-              <label className="relative block w-full sm:w-72">
-                <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+              <div>
+                <p className="text-xs text-muted-foreground">Continue where you left off</p>
+                <p className="text-sm font-semibold">{lastOpenedProject.name}</p>
+              </div>
+            </div>
+            <Button size="sm" onClick={() => openProjectDashboard(lastOpenedProject)}>
+              Open Dashboard
+              <ArrowRight className="size-3.5" />
+            </Button>
+          </div>
+        ) : null}
+
+        {lastOpenedProject ? (
+          <div className="mb-6 rounded-xl border border-border bg-card px-5 py-4 shadow-sm">
+            <div className="mb-2.5">
+              <p className="text-[11px] uppercase tracking-[0.18em] text-muted-foreground">Endpoint</p>
+              <p className="text-sm text-muted-foreground">
+                Choose the active endpoint for {lastOpenedProject.name}.
+              </p>
+            </div>
+
+            <Select
+              value={selectedEndpoint?.id ?? ""}
+              onValueChange={setSelectedEndpointById}
+              disabled={endpointsQuery.isLoading || endpoints.length === 0}
+            >
+              <SelectTrigger id="project-endpoint-select" className="w-full" aria-label="Select endpoint">
+                <SelectValue
+                  placeholder={
+                    endpointsQuery.isLoading
+                      ? "Loading endpoints"
+                      : endpoints.length === 0
+                        ? "No endpoints found"
+                        : "Select an endpoint"
+                  }
+                />
+              </SelectTrigger>
+              <SelectContent position="popper">
+                <SelectGroup>
+                  <SelectLabel>Endpoints</SelectLabel>
+                  {endpoints.map((endpoint) => (
+                    <SelectItem key={endpoint.id} value={endpoint.id}>
+                      {endpoint.name}
+                    </SelectItem>
+                  ))}
+                </SelectGroup>
+              </SelectContent>
+            </Select>
+
+            <p className="mt-2 text-xs text-muted-foreground">
+              {selectedEndpoint
+                ? `Active endpoint: ${selectedEndpoint.name} (${selectedEndpoint.source})`
+                : "Create an endpoint in this project to start receiving and routing events."}
+            </p>
+
+            {endpointsQuery.error ? (
+              <p className="mt-2 text-xs text-destructive">
+                {getRequestErrorMessage(endpointsQuery.error)}
+              </p>
+            ) : null}
+          </div>
+        ) : null}
+
+        {/* ── Projects table card ── */}
+        <div className="rounded-xl border border-border bg-card shadow-sm">
+          {/* Toolbar */}
+          <div className="flex items-center gap-3 border-b border-border px-4 py-3">
+            <p className="text-sm font-medium">Projects</p>
+            <div className="ml-auto flex items-center gap-2">
+              <label className="relative block">
+                <Search className="pointer-events-none absolute left-3 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
                 <input
                   type="text"
                   value={searchTerm}
                   onChange={(event) => setSearchTerm(event.target.value)}
-                  placeholder="Search by name or description"
-                  className="h-10 w-full rounded-md border border-input bg-background pl-9 pr-3 text-sm outline-none transition focus:border-ring focus:ring-2 focus:ring-ring/40"
+                  placeholder="Search…"
+                  className="h-8 w-48 rounded-md border border-input bg-background pl-8 pr-3 text-sm outline-none transition focus:border-ring focus:ring-2 focus:ring-ring/40 focus:w-64"
                 />
               </label>
+              <Button size="sm" onClick={openCreateDialog}>
+                <Plus className="size-3.5" />
+                New Project
+              </Button>
             </div>
+          </div>
 
-            {projectsQuery.error ? (
-              <p className="mt-4 rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
-                {getRequestErrorMessage(projectsQuery.error)}
+          {/* Error states */}
+          {projectsQuery.error ? (
+            <p className="px-5 py-3 text-sm text-destructive">
+              {getRequestErrorMessage(projectsQuery.error)}
+            </p>
+          ) : null}
+          {deleteProjectMutation.error ? (
+            <p className="border-b border-border px-5 py-2 text-sm text-destructive">
+              {getRequestErrorMessage(deleteProjectMutation.error)}
+            </p>
+          ) : null}
+
+          {/* Loading */}
+          {projectsQuery.isLoading ? (
+            <div className="flex items-center gap-2 px-5 py-10 text-sm text-muted-foreground">
+              <LoaderCircle className="size-4 animate-spin" />
+              Loading projects…
+            </div>
+          ) : null}
+
+          {/* Empty state */}
+          {!projectsQuery.isLoading && filteredProjects.length === 0 ? (
+            <div className="flex flex-col items-center gap-4 py-16 text-center">
+              <div className="flex size-12 items-center justify-center rounded-xl border border-dashed border-border bg-muted/30">
+                <FolderOpen className="size-5 text-muted-foreground/60" />
+              </div>
+              <div>
+                <p className="text-sm font-medium">
+                  {searchTerm ? "No results found" : "No projects yet"}
+                </p>
+                <p className="mt-0.5 text-xs text-muted-foreground">
+                  {searchTerm
+                    ? "Try a different search term."
+                    : "Create your first project to get started."}
+                </p>
+              </div>
+              {!searchTerm ? (
+                <Button size="sm" onClick={openCreateDialog}>
+                  <Plus className="size-3.5" />
+                  New Project
+                </Button>
+              ) : null}
+            </div>
+          ) : null}
+
+          {/* Table */}
+          {filteredProjects.length > 0 ? (
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-border text-left">
+                  <th className="px-5 py-2.5 text-xs font-medium text-muted-foreground">Name</th>
+                  <th className="hidden px-5 py-2.5 text-xs font-medium text-muted-foreground sm:table-cell">
+                    Description
+                  </th>
+                  <th className="px-5 py-2.5 text-xs font-medium text-muted-foreground">Status</th>
+                  <th className="px-5 py-2.5 text-right text-xs font-medium text-muted-foreground">
+                    Actions
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border">
+                {filteredProjects.map((project) => (
+                  <tr
+                    key={project.id}
+                    className="group transition-colors hover:bg-muted/30"
+                  >
+                    <td className="px-5 py-3.5">
+                      <button
+                        type="button"
+                        className="text-left font-medium hover:underline hover:underline-offset-2 focus:outline-none"
+                        onClick={() => openProjectDashboard(project)}
+                      >
+                        {project.name}
+                      </button>
+                    </td>
+                    <td className="hidden max-w-xs truncate px-5 py-3.5 text-muted-foreground sm:table-cell">
+                      {project.description ?? <span className="text-muted-foreground/40">—</span>}
+                    </td>
+                    <td className="px-5 py-3.5">
+                      <Badge variant="secondary" className="text-xs">
+                        Active
+                      </Badge>
+                    </td>
+                    <td className="px-5 py-3.5">
+                      <div className="flex items-center justify-end gap-1.5">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          className="h-7 px-2 text-xs"
+                          onClick={() => openEditDialog(project)}
+                        >
+                          <Pencil className="size-3" />
+                          <span className="hidden sm:inline">Edit</span>
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          className="h-7 px-2 text-xs text-destructive hover:text-destructive"
+                          disabled={deleteProjectMutation.isPending}
+                          onClick={() => deleteProject(project.id)}
+                        >
+                          {deleteProjectMutation.isPending ? (
+                            <LoaderCircle className="size-3 animate-spin" />
+                          ) : (
+                            <Trash2 className="size-3" />
+                          )}
+                          <span className="hidden sm:inline">Delete</span>
+                        </Button>
+                        <Button
+                          size="sm"
+                          className="h-7 px-2.5 text-xs"
+                          onClick={() => openProjectDashboard(project)}
+                        >
+                          Open
+                          <ArrowRight className="size-3" />
+                        </Button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          ) : null}
+
+          {/* Footer count */}
+          {filteredProjects.length > 0 ? (
+            <div className="border-t border-border px-5 py-2.5">
+              <p className="text-xs text-muted-foreground">
+                {filteredProjects.length === projects.length
+                  ? `${projects.length} project${projects.length === 1 ? "" : "s"}`
+                  : `${filteredProjects.length} of ${projects.length} projects`}
+              </p>
+            </div>
+          ) : null}
+        </div>
+      </main>
+
+      {/* ── Create dialog ── */}
+      <Dialog open={createOpen} onOpenChange={setCreateOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>New Project</DialogTitle>
+          </DialogHeader>
+          <form id="create-project-form" onSubmit={onCreateProject} className="space-y-4">
+            <div className="space-y-1.5">
+              <label htmlFor="create-name" className="text-sm font-medium">
+                Name <span className="text-destructive">*</span>
+              </label>
+              <input
+                id="create-name"
+                required
+                autoFocus
+                value={projectName}
+                onChange={(event) => setProjectName(event.target.value)}
+                placeholder="e.g. Payments Webhooks"
+                className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm outline-none transition focus:border-ring focus:ring-2 focus:ring-ring/40"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <label htmlFor="create-description" className="text-sm font-medium">
+                Description
+                <span className="ml-1 text-xs font-normal text-muted-foreground">(optional)</span>
+              </label>
+              <textarea
+                id="create-description"
+                value={projectDescription}
+                onChange={(event) => setProjectDescription(event.target.value)}
+                placeholder="What is this project for?"
+                rows={3}
+                className="w-full resize-none rounded-md border border-input bg-background px-3 py-2 text-sm outline-none transition focus:border-ring focus:ring-2 focus:ring-ring/40"
+              />
+            </div>
+            {createProjectMutation.error ? (
+              <p className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+                {getRequestErrorMessage(createProjectMutation.error)}
               </p>
             ) : null}
+          </form>
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => setCreateOpen(false)}>
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              form="create-project-form"
+              disabled={createProjectMutation.isPending || !projectName.trim()}
+            >
+              {createProjectMutation.isPending ? <LoaderCircle className="size-4 animate-spin" /> : null}
+              {createProjectMutation.isPending ? "Creating…" : "Create & Open"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
-            {projectsQuery.isLoading ? (
-              <div className="mt-6 inline-flex items-center gap-2 text-sm text-muted-foreground">
-                <LoaderCircle className="size-4 animate-spin" />
-                Loading projects...
-              </div>
-            ) : null}
-
-            {!projectsQuery.isLoading && filteredProjects.length === 0 ? (
-              <div className="mt-6 rounded-xl border border-dashed border-border bg-muted/20 p-5 text-sm text-muted-foreground">
-                No projects match your search.
-              </div>
-            ) : null}
-
-            <div className="mt-4 space-y-3">
-              {filteredProjects.map((project) => {
-                const isEditing = editingProjectId === project.id
-
-                return (
-                  <article
-                    key={project.id}
-                    className="rounded-xl border border-border bg-background/70 p-4 transition hover:border-primary/50"
-                  >
-                    {isEditing ? (
-                      <div className="space-y-3">
-                        <input
-                          value={editName}
-                          onChange={(event) => setEditName(event.target.value)}
-                          className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm outline-none transition focus:border-ring focus:ring-2 focus:ring-ring/40"
-                          placeholder="Project name"
-                        />
-                        <textarea
-                          value={editDescription}
-                          onChange={(event) => setEditDescription(event.target.value)}
-                          rows={3}
-                          className="w-full resize-none rounded-md border border-input bg-background px-3 py-2 text-sm outline-none transition focus:border-ring focus:ring-2 focus:ring-ring/40"
-                          placeholder="Project description"
-                        />
-                        <div className="flex flex-wrap items-center gap-2">
-                          <Button
-                            onClick={() => saveProject(project.id)}
-                            disabled={updateProjectMutation.isPending || !editName.trim()}
-                          >
-                            {updateProjectMutation.isPending ? <LoaderCircle className="size-4 animate-spin" /> : null}
-                            Save
-                          </Button>
-                          <Button type="button" variant="outline" onClick={cancelEditing}>
-                            Cancel
-                          </Button>
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                        <div className="min-w-0 space-y-1">
-                          <div className="flex items-center gap-2">
-                            <h3 className="truncate text-base font-semibold">{project.name}</h3>
-                            <Badge variant="secondary">Active</Badge>
-                          </div>
-                          <p className="text-sm text-muted-foreground">
-                            {project.description || "No description yet. Add details to clarify this project's scope."}
-                          </p>
-                        </div>
-
-                        <div className="flex flex-wrap items-center gap-2">
-                          <Button type="button" variant="outline" onClick={() => startEditing(project)}>
-                            <Pencil className="size-4" />
-                            Edit
-                          </Button>
-                          <Button type="button" variant="outline" onClick={() => deleteProject(project.id)}>
-                            <Trash2 className="size-4" />
-                            Delete
-                          </Button>
-                          <Button onClick={() => openProjectDashboard(project.id)} className="shrink-0">
-                            Open Dashboard
-                            <ArrowRight className="size-4" />
-                          </Button>
-                        </div>
-                      </div>
-                    )}
-                  </article>
-                )
-              })}
+      {/* ── Edit dialog ── */}
+      <Dialog open={editProject !== null} onOpenChange={(open) => { if (!open) closeEditDialog() }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit Project</DialogTitle>
+          </DialogHeader>
+          <form id="edit-project-form" onSubmit={saveProject} className="space-y-4">
+            <div className="space-y-1.5">
+              <label htmlFor="edit-name" className="text-sm font-medium">
+                Name <span className="text-destructive">*</span>
+              </label>
+              <input
+                id="edit-name"
+                required
+                autoFocus
+                value={editName}
+                onChange={(event) => setEditName(event.target.value)}
+                placeholder="Project name"
+                className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm outline-none transition focus:border-ring focus:ring-2 focus:ring-ring/40"
+              />
             </div>
-          </article>
-
-          <aside className="rounded-2xl border border-border bg-card p-5 shadow-sm">
-            <div className="flex items-center gap-2">
-              <FolderKanban className="size-4 text-muted-foreground" />
-              <h2 className="font-heading text-xl font-semibold">Create Project</h2>
+            <div className="space-y-1.5">
+              <label htmlFor="edit-description" className="text-sm font-medium">
+                Description
+                <span className="ml-1 text-xs font-normal text-muted-foreground">(optional)</span>
+              </label>
+              <textarea
+                id="edit-description"
+                value={editDescription}
+                onChange={(event) => setEditDescription(event.target.value)}
+                placeholder="Project description"
+                rows={3}
+                className="w-full resize-none rounded-md border border-input bg-background px-3 py-2 text-sm outline-none transition focus:border-ring focus:ring-2 focus:ring-ring/40"
+              />
             </div>
-            <p className="mt-2 text-sm text-muted-foreground">
-              Create a new project and jump straight into its dashboard.
-            </p>
-
-            <form className="mt-4 space-y-3" onSubmit={onCreateProject}>
-              <div className="space-y-1.5">
-                <label htmlFor="project-name" className="text-sm font-medium text-foreground">
-                  Project name
-                </label>
-                <input
-                  id="project-name"
-                  required
-                  value={projectName}
-                  onChange={(event) => setProjectName(event.target.value)}
-                  placeholder="Payments Webhooks"
-                  className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm outline-none transition focus:border-ring focus:ring-2 focus:ring-ring/40"
-                />
-              </div>
-
-              <div className="space-y-1.5">
-                <label htmlFor="project-description" className="text-sm font-medium text-foreground">
-                  Description
-                </label>
-                <textarea
-                  id="project-description"
-                  value={projectDescription}
-                  onChange={(event) => setProjectDescription(event.target.value)}
-                  placeholder="Track Stripe and GitHub events"
-                  rows={4}
-                  className="w-full resize-none rounded-md border border-input bg-background px-3 py-2 text-sm outline-none transition focus:border-ring focus:ring-2 focus:ring-ring/40"
-                />
-              </div>
-
-              {createProjectMutation.error ? (
-                <p className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
-                  {getRequestErrorMessage(createProjectMutation.error)}
-                </p>
-              ) : null}
-
-              {updateProjectMutation.error ? (
-                <p className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
-                  {getRequestErrorMessage(updateProjectMutation.error)}
-                </p>
-              ) : null}
-
-              {deleteProjectMutation.error ? (
-                <p className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
-                  {getRequestErrorMessage(deleteProjectMutation.error)}
-                </p>
-              ) : null}
-
-              <Button
-                type="submit"
-                className="w-full"
-                disabled={createProjectMutation.isPending || !projectName.trim()}
-              >
-                {createProjectMutation.isPending ? <LoaderCircle className="size-4 animate-spin" /> : null}
-                {createProjectMutation.isPending ? "Creating..." : "Create and Open"}
-              </Button>
-            </form>
-          </aside>
-        </div>
-      </div>
-    </section>
+            {updateProjectMutation.error ? (
+              <p className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+                {getRequestErrorMessage(updateProjectMutation.error)}
+              </p>
+            ) : null}
+          </form>
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={closeEditDialog}>
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              form="edit-project-form"
+              disabled={updateProjectMutation.isPending || !editName.trim()}
+            >
+              {updateProjectMutation.isPending ? <LoaderCircle className="size-4 animate-spin" /> : null}
+              {updateProjectMutation.isPending ? "Saving…" : "Save Changes"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
   )
 }
