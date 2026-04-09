@@ -12,6 +12,8 @@ function ThemeProvider({
       attribute="class"
       defaultTheme="system"
       enableSystem
+      enableColorScheme
+      themes={["light", "dark", "system"]}
       disableTransitionOnChange
       {...props}
     >

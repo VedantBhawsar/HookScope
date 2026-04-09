@@ -3,6 +3,7 @@ import { Geist_Mono, Inter, Space_Grotesk, Space_Mono } from "next/font/google"
 import "@workspace/ui/globals.css"
 import "./landing.css"
 import { ThemeProvider } from "@/components/theme-provider"
+import { QueryProvider } from "@/components/providers/query-provider"
 import { cn } from "@workspace/ui/lib/utils";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-sans" })
@@ -36,7 +37,9 @@ export default function RootLayout({
       className={cn("antialiased", fontMono.variable, inter.variable, spaceGrotesk.variable, spaceMono.variable)}
     >
       <body>
-        <ThemeProvider defaultTheme="dark">{children}</ThemeProvider>
+        <ThemeProvider defaultTheme="system">
+          <QueryProvider>{children}</QueryProvider>
+        </ThemeProvider>
       </body>
     </html>
   )

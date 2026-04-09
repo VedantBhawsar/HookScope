@@ -1,4 +1,5 @@
 import express from "express"
+import cors from "cors"
 import cookieParser from "cookie-parser"
 import { authRouter } from "./routes/auth.router"
 import { endpointRouter } from "./routes/endpoint.router"
@@ -6,9 +7,17 @@ import { projectRouter } from "./routes/project.router"
 import { webhookRouter } from "./routes/webhook.router"
 import { json } from "./lib/response"
 
+const FRONTEND_URL = process.env["FRONTEND_URL"] ?? "http://localhost:3000"
+
 const startServer = () => {
   const app = express()
 
+  app.use(
+    cors({
+      origin: FRONTEND_URL,
+      credentials: true,
+    })
+  )
   app.use(express.json())
   app.use(cookieParser())
 
