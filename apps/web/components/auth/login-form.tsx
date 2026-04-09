@@ -23,7 +23,7 @@ function LoginForm() {
         email,
         password,
       })
-      const destination = result.user.onboarding?.onboardingCompleted ? "/dashboard" : "/onboarding?step=verify"
+      const destination = result.user.onboarding?.onboardingCompleted ? "/projects" : "/onboarding?step=verify"
       router.push(destination)
       router.refresh()
     } catch {

@@ -9,6 +9,12 @@ export interface CreateProjectPayload {
   description?: string
 }
 
+export interface UpdateProjectPayload {
+  id: string
+  name?: string
+  description?: string
+}
+
 export interface ProjectRecord {
   id: string
   name: string
@@ -67,6 +73,35 @@ export function useCreateProjectMutation() {
     mutationFn: async (payload: CreateProjectPayload) => {
       const response = await http.post<ApiResponse<ProjectRecord>>("/api/projects", payload)
       return unwrapResponse(response.data)
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: projectsQueryKeys.all })
+      await queryClient.invalidateQueries({ queryKey: authQueryKeys.me })
+    },
+  })
+}
+
+export function useUpdateProjectMutation() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async ({ id, ...payload }: UpdateProjectPayload) => {
+      const response = await http.put<ApiResponse<ProjectRecord>>(`/api/projects/${id}`, payload)
+      return unwrapResponse(response.data)
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: projectsQueryKeys.all })
+    },
+  })
+}
+
+export function useDeleteProjectMutation() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async (id: string) => {
+      await http.delete(`/api/projects/${id}`)
+      return id
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: projectsQueryKeys.all })

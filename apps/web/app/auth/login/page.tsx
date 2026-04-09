@@ -8,7 +8,7 @@ export default async function LoginPage() {
   const hasSessionCookie = Boolean(cookieStore.get("at")?.value || cookieStore.get("rt")?.value)
 
   if (hasSessionCookie) {
-    redirect("/dashboard")
+    redirect("/projects")
   }
 
   return (

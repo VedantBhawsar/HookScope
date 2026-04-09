@@ -38,7 +38,7 @@ export function OnboardingFlow() {
     if (!user) return
 
     if (user.onboarding.onboardingCompleted) {
-      router.replace("/dashboard")
+      router.replace("/projects")
       router.refresh()
       return
     }
@@ -63,7 +63,7 @@ export function OnboardingFlow() {
     }
 
     if (hasCreatedProject) {
-      router.replace("/dashboard")
+      router.replace("/projects")
     }
   }, [currentStep, router, user])
 
@@ -102,7 +102,7 @@ export function OnboardingFlow() {
         name: projectName,
         description: projectDescription || undefined,
       })
-      router.replace("/dashboard")
+      router.replace("/projects")
       router.refresh()
     } catch {
       // Error surfaced below from mutation state.

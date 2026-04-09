@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { usePathname, useRouter, useSearchParams } from "next/navigation"
+import { useParams, usePathname, useRouter } from "next/navigation"
 import * as React from "react"
 import {
   BarChart3,
@@ -49,34 +49,39 @@ interface DashboardShellProps {
 const DASHBOARD_NAV_ITEMS = [
   {
     label: "Overview",
-    href: "/dashboard",
+    segment: "",
+    absoluteHref: null,
     icon: LayoutDashboard,
   },
   {
     label: "Projects",
-    href: "/dashboard/projects",
+    segment: "",
+    absoluteHref: "/projects",
     icon: FolderKanban,
   },
   {
     label: "Events",
-    href: "/dashboard/events",
+    segment: "/events",
+    absoluteHref: null,
     icon: Webhook,
   },
   {
     label: "Metrics",
-    href: "/dashboard/metrics",
+    segment: "/metrics",
+    absoluteHref: null,
     icon: BarChart3,
   },
   {
     label: "Alerts",
-    href: "/dashboard/alerts",
+    segment: "/alerts",
+    absoluteHref: null,
     icon: Bell,
   },
 ] as const
 
 export function DashboardShell({ children }: DashboardShellProps) {
   const pathname = usePathname()
-  const searchParams = useSearchParams()
+  const routeParams = useParams<{ projectId?: string }>()
   const router = useRouter()
   const meQuery = useMeQuery()
   const logoutMutation = useLogoutMutation()
@@ -84,16 +89,14 @@ export function DashboardShell({ children }: DashboardShellProps) {
   const [avatarUploadOpen, setAvatarUploadOpen] = React.useState(false)
 
   const projects = projectsQuery.data?.data ?? []
-  const selectedProjectIdFromUrl = searchParams.get("projectId")
+  const selectedProjectIdFromUrl = typeof routeParams.projectId === "string" ? routeParams.projectId : null
   const selectedProject = projects.find((project) => project.id === selectedProjectIdFromUrl) ?? null
 
   const setSelectedProjectId = React.useCallback(
     (projectId: string) => {
-      const params = new URLSearchParams(searchParams.toString())
-      params.set("projectId", projectId)
-      router.replace(`${pathname}?${params.toString()}`, { scroll: false })
+      router.replace(`/dashboard/${projectId}`, { scroll: false })
     },
-    [pathname, router, searchParams]
+    [router]
   )
 
   React.useEffect(() => {
@@ -114,8 +117,7 @@ export function DashboardShell({ children }: DashboardShellProps) {
   React.useEffect(() => {
     if (projectsQuery.isLoading || projects.length === 0) return
 
-    const hasSelection = Boolean(selectedProject)
-    if (hasSelection) return
+    if (selectedProject) return
 
     const firstProject = projects[0]
     if (!firstProject) return
@@ -198,13 +200,13 @@ export function DashboardShell({ children }: DashboardShellProps) {
 
             <nav className="flex flex-1 flex-col gap-1">
               {DASHBOARD_NAV_ITEMS.map((item) => {
-                const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`)
                 const Icon = item.icon
-                const params = new URLSearchParams(searchParams.toString())
-                if (selectedProject?.id) {
-                  params.set("projectId", selectedProject.id)
-                }
-                const href = params.has("projectId") ? `${item.href}?${params.toString()}` : item.href
+                const href = item.absoluteHref
+                  ? item.absoluteHref
+                  : selectedProject?.id
+                    ? `/dashboard/${selectedProject.id}${item.segment}`
+                    : "/projects"
+                const isActive = pathname === href || pathname.startsWith(`${href}/`)
 
                 return (
                   <Link
