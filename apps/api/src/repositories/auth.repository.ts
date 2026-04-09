@@ -15,6 +15,37 @@ export class AuthRepository {
     })
   }
 
+  getActiveProjectCount(userId: string) {
+    return prisma.project.count({
+      where: {
+        userId,
+        deletedAt: null,
+      },
+    })
+  }
+
+  updateUserOnboarding(
+    userId: string,
+    data: {
+      companyName: string
+      companySize?: string
+      companyRole?: string
+      useCase?: string
+      onboardingCompletedAt?: Date
+    }
+  ) {
+    return prisma.user.update({
+      where: { id: userId },
+      data: {
+        companyName: data.companyName,
+        companySize: data.companySize,
+        companyRole: data.companyRole,
+        useCase: data.useCase,
+        onboardingCompletedAt: data.onboardingCompletedAt,
+      },
+    })
+  }
+
   createRefreshToken(data: {
     userId: string
     tokenHash: string

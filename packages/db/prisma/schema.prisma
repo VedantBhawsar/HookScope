@@ -87,9 +87,16 @@ model User {
   id    String @id @default(uuid())
   name  String
   email String @unique
+  emailVerifiedAt DateTime? @map("email_verified_at")
 
   /// Argon2id hash — required for all users. API keys live on Endpoint, not here.
   passwordHash String @map("password_hash")
+
+  companyName  String? @map("company_name")
+  companySize  String? @map("company_size")
+  companyRole  String? @map("company_role")
+  useCase      String? @map("use_case")
+  onboardingCompletedAt DateTime? @map("onboarding_completed_at")
 
   createdAt DateTime @default(now()) @map("created_at")
 

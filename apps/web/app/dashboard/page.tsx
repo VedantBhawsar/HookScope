@@ -1,14 +1,26 @@
 "use client"
 
 import Link from "next/link"
+import { useRouter } from "next/navigation"
+import * as React from "react"
 import { LoaderCircle, LogOut } from "lucide-react"
 import { Button } from "@workspace/ui/components/button"
 import { getRequestErrorMessage } from "@/lib/http"
 import { useLogoutMutation, useMeQuery } from "@/hooks/use-auth"
 
 export default function DashboardPage() {
+  const router = useRouter()
   const meQuery = useMeQuery()
   const logoutMutation = useLogoutMutation()
+
+  React.useEffect(() => {
+    const user = meQuery.data?.user
+    if (!user) return
+
+    if (!user.onboarding?.onboardingCompleted) {
+      router.replace("/onboarding?step=verify")
+    }
+  }, [meQuery.data?.user, router])
 
   if (meQuery.isLoading) {
     return (
@@ -37,6 +49,17 @@ export default function DashboardPage() {
               <Link href="/auth/register">Create account</Link>
             </Button>
           </div>
+        </div>
+      </section>
+    )
+  }
+
+  if (!user.onboarding?.onboardingCompleted) {
+    return (
+      <section className="flex min-h-screen items-center justify-center">
+        <div className="inline-flex items-center gap-2 text-sm text-muted-foreground">
+          <LoaderCircle className="size-4 animate-spin" />
+          Redirecting to onboarding...
         </div>
       </section>
     )

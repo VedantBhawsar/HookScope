@@ -26,8 +26,10 @@ export class ProjectService {
     return this.repository.findByIdAndUserId(id, userId)
   }
 
-  create(userId: string, data: CreateProjectDto) {
-    return this.repository.create(userId, data)
+  async create(userId: string, data: CreateProjectDto) {
+    const project = await this.repository.create(userId, data)
+    await this.repository.markOnboardingCompleted(userId)
+    return project
   }
 
   async update(id: string, userId: string, data: UpdateProjectDto) {

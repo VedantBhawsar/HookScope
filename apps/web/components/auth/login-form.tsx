@@ -19,11 +19,12 @@ function LoginForm() {
     event.preventDefault()
 
     try {
-      await loginMutation.mutateAsync({
+      const result = await loginMutation.mutateAsync({
         email,
         password,
       })
-      router.push("/dashboard")
+      const destination = result.user.onboarding?.onboardingCompleted ? "/dashboard" : "/onboarding?step=verify"
+      router.push(destination)
       router.refresh()
     } catch {
       // Error is rendered through mutation.error state.

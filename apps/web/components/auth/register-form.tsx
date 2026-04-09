@@ -29,12 +29,13 @@ function RegisterForm() {
     setFormError(null)
 
     try {
-      await registerMutation.mutateAsync({
+      const result = await registerMutation.mutateAsync({
         name,
         email,
         password,
       })
-      router.push("/dashboard")
+      const destination = result.user.onboarding?.onboardingCompleted ? "/dashboard" : "/onboarding?step=verify"
+      router.push(destination)
       router.refresh()
     } catch {
       // Error is rendered through mutation.error state.

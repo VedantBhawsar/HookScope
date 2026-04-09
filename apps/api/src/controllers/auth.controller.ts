@@ -2,7 +2,8 @@ import type { Request, Response } from "express"
 import { badRequest, conflict, created, error, json, noContent, unauthorized } from "../lib/response"
 import { REFRESH_TOKEN_COOKIE, clearAuthCookies, setAuthCookies } from "../lib/cookies"
 import type { AuthService } from "../services/auth.service"
-import type { AuthResponse, LoginDto, RegisterDto } from "../types/auth"
+import type { AuthenticatedRequest } from "../middleware/require-auth"
+import type { CompleteOnboardingDto, LoginDto, RegisterDto } from "../types/auth"
 
 export class AuthController {
   constructor(private readonly service: AuthService) {}
@@ -89,9 +90,32 @@ export class AuthController {
     }
   }
 
+  completeOnboarding = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const { userId } = (req as AuthenticatedRequest).user
+      const body = req.body as Partial<CompleteOnboardingDto>
+
+      if (!body.companyName?.trim()) {
+        return badRequest(res, "companyName is required")
+      }
+
+      const user = await this.service.completeOnboarding(userId, body as CompleteOnboardingDto)
+      json(res, { user }, 200, "Onboarding details saved")
+    } catch (err) {
+      console.error("[AuthController.completeOnboarding]", err)
+      error(res, "Failed to save onboarding details")
+    }
+  }
+
   me = async (req: Request, res: Response): Promise<void> => {
-    const user = (req as Request & { user?: AuthResponse["user"] & { userId: string } }).user
-    if (!user) return unauthorized(res)
-    json(res, { user })
+    try {
+      const { userId } = (req as AuthenticatedRequest).user
+      const user = await this.service.getSessionUser(userId)
+      if (!user) return unauthorized(res)
+      json(res, { user })
+    } catch (err) {
+      console.error("[AuthController.me]", err)
+      error(res, "Failed to fetch session")
+    }
   }
 }

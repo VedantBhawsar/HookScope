@@ -64,6 +64,21 @@ export class ProjectRepository {
     })
   }
 
+  markOnboardingCompleted(userId: string) {
+    return prisma.user.updateMany({
+      where: {
+        id: userId,
+        onboardingCompletedAt: null,
+        companyName: {
+          not: null,
+        },
+      },
+      data: {
+        onboardingCompletedAt: new Date(),
+      },
+    })
+  }
+
   update(id: string, userId: string, data: UpdateProjectDto) {
     return prisma.project.updateMany({
       where: { id, userId, deletedAt: null },

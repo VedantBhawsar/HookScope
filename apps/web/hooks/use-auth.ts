@@ -8,10 +8,22 @@ export interface AuthTokens {
   expiresIn: number
 }
 
+export interface AuthOnboardingState {
+  emailVerified: boolean
+  companyName: string | null
+  companySize: string | null
+  companyRole: string | null
+  useCase: string | null
+  onboardingCompleted: boolean
+  hasCreatedProject: boolean
+  isNewUser: boolean
+}
+
 export interface AuthUser {
   id: string
   name: string
   email: string
+  onboarding: AuthOnboardingState
 }
 
 export interface AuthResult {
@@ -30,16 +42,69 @@ export interface RegisterPayload {
   password: string
 }
 
+export interface CompleteOnboardingPayload {
+  companyName: string
+  companySize?: string
+  companyRole?: string
+  useCase?: string
+}
+
 export const authQueryKeys = {
   me: ["auth", "me"] as const,
+}
+
+const DEFAULT_ONBOARDING: AuthOnboardingState = {
+  emailVerified: false,
+  companyName: null,
+  companySize: null,
+  companyRole: null,
+  useCase: null,
+  onboardingCompleted: false,
+  hasCreatedProject: false,
+  isNewUser: true,
+}
+
+type RawAuthUser = Omit<AuthUser, "onboarding"> & {
+  onboarding?: Partial<AuthOnboardingState> | null
+}
+
+function normalizeAuthUser(user: RawAuthUser): AuthUser {
+  const rawOnboarding = user.onboarding ?? {}
+  const companyName = rawOnboarding.companyName ?? null
+  const hasCreatedProject = Boolean(rawOnboarding.hasCreatedProject)
+
+  return {
+    id: user.id,
+    name: user.name,
+    email: user.email,
+    onboarding: {
+      ...DEFAULT_ONBOARDING,
+      ...rawOnboarding,
+      emailVerified: Boolean(rawOnboarding.emailVerified),
+      companyName,
+      companySize: rawOnboarding.companySize ?? null,
+      companyRole: rawOnboarding.companyRole ?? null,
+      useCase: rawOnboarding.useCase ?? null,
+      hasCreatedProject,
+      onboardingCompleted:
+        typeof rawOnboarding.onboardingCompleted === "boolean"
+          ? rawOnboarding.onboardingCompleted
+          : Boolean(companyName && hasCreatedProject),
+      isNewUser:
+        typeof rawOnboarding.isNewUser === "boolean"
+          ? rawOnboarding.isNewUser
+          : !companyName && !hasCreatedProject,
+    },
+  }
 }
 
 export function useMeQuery() {
   return useQuery({
     queryKey: authQueryKeys.me,
     queryFn: async () => {
-      const response = await http.get<ApiResponse<{ user: AuthUser }>>("/api/auth/me")
-      return unwrapResponse(response.data)
+      const response = await http.get<ApiResponse<{ user: RawAuthUser }>>("/api/auth/me")
+      const data = unwrapResponse(response.data)
+      return { user: normalizeAuthUser(data.user) }
     },
   })
 }
@@ -49,8 +114,9 @@ export function useLoginMutation() {
 
   return useMutation({
     mutationFn: async (payload: LoginPayload) => {
-      const response = await http.post<ApiResponse<AuthResult>>("/api/auth/login", payload)
-      return unwrapResponse(response.data)
+      const response = await http.post<ApiResponse<{ user: RawAuthUser; tokens: AuthTokens }>>("/api/auth/login", payload)
+      const data = unwrapResponse(response.data)
+      return { user: normalizeAuthUser(data.user), tokens: data.tokens }
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: authQueryKeys.me })
@@ -63,8 +129,12 @@ export function useRegisterMutation() {
 
   return useMutation({
     mutationFn: async (payload: RegisterPayload) => {
-      const response = await http.post<ApiResponse<AuthResult>>("/api/auth/register", payload)
-      return unwrapResponse(response.data)
+      const response = await http.post<ApiResponse<{ user: RawAuthUser; tokens: AuthTokens }>>(
+        "/api/auth/register",
+        payload
+      )
+      const data = unwrapResponse(response.data)
+      return { user: normalizeAuthUser(data.user), tokens: data.tokens }
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: authQueryKeys.me })
@@ -82,6 +152,21 @@ export function useLogoutMutation() {
     },
     onSuccess: async () => {
       queryClient.setQueryData(authQueryKeys.me, null)
+      await queryClient.invalidateQueries({ queryKey: authQueryKeys.me })
+    },
+  })
+}
+
+export function useCompleteOnboardingMutation() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async (payload: CompleteOnboardingPayload) => {
+      const response = await http.patch<ApiResponse<{ user: RawAuthUser }>>("/api/auth/onboarding", payload)
+      const data = unwrapResponse(response.data)
+      return { user: normalizeAuthUser(data.user) }
+    },
+    onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: authQueryKeys.me })
     },
   })

@@ -14,10 +14,22 @@ export interface AuthTokens {
   expiresIn: number // seconds until access token expires
 }
 
+export interface AuthOnboardingState {
+  emailVerified: boolean
+  companyName: string | null
+  companySize: string | null
+  companyRole: string | null
+  useCase: string | null
+  onboardingCompleted: boolean
+  hasCreatedProject: boolean
+  isNewUser: boolean
+}
+
 export interface AuthUser {
   id: string
   name: string
   email: string
+  onboarding: AuthOnboardingState
 }
 
 export interface AuthResponse {
@@ -28,4 +40,11 @@ export interface AuthResponse {
 export interface AccessTokenPayload {
   userId: string
   email: string
+}
+
+export interface CompleteOnboardingDto {
+  companyName: string
+  companySize?: string
+  companyRole?: string
+  useCase?: string
 }

@@ -6,7 +6,13 @@ import {
   signAccessToken,
 } from "../lib/tokens"
 import { hashPassword, verifyPassword } from "../lib/password"
-import type { AuthResponse, LoginDto, RegisterDto } from "../types/auth"
+import type {
+  AuthOnboardingState,
+  AuthResponse,
+  CompleteOnboardingDto,
+  LoginDto,
+  RegisterDto,
+} from "../types/auth"
 
 const REFRESH_TOKEN_TTL_MS = 7 * 24 * 60 * 60 * 1000 // 7 days
 
@@ -22,7 +28,7 @@ export class AuthService {
 
     const { accessToken, refreshToken } = await this.issueTokenPair(user.id, user.email)
     return {
-      user: { id: user.id, name: user.name, email: user.email },
+      user: this.toAuthUser(user, 0),
       tokens: { accessToken, expiresIn: ACCESS_TOKEN_EXPIRES_IN },
       refreshToken,
     }
@@ -35,9 +41,10 @@ export class AuthService {
     const valid = await verifyPassword(dto.password, hashToCheck)
     if (!user || !valid) throw new Error("INVALID_CREDENTIALS")
 
+    const projectCount = await this.repo.getActiveProjectCount(user.id)
     const { accessToken, refreshToken } = await this.issueTokenPair(user.id, user.email)
     return {
-      user: { id: user.id, name: user.name, email: user.email },
+      user: this.toAuthUser(user, projectCount),
       tokens: { accessToken, expiresIn: ACCESS_TOKEN_EXPIRES_IN },
       refreshToken,
     }
@@ -81,16 +88,43 @@ export class AuthService {
 
     // 4. Valid → rotate: revoke old, issue new in same family
     await this.repo.revokeRefreshToken(stored.id)
+    const projectCount = await this.repo.getActiveProjectCount(stored.user.id)
     const { accessToken, refreshToken } = await this.issueTokenPairInFamily(
       stored.userId,
       stored.user.email,
       stored.family
     )
     return {
-      user: { id: stored.user.id, name: stored.user.name, email: stored.user.email },
+      user: this.toAuthUser(stored.user, projectCount),
       tokens: { accessToken, expiresIn: ACCESS_TOKEN_EXPIRES_IN },
       refreshToken,
     }
+  }
+
+  async getSessionUser(userId: string) {
+    const user = await this.repo.findUserById(userId)
+    if (!user) return null
+
+    const projectCount = await this.repo.getActiveProjectCount(user.id)
+    return this.toAuthUser(user, projectCount)
+  }
+
+  async completeOnboarding(userId: string, dto: CompleteOnboardingDto) {
+    const companyName = dto.companyName.trim()
+    const companySize = dto.companySize?.trim() || undefined
+    const companyRole = dto.companyRole?.trim() || undefined
+    const useCase = dto.useCase?.trim() || undefined
+
+    const user = await this.repo.updateUserOnboarding(userId, {
+      companyName,
+      companySize,
+      companyRole,
+      useCase,
+      onboardingCompletedAt: undefined,
+    })
+
+    const projectCount = await this.repo.getActiveProjectCount(user.id)
+    return this.toAuthUser(user, projectCount)
   }
 
   async logout(rawRefreshToken: string): Promise<void> {
@@ -130,5 +164,56 @@ export class AuthService {
     })
 
     return { accessToken, refreshToken: rawRefreshToken }
+  }
+
+  private toAuthUser(
+    user: {
+      id: string
+      name: string
+      email: string
+      emailVerifiedAt: Date | null
+      companyName: string | null
+      companySize: string | null
+      companyRole: string | null
+      useCase: string | null
+      onboardingCompletedAt: Date | null
+    },
+    projectCount: number
+  ) {
+    const onboarding = this.toOnboardingState(user, projectCount)
+
+    return {
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      onboarding,
+    }
+  }
+
+  private toOnboardingState(
+    user: {
+      emailVerifiedAt: Date | null
+      companyName: string | null
+      companySize: string | null
+      companyRole: string | null
+      useCase: string | null
+      onboardingCompletedAt: Date | null
+    },
+    projectCount: number
+  ): AuthOnboardingState {
+    const hasCreatedProject = projectCount > 0
+    const hasCompanyDetails = Boolean(user.companyName)
+    const onboardingCompleted = Boolean(user.onboardingCompletedAt) || (hasCompanyDetails && hasCreatedProject)
+
+    return {
+      emailVerified: Boolean(user.emailVerifiedAt),
+      companyName: user.companyName,
+      companySize: user.companySize,
+      companyRole: user.companyRole,
+      useCase: user.useCase,
+      onboardingCompleted,
+      hasCreatedProject,
+      isNewUser: !hasCompanyDetails && !hasCreatedProject,
+    }
   }
 }
