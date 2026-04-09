@@ -16,16 +16,19 @@
   },
   "dependencies": {
     "@workspace/db": "workspace:*",
+    "@workspace/s3": "workspace:*",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
     "express": "^5.2.1",
-    "jose": "^6.2.2"
+    "jose": "^6.2.2",
+    "multer": "^2.1.1"
   },
   "devDependencies": {
     "@types/bun": "latest",
     "@types/cookie-parser": "^1.4.10",
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.6",
+    "@types/multer": "^2.1.0",
     "@workspace/eslint-config": "workspace:*",
     "@workspace/typescript-config": "workspace:*",
     "eslint": "^9.39.2",

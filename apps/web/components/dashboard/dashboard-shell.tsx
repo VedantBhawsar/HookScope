@@ -12,6 +12,7 @@ import {
   LoaderCircle,
   LogOut,
   Settings,
+  UserCircle,
   Webhook,
 } from "lucide-react"
 import { ThemeToggle } from "@/components/theme-toggle"
@@ -39,6 +40,7 @@ import { getRequestErrorMessage } from "@/lib/http"
 import { useLogoutMutation, useMeQuery } from "@/hooks/use-auth"
 import { useProjectsQuery } from "@/hooks/use-projects"
 import { DashboardProjectProvider } from "@/components/dashboard/dashboard-project-context"
+import { AvatarUploadDialog } from "@/components/dashboard/avatar-upload-dialog"
 
 interface DashboardShellProps {
   children: React.ReactNode
@@ -79,6 +81,7 @@ export function DashboardShell({ children }: DashboardShellProps) {
   const meQuery = useMeQuery()
   const logoutMutation = useLogoutMutation()
   const projectsQuery = useProjectsQuery()
+  const [avatarUploadOpen, setAvatarUploadOpen] = React.useState(false)
 
   const projects = projectsQuery.data?.data ?? []
   const selectedProjectIdFromUrl = searchParams.get("projectId")
@@ -197,11 +200,16 @@ export function DashboardShell({ children }: DashboardShellProps) {
               {DASHBOARD_NAV_ITEMS.map((item) => {
                 const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`)
                 const Icon = item.icon
+                const params = new URLSearchParams(searchParams.toString())
+                if (selectedProject?.id) {
+                  params.set("projectId", selectedProject.id)
+                }
+                const href = params.has("projectId") ? `${item.href}?${params.toString()}` : item.href
 
                 return (
                   <Link
-                    key={item.href}
-                    href={item.href}
+                    key={href}
+                    href={href}
                     className={cn(
                       "inline-flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors",
                       isActive
@@ -218,7 +226,14 @@ export function DashboardShell({ children }: DashboardShellProps) {
 
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="outline" className="mt-4 h-auto w-full justify-start px-4 py-3">
+                <Button variant="outline" className="mt-4 h-auto w-full justify-start px-3 py-2.5">
+                  <span className="flex size-8 shrink-0 items-center justify-center overflow-hidden rounded-full border border-border bg-muted text-xs font-semibold text-muted-foreground">
+                    {user.avatarUrl ? (
+                      <img src={user.avatarUrl} alt={user.name} className="size-full object-cover" />
+                    ) : (
+                      getInitials(user.name)
+                    )}
+                  </span>
                   <div className="grid min-w-0 flex-1 text-left">
                     <span className="truncate text-sm font-medium">{user.name}</span>
                     <span className="truncate text-xs text-muted-foreground">{user.email}</span>
@@ -229,6 +244,10 @@ export function DashboardShell({ children }: DashboardShellProps) {
               <DropdownMenuContent side="top" align="start" className="min-w-56">
                 <DropdownMenuGroup>
                   <DropdownMenuLabel>Account</DropdownMenuLabel>
+                  <DropdownMenuItem onSelect={() => setAvatarUploadOpen(true)}>
+                    <UserCircle data-icon="inline-start" />
+                    Change photo
+                  </DropdownMenuItem>
                   <DropdownMenuItem asChild>
                     <Link href="/dashboard/settings">
                       <Settings data-icon="inline-start" />
@@ -283,6 +302,23 @@ export function DashboardShell({ children }: DashboardShellProps) {
           </div>
         </div>
       </div>
+
+      <AvatarUploadDialog
+        open={avatarUploadOpen}
+        onOpenChange={setAvatarUploadOpen}
+        currentAvatarUrl={user.avatarUrl}
+        userName={user.name}
+      />
     </DashboardProjectProvider>
   )
+}
+
+function getInitials(name: string): string {
+  return name
+    .split(" ")
+    .map((part) => part[0])
+    .filter(Boolean)
+    .slice(0, 2)
+    .join("")
+    .toUpperCase()
 }

@@ -6,6 +6,7 @@ import {
   signAccessToken,
 } from "../lib/tokens"
 import { hashPassword, verifyPassword } from "../lib/password"
+import { putObject, deleteObject, getS3Client } from "@workspace/s3"
 import type {
   AuthOnboardingState,
   AuthResponse,
@@ -137,6 +138,38 @@ export class AuthService {
     await this.repo.revokeAllUserTokens(userId)
   }
 
+  async uploadAvatar(userId: string, file: Express.Multer.File): Promise<string> {
+    const ext = file.mimetype.split("/")[1] ?? "jpg"
+    const key = `avatars/${userId}/${Date.now()}.${ext}`
+    const bucket = process.env["S3_BUCKET"] ?? "webhooks"
+
+    await putObject(
+      { bucket, key, body: file.buffer, contentType: file.mimetype },
+      getS3Client()
+    )
+
+    const endpoint = (process.env["S3_ENDPOINT"] ?? "https://s3.amazonaws.com").replace(/\/$/, "")
+    const avatarUrl = `${endpoint}/${bucket}/${key}`
+
+    const existingUser = await this.repo.findUserById(userId)
+    if (existingUser?.avatarUrl) {
+      const oldKey = this.extractS3Key(existingUser.avatarUrl, bucket, endpoint)
+      if (oldKey) {
+        await deleteObject({ bucket, key: oldKey }, getS3Client()).catch(() => {
+          // Non-fatal: old avatar cleanup failure should not block the upload
+        })
+      }
+    }
+
+    await this.repo.updateUserAvatar(userId, avatarUrl)
+    return avatarUrl
+  }
+
+  private extractS3Key(url: string, bucket: string, endpoint: string): string | null {
+    const prefix = `${endpoint}/${bucket}/`
+    return url.startsWith(prefix) ? url.slice(prefix.length) : null
+  }
+
   // ── Private helpers ──────────────────────────────────────────────────────────
 
   private async issueTokenPair(
@@ -171,6 +204,7 @@ export class AuthService {
       id: string
       name: string
       email: string
+      avatarUrl: string | null
       emailVerifiedAt: Date | null
       companyName: string | null
       companySize: string | null
@@ -186,6 +220,7 @@ export class AuthService {
       id: user.id,
       name: user.name,
       email: user.email,
+      avatarUrl: user.avatarUrl,
       onboarding,
     }
   }

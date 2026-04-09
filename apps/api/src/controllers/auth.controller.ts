@@ -118,4 +118,23 @@ export class AuthController {
       error(res, "Failed to fetch session")
     }
   }
+
+  uploadAvatar = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const { userId } = (req as AuthenticatedRequest).user
+      const file = req.file
+      if (!file) return badRequest(res, "No image file provided")
+
+      const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"]
+      if (!ALLOWED_TYPES.includes(file.mimetype)) {
+        return badRequest(res, "File must be a JPEG, PNG, WebP, or GIF image")
+      }
+
+      const avatarUrl = await this.service.uploadAvatar(userId, file)
+      json(res, { avatarUrl }, 200, "Avatar uploaded successfully")
+    } catch (err) {
+      console.error("[AuthController.uploadAvatar]", err)
+      error(res, "Failed to upload avatar")
+    }
+  }
 }

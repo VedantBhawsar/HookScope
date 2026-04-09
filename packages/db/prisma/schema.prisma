@@ -92,6 +92,8 @@ model User {
   /// Argon2id hash — required for all users. API keys live on Endpoint, not here.
   passwordHash String @map("password_hash")
 
+  avatarUrl    String? @map("avatar_url")
+
   companyName  String? @map("company_name")
   companySize  String? @map("company_size")
   companyRole  String? @map("company_role")

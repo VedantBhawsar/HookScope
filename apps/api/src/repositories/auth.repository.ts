@@ -84,4 +84,11 @@ export class AuthRepository {
       data: { revokedAt: new Date() },
     })
   }
+
+  updateUserAvatar(userId: string, avatarUrl: string | null) {
+    return prisma.user.update({
+      where: { id: userId },
+      data: { avatarUrl },
+    })
+  }
 }

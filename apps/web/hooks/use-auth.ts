@@ -23,6 +23,7 @@ export interface AuthUser {
   id: string
   name: string
   email: string
+  avatarUrl: string | null
   onboarding: AuthOnboardingState
 }
 
@@ -65,6 +66,7 @@ const DEFAULT_ONBOARDING: AuthOnboardingState = {
 }
 
 type RawAuthUser = Omit<AuthUser, "onboarding"> & {
+  avatarUrl?: string | null
   onboarding?: Partial<AuthOnboardingState> | null
 }
 
@@ -77,6 +79,7 @@ function normalizeAuthUser(user: RawAuthUser): AuthUser {
     id: user.id,
     name: user.name,
     email: user.email,
+    avatarUrl: user.avatarUrl ?? null,
     onboarding: {
       ...DEFAULT_ONBOARDING,
       ...rawOnboarding,
@@ -165,6 +168,27 @@ export function useCompleteOnboardingMutation() {
       const response = await http.patch<ApiResponse<{ user: RawAuthUser }>>("/api/auth/onboarding", payload)
       const data = unwrapResponse(response.data)
       return { user: normalizeAuthUser(data.user) }
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: authQueryKeys.me })
+    },
+  })
+}
+
+export function useUploadAvatarMutation() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async (file: File) => {
+      const formData = new FormData()
+      formData.append("avatar", file)
+      const response = await http.post<ApiResponse<{ avatarUrl: string }>>("/api/auth/avatar", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      })
+      if (!response.data.success || !response.data.data) {
+        throw new Error(response.data.message ?? "Avatar upload failed")
+      }
+      return response.data.data
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: authQueryKeys.me })
