@@ -19,6 +19,7 @@ export interface ProjectRecord {
   id: string
   name: string
   description: string | null
+  endpointCount: number
   createdAt: string
   updatedAt: string
 }

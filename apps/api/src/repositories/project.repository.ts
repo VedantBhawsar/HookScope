@@ -1,6 +1,39 @@
 import { prisma } from "@workspace/db/client"
 import type { CreateProjectDto, ProjectListQuery, UpdateProjectDto } from "../types/project"
 
+const projectSelect = {
+  id: true,
+  name: true,
+  description: true,
+  createdAt: true,
+  updatedAt: true,
+  _count: {
+    select: {
+      endpoints: true,
+    },
+  },
+} as const
+
+function mapProjectWithEndpointCount(project: {
+  id: string
+  name: string
+  description: string | null
+  createdAt: Date
+  updatedAt: Date
+  _count: {
+    endpoints: number
+  }
+}) {
+  return {
+    id: project.id,
+    name: project.name,
+    description: project.description,
+    endpointCount: project._count.endpoints,
+    createdAt: project.createdAt,
+    updatedAt: project.updatedAt,
+  }
+}
+
 export class ProjectRepository {
   async findAllByUserId(userId: string, query: ProjectListQuery) {
     const { page, limit, search } = query
@@ -25,43 +58,28 @@ export class ProjectRepository {
         skip,
         take: limit,
         orderBy: { createdAt: "desc" },
-        select: {
-          id: true,
-          name: true,
-          description: true,
-          createdAt: true,
-          updatedAt: true,
-        },
+        select: projectSelect,
       }),
     ])
 
-    return { total, data }
+    return {
+      total,
+      data: data.map(mapProjectWithEndpointCount),
+    }
   }
 
   findByIdAndUserId(id: string, userId: string) {
     return prisma.project.findFirst({
       where: { id, userId, deletedAt: null },
-      select: {
-        id: true,
-        name: true,
-        description: true,
-        createdAt: true,
-        updatedAt: true,
-      },
-    })
+      select: projectSelect,
+    }).then((project) => (project ? mapProjectWithEndpointCount(project) : null))
   }
 
   create(userId: string, data: CreateProjectDto) {
     return prisma.project.create({
       data: { userId, name: data.name, description: data.description },
-      select: {
-        id: true,
-        name: true,
-        description: true,
-        createdAt: true,
-        updatedAt: true,
-      },
-    })
+      select: projectSelect,
+    }).then(mapProjectWithEndpointCount)
   }
 
   markOnboardingCompleted(userId: string) {
@@ -89,14 +107,8 @@ export class ProjectRepository {
   findById(id: string, userId: string) {
     return prisma.project.findFirst({
       where: { id, userId, deletedAt: null },
-      select: {
-        id: true,
-        name: true,
-        description: true,
-        createdAt: true,
-        updatedAt: true,
-      },
-    })
+      select: projectSelect,
+    }).then((project) => (project ? mapProjectWithEndpointCount(project) : null))
   }
 
   softDelete(id: string, userId: string) {

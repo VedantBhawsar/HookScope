@@ -3,19 +3,10 @@
 import * as React from "react"
 import { useRouter } from "next/navigation"
 import {
-  ArrowRight,
-  ChevronDown,
+    ArrowRight,
   Clock,
-  FolderOpen,
   LoaderCircle,
-  LogOut,
-  Pencil,
-  Plus,
-  Search,
-  Trash2,
-  Webhook,
 } from "lucide-react"
-import { Badge } from "@workspace/ui/components/badge"
 import { Button } from "@workspace/ui/components/button"
 import {
   Dialog,
@@ -24,14 +15,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@workspace/ui/components/dialog"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@workspace/ui/components/dropdown-menu"
+import { Input } from "@workspace/ui/components/input"
+import { Textarea } from "@workspace/ui/components/textarea"
 import { getRequestErrorMessage } from "@/lib/http"
 import { useLogoutMutation, useMeQuery } from "@/hooks/use-auth"
 import {
@@ -41,8 +26,9 @@ import {
   useUpdateProjectMutation,
   type ProjectRecord,
 } from "@/hooks/use-projects"
-import { ThemeToggle } from "@/components/theme-toggle"
 import { CreateEndpointDialog } from "@/components/endpoints/create-endpoint-dialog"
+import { ProjectsTopbar } from "@/components/projects/projects-topbar"
+import { ProjectsTableCard } from "@/components/projects/projects-table-card"
 
 const LAST_OPENED_KEY = "last_opened_project"
 
@@ -69,21 +55,6 @@ function getGreeting(): string {
   if (hour < 12) return "Good morning"
   if (hour < 17) return "Good afternoon"
   return "Good evening"
-}
-
-function UserAvatar({ name }: { name: string }) {
-  const initials = name
-    .split(" ")
-    .slice(0, 2)
-    .map((w) => w[0])
-    .join("")
-    .toUpperCase()
-
-  return (
-    <span className="flex size-7 items-center justify-center rounded-full bg-primary text-[11px] font-semibold text-primary-foreground">
-      {initials}
-    </span>
-  )
 }
 
 export function ProjectsWorkspace() {
@@ -240,58 +211,11 @@ export function ProjectsWorkspace() {
 
   return (
     <div className="flex min-h-screen flex-col bg-background">
-      {/* ── Top navigation bar ── */}
-      <header className="sticky top-0 z-40 flex h-14 items-center gap-4 border-b border-border bg-background/95 px-4 backdrop-blur-sm sm:px-6">
-        {/* Brand */}
-        <div className="flex items-center gap-2.5">
-          <div className="flex size-7 items-center justify-center rounded-lg bg-primary">
-            <Webhook className="size-4 text-primary-foreground" />
-          </div>
-          <span className="hidden text-sm font-semibold tracking-tight sm:block">HookBase</span>
-        </div>
-
-        {/* Spacer */}
-        <div className="flex-1" />
-
-        {/* Right side controls */}
-        <ThemeToggle />
-
-        {user ? (
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <button
-                type="button"
-                className="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm transition-colors hover:bg-muted focus:outline-none"
-              >
-                <UserAvatar name={user.name} />
-                <span className="hidden max-w-35 truncate font-medium sm:block">{user.name}</span>
-                <ChevronDown className="size-3.5 text-muted-foreground" />
-              </button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-56">
-              <DropdownMenuLabel className="font-normal">
-                <div className="flex flex-col gap-0.5">
-                  <span className="text-sm font-medium leading-none">{user.name}</span>
-                  <span className="text-xs text-muted-foreground">{user.email}</span>
-                </div>
-              </DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem
-                className="cursor-pointer text-destructive focus:text-destructive"
-                onSelect={handleLogout}
-                disabled={logoutMutation.isPending}
-              >
-                {logoutMutation.isPending ? (
-                  <LoaderCircle className="size-4 animate-spin" />
-                ) : (
-                  <LogOut className="size-4" />
-                )}
-                Sign out
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        ) : null}
-      </header>
+      <ProjectsTopbar
+        user={user ?? null}
+        isLogoutPending={logoutMutation.isPending}
+        onLogout={handleLogout}
+      />
 
       {/* ── Page body ── */}
       <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-10 sm:px-6">
@@ -326,174 +250,21 @@ export function ProjectsWorkspace() {
           </div>
         ) : null}
 
-        {/* ── Projects table card ── */}
-        <div className="rounded-xl border border-border bg-card shadow-sm">
-          {/* Toolbar */}
-          <div className="flex items-center gap-3 border-b border-border px-4 py-3">
-            <p className="text-sm font-medium">Projects</p>
-            <div className="ml-auto flex items-center gap-2">
-              <label className="relative block">
-                <Search className="pointer-events-none absolute left-3 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
-                <input
-                  type="text"
-                  value={searchTerm}
-                  onChange={(event) => setSearchTerm(event.target.value)}
-                  placeholder="Search…"
-                  className="h-8 w-48 rounded-md border border-input bg-background pl-8 pr-3 text-sm outline-none transition focus:border-ring focus:ring-2 focus:ring-ring/40 focus:w-64"
-                />
-              </label>
-              <Button size="sm" onClick={openCreateDialog}>
-                <Plus className="size-3.5" />
-                New Project
-              </Button>
-            </div>
-          </div>
-
-          {/* Error states */}
-          {projectsQuery.error ? (
-            <p className="px-5 py-3 text-sm text-destructive">
-              {getRequestErrorMessage(projectsQuery.error)}
-            </p>
-          ) : null}
-          {deleteProjectMutation.error ? (
-            <p className="border-b border-border px-5 py-2 text-sm text-destructive">
-              {getRequestErrorMessage(deleteProjectMutation.error)}
-            </p>
-          ) : null}
-
-          {/* Loading */}
-          {projectsQuery.isLoading ? (
-            <div className="flex items-center gap-2 px-5 py-10 text-sm text-muted-foreground">
-              <LoaderCircle className="size-4 animate-spin" />
-              Loading projects…
-            </div>
-          ) : null}
-
-          {/* Empty state */}
-          {!projectsQuery.isLoading && filteredProjects.length === 0 ? (
-            <div className="flex flex-col items-center gap-4 py-16 text-center">
-              <div className="flex size-12 items-center justify-center rounded-xl border border-dashed border-border bg-muted/30">
-                <FolderOpen className="size-5 text-muted-foreground/60" />
-              </div>
-              <div>
-                <p className="text-sm font-medium">
-                  {searchTerm ? "No results found" : "No projects yet"}
-                </p>
-                <p className="mt-0.5 text-xs text-muted-foreground">
-                  {searchTerm
-                    ? "Try a different search term."
-                    : "Create your first project to get started."}
-                </p>
-              </div>
-              {!searchTerm ? (
-                <Button size="sm" onClick={openCreateDialog}>
-                  <Plus className="size-3.5" />
-                  New Project
-                </Button>
-              ) : null}
-            </div>
-          ) : null}
-
-          {/* Table */}
-          {filteredProjects.length > 0 ? (
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-border text-left">
-                  <th className="px-5 py-2.5 text-xs font-medium text-muted-foreground">Name</th>
-                  <th className="hidden px-5 py-2.5 text-xs font-medium text-muted-foreground sm:table-cell">
-                    Description
-                  </th>
-                  <th className="px-5 py-2.5 text-xs font-medium text-muted-foreground">Status</th>
-                  <th className="px-5 py-2.5 text-right text-xs font-medium text-muted-foreground">
-                    Actions
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border">
-                {filteredProjects.map((project) => (
-                  <tr
-                    key={project.id}
-                    className="group transition-colors hover:bg-muted/30"
-                  >
-                    <td className="px-5 py-3.5">
-                      <button
-                        type="button"
-                        className="text-left font-medium hover:underline hover:underline-offset-2 focus:outline-none"
-                        onClick={() => openProjectDashboard(project)}
-                      >
-                        {project.name}
-                      </button>
-                    </td>
-                    <td className="hidden max-w-xs truncate px-5 py-3.5 text-muted-foreground sm:table-cell">
-                      {project.description ?? <span className="text-muted-foreground/40">—</span>}
-                    </td>
-                    <td className="px-5 py-3.5">
-                      <Badge variant="secondary" className="text-xs">
-                        Active
-                      </Badge>
-                    </td>
-                    <td className="px-5 py-3.5">
-                      <div className="flex items-center justify-end gap-1.5">
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          className="h-7 px-2 text-xs"
-                          onClick={() => openEditDialog(project)}
-                        >
-                          <Pencil className="size-3" />
-                          <span className="hidden sm:inline">Edit</span>
-                        </Button>
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          className="h-7 px-2 text-xs text-destructive hover:text-destructive"
-                          disabled={deleteProjectMutation.isPending}
-                          onClick={() => deleteProject(project.id)}
-                        >
-                          {deleteProjectMutation.isPending ? (
-                            <LoaderCircle className="size-3 animate-spin" />
-                          ) : (
-                            <Trash2 className="size-3" />
-                          )}
-                          <span className="hidden sm:inline">Delete</span>
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="h-7 px-2.5 text-xs"
-                          onClick={() => setEndpointDialogProject(project)}
-                        >
-                          Create Endpoint
-                        </Button>
-                        <Button
-                          size="sm"
-                          className="h-7 px-2.5 text-xs"
-                          onClick={() => openProjectDashboard(project)}
-                        >
-                          Open
-                          <ArrowRight className="size-3" />
-                        </Button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          ) : null}
-
-          {/* Footer count */}
-          {filteredProjects.length > 0 ? (
-            <div className="border-t border-border px-5 py-2.5">
-              <p className="text-xs text-muted-foreground">
-                {filteredProjects.length === projects.length
-                  ? `${projects.length} project${projects.length === 1 ? "" : "s"}`
-                  : `${filteredProjects.length} of ${projects.length} projects`}
-              </p>
-            </div>
-          ) : null}
-        </div>
+        <ProjectsTableCard
+          projects={filteredProjects}
+          allProjectsCount={projects.length}
+          searchTerm={searchTerm}
+          onSearchTermChange={setSearchTerm}
+          onCreateProject={openCreateDialog}
+          onOpenProject={openProjectDashboard}
+          onEditProject={openEditDialog}
+          onCreateEndpoint={setEndpointDialogProject}
+          onDeleteProject={deleteProject}
+          isLoading={projectsQuery.isLoading}
+          isDeleting={deleteProjectMutation.isPending}
+          projectsErrorMessage={projectsQuery.error ? getRequestErrorMessage(projectsQuery.error) : null}
+          deleteErrorMessage={deleteProjectMutation.error ? getRequestErrorMessage(deleteProjectMutation.error) : null}
+        />
       </main>
 
       {/* ── Create dialog ── */}
@@ -507,14 +278,14 @@ export function ProjectsWorkspace() {
               <label htmlFor="create-name" className="text-sm font-medium">
                 Name <span className="text-destructive">*</span>
               </label>
-              <input
+              <Input
                 id="create-name"
                 required
                 autoFocus
                 value={projectName}
                 onChange={(event) => setProjectName(event.target.value)}
                 placeholder="e.g. Payments Webhooks"
-                className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm outline-none transition focus:border-ring focus:ring-2 focus:ring-ring/40"
+                className="h-9"
               />
             </div>
             <div className="space-y-1.5">
@@ -522,13 +293,13 @@ export function ProjectsWorkspace() {
                 Description
                 <span className="ml-1 text-xs font-normal text-muted-foreground">(optional)</span>
               </label>
-              <textarea
+              <Textarea
                 id="create-description"
                 value={projectDescription}
                 onChange={(event) => setProjectDescription(event.target.value)}
                 placeholder="What is this project for?"
                 rows={3}
-                className="w-full resize-none rounded-md border border-input bg-background px-3 py-2 text-sm outline-none transition focus:border-ring focus:ring-2 focus:ring-ring/40"
+                className="resize-none"
               />
             </div>
             {createProjectMutation.error ? (
@@ -564,14 +335,14 @@ export function ProjectsWorkspace() {
               <label htmlFor="edit-name" className="text-sm font-medium">
                 Name <span className="text-destructive">*</span>
               </label>
-              <input
+              <Input
                 id="edit-name"
                 required
                 autoFocus
                 value={editName}
                 onChange={(event) => setEditName(event.target.value)}
                 placeholder="Project name"
-                className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm outline-none transition focus:border-ring focus:ring-2 focus:ring-ring/40"
+                className="h-9"
               />
             </div>
             <div className="space-y-1.5">
@@ -579,13 +350,13 @@ export function ProjectsWorkspace() {
                 Description
                 <span className="ml-1 text-xs font-normal text-muted-foreground">(optional)</span>
               </label>
-              <textarea
+              <Textarea
                 id="edit-description"
                 value={editDescription}
                 onChange={(event) => setEditDescription(event.target.value)}
                 placeholder="Project description"
                 rows={3}
-                className="w-full resize-none rounded-md border border-input bg-background px-3 py-2 text-sm outline-none transition focus:border-ring focus:ring-2 focus:ring-ring/40"
+                className="resize-none"
               />
             </div>
             {updateProjectMutation.error ? (

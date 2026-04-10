@@ -12,6 +12,7 @@ export interface ProjectDto {
   id: string
   name: string
   description: string | null
+  endpointCount: number
   createdAt: Date
   updatedAt: Date
 }

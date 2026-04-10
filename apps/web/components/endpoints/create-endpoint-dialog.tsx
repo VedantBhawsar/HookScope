@@ -54,18 +54,20 @@ export function CreateEndpointDialog({
   const [source, setSource] = React.useState<CreateEndpointPayload["source"]>("GENERIC")
   const [destinationUrl, setDestinationUrl] = React.useState("")
 
-  const resetForm = React.useCallback(() => {
-    setName("")
-    setSource("GENERIC")
-    setDestinationUrl("")
-    createEndpointMutation.reset()
-  }, [createEndpointMutation])
+  const previousOpenRef = React.useRef(open)
 
   React.useEffect(() => {
-    if (!open) {
-      resetForm()
+    const wasOpen = previousOpenRef.current
+
+    if (wasOpen && !open) {
+      setName("")
+      setSource("GENERIC")
+      setDestinationUrl("")
+      createEndpointMutation.reset()
     }
-  }, [open, resetForm])
+
+    previousOpenRef.current = open
+  }, [open, createEndpointMutation])
 
   const onSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault()

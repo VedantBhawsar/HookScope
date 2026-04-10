@@ -5,6 +5,8 @@ globs: **/*
 
 - Check .wolf/anatomy.md before reading any project file
 - Check .wolf/cerebrum.md Do-Not-Repeat list before generating code
+- For frontend UI: BEFORE implementation, check `packages/ui/src/components/` for existing shadcn components. If a required component is missing, use the `shadcn` skill to install it into `@workspace/ui` first, then import from there. Never use raw HTML when a shadcn equivalent should exist.
+- Extract reusable layout sections (for example header/sidebar/table sections) into dedicated components when touching or adding page-level UI.
 - After writing or editing files, update .wolf/anatomy.md and append to .wolf/memory.md
 - After receiving a user correction, update .wolf/cerebrum.md immediately (Preferences, Learnings, or Do-Not-Repeat)
 - LEARN from every interaction: if you discover a convention, user preference, or project pattern, add it to .wolf/cerebrum.md. Low threshold — when in doubt, log it.
