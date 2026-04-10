@@ -1,16 +1,22 @@
 "use client"
 
 import Link from "next/link"
+import { usePathname } from "next/navigation"
 import * as React from "react"
 import type { ComponentType } from "react"
 import {
+  BarChart3,
+  Bell,
   Check,
   ChevronsUpDown,
+  FolderKanban,
+  LayoutDashboard,
   LoaderCircle,
   LogOut,
   Search,
   Settings,
   UserCircle,
+  Webhook,
 } from "lucide-react"
 import type { AuthUser } from "@/hooks/use-auth"
 import type { EndpointRecord } from "@/hooks/use-endpoints"
@@ -37,13 +43,9 @@ interface DashboardNavItem {
 
 interface DashboardSidebarProps {
   user: AuthUser
-  pathname: string
-  navItems: readonly DashboardNavItem[]
   selectedProject: ProjectRecord | null
   endpoints: EndpointRecord[]
   selectedEndpointId: string | null
-  selectedEndpointName: string | null
-  selectedEndpointMeta: string
   isLoadingEndpoints: boolean
   endpointsErrorMessage: string | null
   onSelectEndpoint: (endpointId: string) => void
@@ -53,15 +55,44 @@ interface DashboardSidebarProps {
   isLogoutPending: boolean
 }
 
+const DASHBOARD_NAV_ITEMS: readonly DashboardNavItem[] = [
+  {
+    label: "Overview",
+    segment: "",
+    absoluteHref: null,
+    icon: LayoutDashboard,
+  },
+  {
+    label: "Events",
+    segment: "/events",
+    absoluteHref: null,
+    icon: Webhook,
+  },
+  {
+    label: "Metrics",
+    segment: "/metrics",
+    absoluteHref: null,
+    icon: BarChart3,
+  },
+  {
+    label: "Alerts",
+    segment: "/alerts",
+    absoluteHref: null,
+    icon: Bell,
+  },
+  {
+    label: "Settings",
+    segment: "/settings",
+    absoluteHref: null,
+    icon: Settings,
+  },
+]
+
 export function DashboardSidebar({
   user,
-  pathname,
-  navItems,
   selectedProject,
   endpoints,
   selectedEndpointId,
-  selectedEndpointName,
-  selectedEndpointMeta,
   isLoadingEndpoints,
   endpointsErrorMessage,
   onSelectEndpoint,
@@ -70,7 +101,24 @@ export function DashboardSidebar({
   onLogout,
   isLogoutPending,
 }: DashboardSidebarProps) {
+  const pathname = usePathname()
   const [endpointSearch, setEndpointSearch] = React.useState("")
+
+  const selectedEndpoint = React.useMemo(
+    () => endpoints.find((endpoint) => endpoint.id === selectedEndpointId) ?? null,
+    [endpoints, selectedEndpointId]
+  )
+
+  const selectedEndpointName =
+    selectedEndpoint?.name ?? (isLoadingEndpoints ? "Loading endpoints..." : "No endpoint yet")
+  const selectedEndpointMeta = selectedEndpoint
+    ? `${selectedEndpoint.source} · ${selectedEndpoint.status}`
+    : "Create an endpoint to begin receiving and forwarding webhooks."
+  const endpointSettingsHref = selectedProject?.id
+    ? selectedEndpointId
+      ? `/dashboard/${selectedProject.id}/${selectedEndpointId}/settings`
+      : null
+    : null
 
   const filteredEndpoints = React.useMemo(() => {
     const query = endpointSearch.trim().toLowerCase()
@@ -88,20 +136,35 @@ export function DashboardSidebar({
   return (
     <aside className="hidden border-r border-border/70 bg-card/50 p-4 lg:sticky lg:top-0 lg:flex lg:h-screen lg:flex-col lg:overflow-y-auto">
       <div className="mb-6 rounded-xl border border-border bg-card px-4 py-3">
-        <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Webhook</p>
-        <h1 className="mt-1 font-heading text-lg font-semibold">Observability</h1>
+        <p className="text-xs tracking-[0.2em] text-muted-foreground uppercase">
+          Webhook
+        </p>
+        <h1 className="mt-1 font-heading text-lg font-semibold">
+          Observability
+        </h1>
       </div>
 
       <div className="mb-3 rounded-xl border border-border bg-card p-2.5">
-        <p className="text-[11px] uppercase tracking-[0.18em] text-muted-foreground">Endpoint</p>
+        <p className="text-[11px] tracking-[0.18em] text-muted-foreground uppercase">
+          Endpoint
+        </p>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button type="button" variant="outline" className="mt-1.5 h-auto w-full justify-between px-2.5 py-2">
+            <Button
+              type="button"
+              variant="outline"
+              className="mt-1.5 h-auto w-full justify-between px-2.5 py-2"
+            >
               <div className="min-w-0 text-left">
                 <p className="truncate text-xs font-medium">
-                  {selectedEndpointName ?? (isLoadingEndpoints ? "Loading endpoints..." : "No endpoint yet")}
+                  {selectedEndpointName ??
+                    (isLoadingEndpoints
+                      ? "Loading endpoints..."
+                      : "No endpoint yet")}
                 </p>
-                <p className="mt-0.5 truncate text-[11px] leading-4 text-muted-foreground">{selectedEndpointMeta}</p>
+                <p className="mt-0.5 truncate text-[11px] leading-4 text-muted-foreground">
+                  {selectedEndpointMeta}
+                </p>
               </div>
               <ChevronsUpDown className="size-3.5 shrink-0 text-muted-foreground" />
             </Button>
@@ -110,7 +173,7 @@ export function DashboardSidebar({
             <DropdownMenuGroup>
               <div className="px-2 pb-2">
                 <label className="relative block">
-                  <Search className="pointer-events-none absolute left-2 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
+                  <Search className="pointer-events-none absolute top-1/2 left-2 size-3.5 -translate-y-1/2 text-muted-foreground" />
                   <Input
                     value={endpointSearch}
                     onChange={(event) => setEndpointSearch(event.target.value)}
@@ -126,16 +189,23 @@ export function DashboardSidebar({
             <DropdownMenuGroup>
               {isLoadingEndpoints ? (
                 <DropdownMenuItem disabled>
-                  <LoaderCircle data-icon="inline-start" className="animate-spin" />
+                  <LoaderCircle
+                    data-icon="inline-start"
+                    className="animate-spin"
+                  />
                   Loading endpoints...
                 </DropdownMenuItem>
               ) : null}
 
               {!isLoadingEndpoints && endpoints.length === 0 ? (
-                <DropdownMenuItem disabled>No endpoints available</DropdownMenuItem>
+                <DropdownMenuItem disabled>
+                  No endpoints available
+                </DropdownMenuItem>
               ) : null}
 
-              {!isLoadingEndpoints && endpoints.length > 0 && filteredEndpoints.length === 0 ? (
+              {!isLoadingEndpoints &&
+              endpoints.length > 0 &&
+              filteredEndpoints.length === 0 ? (
                 <DropdownMenuItem disabled>No matches found</DropdownMenuItem>
               ) : null}
 
@@ -144,8 +214,15 @@ export function DashboardSidebar({
                     const isActive = endpoint.id === selectedEndpointId
 
                     return (
-                      <DropdownMenuItem key={endpoint.id} onSelect={() => onSelectEndpoint(endpoint.id)}>
-                        {isActive ? <Check data-icon="inline-start" /> : <span className="size-4" />}
+                      <DropdownMenuItem
+                        key={endpoint.id}
+                        onSelect={() => onSelectEndpoint(endpoint.id)}
+                      >
+                        {isActive ? (
+                          <Check data-icon="inline-start" />
+                        ) : (
+                          <span className="size-4" />
+                        )}
                         <span className="truncate">{endpoint.name}</span>
                       </DropdownMenuItem>
                     )
@@ -165,17 +242,25 @@ export function DashboardSidebar({
         >
           Create Endpoint
         </Button>
-        {endpointsErrorMessage ? <p className="mt-1.5 text-[11px] text-destructive">{endpointsErrorMessage}</p> : null}
+        {endpointsErrorMessage ? (
+          <p className="mt-1.5 text-[11px] text-destructive">
+            {endpointsErrorMessage}
+          </p>
+        ) : null}
       </div>
 
       <nav className="flex flex-1 flex-col gap-1">
-        {navItems.map((item) => {
+        {DASHBOARD_NAV_ITEMS.map((item) => {
           const Icon = item.icon
+          const projectBaseHref = selectedProject?.id
+            ? `/dashboard/${selectedProject.id}`
+            : "/projects"
+          const endpointScopedBaseHref = selectedEndpointId
+            ? `${projectBaseHref}/${selectedEndpointId}`
+            : projectBaseHref
           const href = item.absoluteHref
             ? item.absoluteHref
-            : selectedProject?.id
-              ? `/dashboard/${selectedProject.id}${item.segment}`
-              : "/projects"
+            : `${endpointScopedBaseHref}${item.segment}`
           const isActive = pathname === href || pathname.startsWith(`${href}/`)
 
           return (
@@ -198,17 +283,26 @@ export function DashboardSidebar({
 
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="outline" className="mt-4 h-auto w-full justify-start px-3 py-2.5">
+          <Button
+            variant="outline"
+            className="mt-4 h-auto w-full justify-start px-3 py-2.5"
+          >
             <span className="flex size-8 shrink-0 items-center justify-center overflow-hidden rounded-full border border-border bg-muted text-xs font-semibold text-muted-foreground">
               {user.avatarUrl ? (
-                <img src={user.avatarUrl} alt={user.name} className="size-full object-cover" />
+                <img
+                  src={user.avatarUrl}
+                  alt={user.name}
+                  className="size-full object-cover"
+                />
               ) : (
                 getInitials(user.name)
               )}
             </span>
             <div className="grid min-w-0 flex-1 text-left">
               <span className="truncate text-sm font-medium">{user.name}</span>
-              <span className="truncate text-xs text-muted-foreground">{user.email}</span>
+              <span className="truncate text-xs text-muted-foreground">
+                {user.email}
+              </span>
             </div>
             <ChevronsUpDown className="text-muted-foreground" />
           </Button>
@@ -220,18 +314,32 @@ export function DashboardSidebar({
               <UserCircle data-icon="inline-start" />
               Change photo
             </DropdownMenuItem>
-            <DropdownMenuItem asChild>
-              <Link href="/dashboard/settings">
+            {endpointSettingsHref ? (
+              <DropdownMenuItem asChild>
+                <Link href={endpointSettingsHref}>
+                  <Settings data-icon="inline-start" />
+                  Endpoint settings
+                </Link>
+              </DropdownMenuItem>
+            ) : (
+              <DropdownMenuItem disabled>
                 <Settings data-icon="inline-start" />
-                Settings
-              </Link>
-            </DropdownMenuItem>
+                Endpoint settings
+              </DropdownMenuItem>
+            )}
           </DropdownMenuGroup>
           <DropdownMenuSeparator />
           <DropdownMenuGroup>
-            <DropdownMenuItem variant="destructive" onClick={onLogout} disabled={isLogoutPending}>
+            <DropdownMenuItem
+              variant="destructive"
+              onClick={onLogout}
+              disabled={isLogoutPending}
+            >
               {isLogoutPending ? (
-                <LoaderCircle data-icon="inline-start" className="animate-spin" />
+                <LoaderCircle
+                  data-icon="inline-start"
+                  className="animate-spin"
+                />
               ) : (
                 <LogOut data-icon="inline-start" />
               )}

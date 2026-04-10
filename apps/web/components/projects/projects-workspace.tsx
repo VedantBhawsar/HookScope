@@ -21,6 +21,7 @@ import { CreateProjectDialog } from "@/components/projects/create-project-dialog
 import { EditProjectDialog } from "@/components/projects/edit-project-dialog"
 import { ProjectsTopbar } from "@/components/projects/projects-topbar"
 import { ProjectsTableCard } from "@/components/projects/projects-table-card"
+import { getActiveEndpointForProject } from "@/lib/endpoint-selection"
 
 const LAST_OPENED_KEY = "last_opened_project"
 
@@ -40,6 +41,15 @@ function setLastOpenedProject(project: { id: string; name: string }) {
   } catch {
     //
   }
+}
+
+function getProjectDashboardHref(projectId: string): string {
+  const storedEndpoint = getActiveEndpointForProject(projectId)
+  if (!storedEndpoint?.id) {
+    return `/dashboard/${encodeURIComponent(projectId)}`
+  }
+
+  return `/dashboard/${encodeURIComponent(projectId)}/${encodeURIComponent(storedEndpoint.id)}`
 }
 
 function getGreeting(): string {
@@ -105,7 +115,7 @@ export function ProjectsWorkspace() {
   const openProjectDashboard = (project: ProjectRecord) => {
     setLastOpenedProject({ id: project.id, name: project.name })
     setLastOpened({ id: project.id, name: project.name })
-    router.push(`/dashboard/${encodeURIComponent(project.id)}`)
+    router.push(getProjectDashboardHref(project.id))
   }
 
   const handleLogout = async () => {
@@ -125,7 +135,7 @@ export function ProjectsWorkspace() {
   const handleProjectCreated = (project: ProjectRecord) => {
     setLastOpenedProject({ id: project.id, name: project.name })
     setLastOpened({ id: project.id, name: project.name })
-    router.push(`/dashboard/${encodeURIComponent(project.id)}`)
+    router.push(getProjectDashboardHref(project.id))
   }
 
   // Edit dialog handlers

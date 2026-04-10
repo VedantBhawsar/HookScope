@@ -1,15 +1,8 @@
 "use client"
 
-import { useParams, usePathname, useRouter } from "next/navigation"
+import { useParams, useRouter } from "next/navigation"
 import * as React from "react"
-import {
-  BarChart3,
-  Bell,
-  FolderKanban,
-  LayoutDashboard,
-  LoaderCircle,
-  Webhook,
-} from "lucide-react"
+import { LoaderCircle } from "lucide-react"
 import { getRequestErrorMessage } from "@/lib/http"
 import { useLogoutMutation, useMeQuery } from "@/hooks/use-auth"
 import { useEndpointsQuery } from "@/hooks/use-endpoints"
@@ -29,42 +22,8 @@ interface DashboardShellProps {
   children: React.ReactNode
 }
 
-const DASHBOARD_NAV_ITEMS = [
-  {
-    label: "Overview",
-    segment: "",
-    absoluteHref: null,
-    icon: LayoutDashboard,
-  },
-  {
-    label: "Projects",
-    segment: "",
-    absoluteHref: "/projects",
-    icon: FolderKanban,
-  },
-  {
-    label: "Events",
-    segment: "/events",
-    absoluteHref: null,
-    icon: Webhook,
-  },
-  {
-    label: "Metrics",
-    segment: "/metrics",
-    absoluteHref: null,
-    icon: BarChart3,
-  },
-  {
-    label: "Alerts",
-    segment: "/alerts",
-    absoluteHref: null,
-    icon: Bell,
-  },
-] as const
-
 export function DashboardShell({ children }: DashboardShellProps) {
-  const pathname = usePathname()
-  const routeParams = useParams<{ projectId?: string }>()
+  const routeParams = useParams<{ projectId?: string; endpointId?: string }>()
   const router = useRouter()
   const meQuery = useMeQuery()
   const logoutMutation = useLogoutMutation()
@@ -75,6 +34,8 @@ export function DashboardShell({ children }: DashboardShellProps) {
   const projects = projectsQuery.data?.data ?? []
   const selectedProjectIdFromUrl =
     typeof routeParams.projectId === "string" ? routeParams.projectId : null
+  const selectedEndpointIdFromUrl =
+    typeof routeParams.endpointId === "string" ? routeParams.endpointId : null
   const selectedProject =
     projects.find((project) => project.id === selectedProjectIdFromUrl) ?? null
   const endpointsQuery = useEndpointsQuery(selectedProject?.id ?? null)
@@ -85,13 +46,21 @@ export function DashboardShell({ children }: DashboardShellProps) {
 
   const setSelectedProjectId = React.useCallback(
     (projectId: string) => {
+      const preferredEndpoint = getActiveEndpointForProject(projectId)
+      const fallbackEndpoint = endpoints[0]
+      const targetEndpointId = preferredEndpoint?.id ?? fallbackEndpoint?.id
+
+      if (targetEndpointId) {
+        router.replace(`/dashboard/${projectId}/${targetEndpointId}`, {
+          scroll: false,
+        })
+        return
+      }
+
       router.replace(`/dashboard/${projectId}`, { scroll: false })
     },
-    [router]
+    [endpoints, router]
   )
-
-  const selectedEndpoint =
-    endpoints.find((endpoint) => endpoint.id === selectedEndpointId) ?? null
 
   const handleSelectEndpoint = React.useCallback(
     (endpointId: string) => {
@@ -105,8 +74,11 @@ export function DashboardShell({ children }: DashboardShellProps) {
         id: endpoint.id,
         name: endpoint.name,
       })
+      router.replace(`/dashboard/${selectedProject.id}/${endpoint.id}`, {
+        scroll: false,
+      })
     },
-    [endpoints, selectedProject?.id]
+    [endpoints, router, selectedProject?.id]
   )
 
   React.useEffect(() => {
@@ -146,6 +118,21 @@ export function DashboardShell({ children }: DashboardShellProps) {
       return
     }
 
+    if (selectedEndpointIdFromUrl) {
+      const endpointFromUrl = endpoints.find(
+        (endpoint) => endpoint.id === selectedEndpointIdFromUrl
+      )
+
+      if (endpointFromUrl) {
+        setSelectedEndpointId(endpointFromUrl.id)
+        setActiveEndpointForProject(selectedProject.id, {
+          id: endpointFromUrl.id,
+          name: endpointFromUrl.name,
+        })
+        return
+      }
+    }
+
     const storedSelection = getActiveEndpointForProject(selectedProject.id)
     const storedEndpointExists = storedSelection
       ? endpoints.some((endpoint) => endpoint.id === storedSelection.id)
@@ -153,6 +140,9 @@ export function DashboardShell({ children }: DashboardShellProps) {
 
     if (storedSelection && storedEndpointExists) {
       setSelectedEndpointId(storedSelection.id)
+      router.replace(`/dashboard/${selectedProject.id}/${storedSelection.id}`, {
+        scroll: false,
+      })
       return
     }
 
@@ -167,7 +157,16 @@ export function DashboardShell({ children }: DashboardShellProps) {
       id: fallbackEndpoint.id,
       name: fallbackEndpoint.name,
     })
-  }, [endpoints, endpointsQuery.isLoading, selectedProject?.id])
+    router.replace(`/dashboard/${selectedProject.id}/${fallbackEndpoint.id}`, {
+      scroll: false,
+    })
+  }, [
+    endpoints,
+    endpointsQuery.isLoading,
+    router,
+    selectedEndpointIdFromUrl,
+    selectedProject?.id,
+  ])
 
   if (meQuery.isLoading) {
     return (
@@ -210,17 +209,9 @@ export function DashboardShell({ children }: DashboardShellProps) {
         <div className="grid min-h-screen grid-cols-1 lg:h-full lg:min-h-0 lg:grid-cols-[260px_1fr]">
           <DashboardSidebar
             user={user}
-            pathname={pathname}
-            navItems={DASHBOARD_NAV_ITEMS}
             selectedProject={selectedProject}
             endpoints={endpoints}
             selectedEndpointId={selectedEndpointId}
-            selectedEndpointName={selectedEndpoint?.name ?? null}
-            selectedEndpointMeta={
-              selectedEndpoint
-                ? `${selectedEndpoint.source} · ${selectedEndpoint.status}`
-                : "Create an endpoint to begin receiving and forwarding webhooks."
-            }
             isLoadingEndpoints={endpointsQuery.isLoading}
             endpointsErrorMessage={
               endpointsQuery.error
