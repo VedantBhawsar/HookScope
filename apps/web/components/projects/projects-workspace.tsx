@@ -13,7 +13,6 @@ import { useLogoutMutation, useMeQuery } from "@/hooks/use-auth"
 import {
   useDeleteProjectMutation,
   useProjectsQuery,
-  useUpdateProjectMutation,
   type ProjectRecord,
 } from "@/hooks/use-projects"
 import { ConfirmDeleteDialog } from "@workspace/ui/components/confirm-delete-dialog"
@@ -54,7 +53,6 @@ export function ProjectsWorkspace() {
   const router = useRouter()
   const meQuery = useMeQuery()
   const projectsQuery = useProjectsQuery()
-  const updateProjectMutation = useUpdateProjectMutation()
   const deleteProjectMutation = useDeleteProjectMutation()
   const logoutMutation = useLogoutMutation()
 
@@ -65,8 +63,6 @@ export function ProjectsWorkspace() {
 
   // Edit dialog
   const [editProject, setEditProject] = React.useState<ProjectRecord | null>(null)
-  const [editName, setEditName] = React.useState("")
-  const [editDescription, setEditDescription] = React.useState("")
 
   // Delete confirmation
   const [deleteTarget, setDeleteTarget] = React.useState<ProjectRecord | null>(null)
@@ -135,31 +131,10 @@ export function ProjectsWorkspace() {
   // Edit dialog handlers
   const openEditDialog = (project: ProjectRecord) => {
     setEditProject(project)
-    setEditName(project.name)
-    setEditDescription(project.description ?? "")
-    updateProjectMutation.reset()
   }
 
   const closeEditDialog = () => {
     setEditProject(null)
-    setEditName("")
-    setEditDescription("")
-  }
-
-  const saveProject = async (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault()
-    if (!editProject) return
-
-    try {
-      await updateProjectMutation.mutateAsync({
-        id: editProject.id,
-        name: editName.trim(),
-        description: editDescription.trim() || undefined,
-      })
-      closeEditDialog()
-    } catch {
-      //
-    }
   }
 
   const confirmDelete = async () => {
@@ -262,14 +237,13 @@ export function ProjectsWorkspace() {
             closeEditDialog()
           }
         }}
-        editName={editName}
-        editDescription={editDescription}
-        onEditNameChange={setEditName}
-        onEditDescriptionChange={setEditDescription}
-        onSubmit={saveProject}
-        onCancel={closeEditDialog}
-        isPending={updateProjectMutation.isPending}
-        errorMessage={updateProjectMutation.error ? getRequestErrorMessage(updateProjectMutation.error) : null}
+        project={editProject}
+        onUpdated={(project) => {
+          if (lastOpened?.id === project.id) {
+            setLastOpenedProject({ id: project.id, name: project.name })
+            setLastOpened({ id: project.id, name: project.name })
+          }
+        }}
       />
 
       <CreateEndpointDialog
