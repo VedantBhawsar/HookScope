@@ -3,30 +3,23 @@
 import * as React from "react"
 import { useRouter } from "next/navigation"
 import {
-    ArrowRight,
+  ArrowRight,
   Clock,
   LoaderCircle,
 } from "lucide-react"
 import { Button } from "@workspace/ui/components/button"
-import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@workspace/ui/components/dialog"
-import { Input } from "@workspace/ui/components/input"
-import { Textarea } from "@workspace/ui/components/textarea"
 import { getRequestErrorMessage } from "@/lib/http"
 import { useLogoutMutation, useMeQuery } from "@/hooks/use-auth"
 import {
-  useCreateProjectMutation,
   useDeleteProjectMutation,
   useProjectsQuery,
   useUpdateProjectMutation,
   type ProjectRecord,
 } from "@/hooks/use-projects"
+import { ConfirmDeleteDialog } from "@workspace/ui/components/confirm-delete-dialog"
 import { CreateEndpointDialog } from "@/components/endpoints/create-endpoint-dialog"
+import { CreateProjectDialog } from "@/components/projects/create-project-dialog"
+import { EditProjectDialog } from "@/components/projects/edit-project-dialog"
 import { ProjectsTopbar } from "@/components/projects/projects-topbar"
 import { ProjectsTableCard } from "@/components/projects/projects-table-card"
 
@@ -61,7 +54,6 @@ export function ProjectsWorkspace() {
   const router = useRouter()
   const meQuery = useMeQuery()
   const projectsQuery = useProjectsQuery()
-  const createProjectMutation = useCreateProjectMutation()
   const updateProjectMutation = useUpdateProjectMutation()
   const deleteProjectMutation = useDeleteProjectMutation()
   const logoutMutation = useLogoutMutation()
@@ -70,13 +62,14 @@ export function ProjectsWorkspace() {
 
   // Create dialog
   const [createOpen, setCreateOpen] = React.useState(false)
-  const [projectName, setProjectName] = React.useState("")
-  const [projectDescription, setProjectDescription] = React.useState("")
 
   // Edit dialog
   const [editProject, setEditProject] = React.useState<ProjectRecord | null>(null)
   const [editName, setEditName] = React.useState("")
   const [editDescription, setEditDescription] = React.useState("")
+
+  // Delete confirmation
+  const [deleteTarget, setDeleteTarget] = React.useState<ProjectRecord | null>(null)
 
   // Last opened
   const [lastOpened, setLastOpened] = React.useState<{ id: string; name: string } | null>(null)
@@ -130,29 +123,13 @@ export function ProjectsWorkspace() {
 
   // Create dialog handlers
   const openCreateDialog = () => {
-    setProjectName("")
-    setProjectDescription("")
-    createProjectMutation.reset()
     setCreateOpen(true)
   }
 
-  const onCreateProject = async (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault()
-
-    try {
-      const project = await createProjectMutation.mutateAsync({
-        name: projectName.trim(),
-        description: projectDescription.trim() || undefined,
-      })
-
-      setCreateOpen(false)
-      setProjectName("")
-      setProjectDescription("")
-      setLastOpenedProject({ id: project.id, name: project.name })
-      router.push(`/dashboard/${encodeURIComponent(project.id)}`)
-    } catch {
-      //
-    }
+  const handleProjectCreated = (project: ProjectRecord) => {
+    setLastOpenedProject({ id: project.id, name: project.name })
+    setLastOpened({ id: project.id, name: project.name })
+    router.push(`/dashboard/${encodeURIComponent(project.id)}`)
   }
 
   // Edit dialog handlers
@@ -185,10 +162,12 @@ export function ProjectsWorkspace() {
     }
   }
 
-  const deleteProject = async (projectId: string) => {
+  const confirmDelete = async () => {
+    if (!deleteTarget) return
     try {
-      await deleteProjectMutation.mutateAsync(projectId)
-      if (editProject?.id === projectId) closeEditDialog()
+      await deleteProjectMutation.mutateAsync(deleteTarget.id)
+      if (editProject?.id === deleteTarget.id) closeEditDialog()
+      setDeleteTarget(null)
     } catch {
       //
     }
@@ -259,7 +238,10 @@ export function ProjectsWorkspace() {
           onOpenProject={openProjectDashboard}
           onEditProject={openEditDialog}
           onCreateEndpoint={setEndpointDialogProject}
-          onDeleteProject={deleteProject}
+          onDeleteProject={(projectId) => {
+            const project = projects.find((p) => p.id === projectId) ?? null
+            setDeleteTarget(project)
+          }}
           isLoading={projectsQuery.isLoading}
           isDeleting={deleteProjectMutation.isPending}
           projectsErrorMessage={projectsQuery.error ? getRequestErrorMessage(projectsQuery.error) : null}
@@ -267,119 +249,28 @@ export function ProjectsWorkspace() {
         />
       </main>
 
-      {/* ── Create dialog ── */}
-      <Dialog open={createOpen} onOpenChange={setCreateOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>New Project</DialogTitle>
-          </DialogHeader>
-          <form id="create-project-form" onSubmit={onCreateProject} className="space-y-4">
-            <div className="space-y-1.5">
-              <label htmlFor="create-name" className="text-sm font-medium">
-                Name <span className="text-destructive">*</span>
-              </label>
-              <Input
-                id="create-name"
-                required
-                autoFocus
-                value={projectName}
-                onChange={(event) => setProjectName(event.target.value)}
-                placeholder="e.g. Payments Webhooks"
-                className="h-9"
-              />
-            </div>
-            <div className="space-y-1.5">
-              <label htmlFor="create-description" className="text-sm font-medium">
-                Description
-                <span className="ml-1 text-xs font-normal text-muted-foreground">(optional)</span>
-              </label>
-              <Textarea
-                id="create-description"
-                value={projectDescription}
-                onChange={(event) => setProjectDescription(event.target.value)}
-                placeholder="What is this project for?"
-                rows={3}
-                className="resize-none"
-              />
-            </div>
-            {createProjectMutation.error ? (
-              <p className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
-                {getRequestErrorMessage(createProjectMutation.error)}
-              </p>
-            ) : null}
-          </form>
-          <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => setCreateOpen(false)}>
-              Cancel
-            </Button>
-            <Button
-              type="submit"
-              form="create-project-form"
-              disabled={createProjectMutation.isPending || !projectName.trim()}
-            >
-              {createProjectMutation.isPending ? <LoaderCircle className="size-4 animate-spin" /> : null}
-              {createProjectMutation.isPending ? "Creating…" : "Create & Open"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <CreateProjectDialog
+        open={createOpen}
+        onOpenChange={setCreateOpen}
+        onCreated={handleProjectCreated}
+      />
 
-      {/* ── Edit dialog ── */}
-      <Dialog open={editProject !== null} onOpenChange={(open) => { if (!open) closeEditDialog() }}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Edit Project</DialogTitle>
-          </DialogHeader>
-          <form id="edit-project-form" onSubmit={saveProject} className="space-y-4">
-            <div className="space-y-1.5">
-              <label htmlFor="edit-name" className="text-sm font-medium">
-                Name <span className="text-destructive">*</span>
-              </label>
-              <Input
-                id="edit-name"
-                required
-                autoFocus
-                value={editName}
-                onChange={(event) => setEditName(event.target.value)}
-                placeholder="Project name"
-                className="h-9"
-              />
-            </div>
-            <div className="space-y-1.5">
-              <label htmlFor="edit-description" className="text-sm font-medium">
-                Description
-                <span className="ml-1 text-xs font-normal text-muted-foreground">(optional)</span>
-              </label>
-              <Textarea
-                id="edit-description"
-                value={editDescription}
-                onChange={(event) => setEditDescription(event.target.value)}
-                placeholder="Project description"
-                rows={3}
-                className="resize-none"
-              />
-            </div>
-            {updateProjectMutation.error ? (
-              <p className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
-                {getRequestErrorMessage(updateProjectMutation.error)}
-              </p>
-            ) : null}
-          </form>
-          <DialogFooter>
-            <Button type="button" variant="outline" onClick={closeEditDialog}>
-              Cancel
-            </Button>
-            <Button
-              type="submit"
-              form="edit-project-form"
-              disabled={updateProjectMutation.isPending || !editName.trim()}
-            >
-              {updateProjectMutation.isPending ? <LoaderCircle className="size-4 animate-spin" /> : null}
-              {updateProjectMutation.isPending ? "Saving…" : "Save Changes"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <EditProjectDialog
+        open={editProject !== null}
+        onOpenChange={(open) => {
+          if (!open) {
+            closeEditDialog()
+          }
+        }}
+        editName={editName}
+        editDescription={editDescription}
+        onEditNameChange={setEditName}
+        onEditDescriptionChange={setEditDescription}
+        onSubmit={saveProject}
+        onCancel={closeEditDialog}
+        isPending={updateProjectMutation.isPending}
+        errorMessage={updateProjectMutation.error ? getRequestErrorMessage(updateProjectMutation.error) : null}
+      />
 
       <CreateEndpointDialog
         open={endpointDialogProject !== null}
@@ -390,6 +281,21 @@ export function ProjectsWorkspace() {
         }}
         projectId={endpointDialogProject?.id ?? null}
         projectName={endpointDialogProject?.name}
+      />
+
+      <ConfirmDeleteDialog
+        open={deleteTarget !== null}
+        onOpenChange={(open) => { if (!open) setDeleteTarget(null) }}
+        entityName="Project"
+        entityLabel={deleteTarget?.name}
+        requireConfirmText={deleteTarget ? `sudo delete ${deleteTarget.name}` : undefined}
+        warning={
+          deleteTarget && deleteTarget.endpointCount > 0
+            ? `This will also permanently delete ${deleteTarget.endpointCount} endpoint${deleteTarget.endpointCount === 1 ? "" : "s"} associated with this project.`
+            : undefined
+        }
+        onConfirm={confirmDelete}
+        isPending={deleteProjectMutation.isPending}
       />
     </div>
   )

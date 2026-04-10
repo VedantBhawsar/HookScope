@@ -7,6 +7,7 @@ globs: **/*
 - Check .wolf/cerebrum.md Do-Not-Repeat list before generating code
 - Structure implementation as smaller, reusable components/modules instead of large monolithic files
 - For frontend UI: BEFORE implementation, check `packages/ui/src/components/` for existing shadcn components. If a required component is missing, use the `shadcn` skill to install it into `@workspace/ui` first, then import from there. Never use raw HTML when a shadcn equivalent should exist.
+- For ANY delete functionality: always use `<ConfirmDeleteDialog>` from `@workspace/ui/components/confirm-delete-dialog`. Never implement an inline confirm or browser `window.confirm()`. Pass `entityName`, optional `entityLabel`, `onConfirm`, and `isPending` props.
 - Extract reusable layout sections (for example header/sidebar/table sections) into dedicated components when touching or adding page-level UI.
 - After writing or editing files, update .wolf/anatomy.md and append to .wolf/memory.md
 - After receiving a user correction, update .wolf/cerebrum.md immediately (Preferences, Learnings, or Do-Not-Repeat)

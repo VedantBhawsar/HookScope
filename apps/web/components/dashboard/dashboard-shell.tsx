@@ -73,11 +73,15 @@ export function DashboardShell({ children }: DashboardShellProps) {
   const [endpointDialogOpen, setEndpointDialogOpen] = React.useState(false)
 
   const projects = projectsQuery.data?.data ?? []
-  const selectedProjectIdFromUrl = typeof routeParams.projectId === "string" ? routeParams.projectId : null
-  const selectedProject = projects.find((project) => project.id === selectedProjectIdFromUrl) ?? null
+  const selectedProjectIdFromUrl =
+    typeof routeParams.projectId === "string" ? routeParams.projectId : null
+  const selectedProject =
+    projects.find((project) => project.id === selectedProjectIdFromUrl) ?? null
   const endpointsQuery = useEndpointsQuery(selectedProject?.id ?? null)
   const endpoints = endpointsQuery.data?.data ?? []
-  const [selectedEndpointId, setSelectedEndpointId] = React.useState<string | null>(null)
+  const [selectedEndpointId, setSelectedEndpointId] = React.useState<
+    string | null
+  >(null)
 
   const setSelectedProjectId = React.useCallback(
     (projectId: string) => {
@@ -86,7 +90,24 @@ export function DashboardShell({ children }: DashboardShellProps) {
     [router]
   )
 
-  const selectedEndpoint = endpoints.find((endpoint) => endpoint.id === selectedEndpointId) ?? null
+  const selectedEndpoint =
+    endpoints.find((endpoint) => endpoint.id === selectedEndpointId) ?? null
+
+  const handleSelectEndpoint = React.useCallback(
+    (endpointId: string) => {
+      if (!selectedProject?.id) return
+
+      const endpoint = endpoints.find((item) => item.id === endpointId)
+      if (!endpoint) return
+
+      setSelectedEndpointId(endpoint.id)
+      setActiveEndpointForProject(selectedProject.id, {
+        id: endpoint.id,
+        name: endpoint.name,
+      })
+    },
+    [endpoints, selectedProject?.id]
+  )
 
   React.useEffect(() => {
     if (meQuery.isLoading) return
@@ -178,18 +199,22 @@ export function DashboardShell({ children }: DashboardShellProps) {
     selectedProject,
     setSelectedProjectId,
     isLoading: projectsQuery.isLoading,
-    errorMessage: projectsQuery.error ? getRequestErrorMessage(projectsQuery.error) : null,
+    errorMessage: projectsQuery.error
+      ? getRequestErrorMessage(projectsQuery.error)
+      : null,
   }
 
   return (
     <DashboardProjectProvider value={projectContextValue}>
-      <div className="min-h-screen bg-background">
-        <div className="grid min-h-screen grid-cols-1 lg:grid-cols-[260px_1fr]">
+      <div className="min-h-screen bg-background lg:h-screen lg:overflow-hidden">
+        <div className="grid min-h-screen grid-cols-1 lg:h-full lg:min-h-0 lg:grid-cols-[260px_1fr]">
           <DashboardSidebar
             user={user}
             pathname={pathname}
             navItems={DASHBOARD_NAV_ITEMS}
             selectedProject={selectedProject}
+            endpoints={endpoints}
+            selectedEndpointId={selectedEndpointId}
             selectedEndpointName={selectedEndpoint?.name ?? null}
             selectedEndpointMeta={
               selectedEndpoint
@@ -197,22 +222,37 @@ export function DashboardShell({ children }: DashboardShellProps) {
                 : "Create an endpoint to begin receiving and forwarding webhooks."
             }
             isLoadingEndpoints={endpointsQuery.isLoading}
-            endpointsErrorMessage={endpointsQuery.error ? getRequestErrorMessage(endpointsQuery.error) : null}
+            endpointsErrorMessage={
+              endpointsQuery.error
+                ? getRequestErrorMessage(endpointsQuery.error)
+                : null
+            }
+            onSelectEndpoint={handleSelectEndpoint}
             onCreateEndpoint={() => setEndpointDialogOpen(true)}
             onOpenAvatarUpload={() => setAvatarUploadOpen(true)}
             onLogout={() => logoutMutation.mutate()}
             isLogoutPending={logoutMutation.isPending}
           />
 
-          <div className="flex min-w-0 flex-col">
+          <div className="flex min-w-0 flex-col lg:h-full lg:min-h-0 lg:overflow-y-auto">
             <DashboardHeader
               title={selectedProject?.name ?? `${user.name}'s Workspace`}
-              projectsErrorMessage={projectsQuery.error ? getRequestErrorMessage(projectsQuery.error) : null}
-              logoutErrorMessage={logoutMutation.error ? getRequestErrorMessage(logoutMutation.error) : null}
+              projectsErrorMessage={
+                projectsQuery.error
+                  ? getRequestErrorMessage(projectsQuery.error)
+                  : null
+              }
+              logoutErrorMessage={
+                logoutMutation.error
+                  ? getRequestErrorMessage(logoutMutation.error)
+                  : null
+              }
             />
 
             <main className="flex-1 p-4 sm:p-6 lg:p-8">
-              <div className="mx-auto flex w-full flex-col gap-6">{children}</div>
+              <div className="mx-auto flex w-full flex-col gap-6">
+                {children}
+              </div>
             </main>
           </div>
         </div>
