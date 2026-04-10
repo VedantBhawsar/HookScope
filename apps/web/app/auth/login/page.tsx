@@ -5,9 +5,9 @@ import { LoginForm } from "@/components/auth/login-form"
 
 export default async function LoginPage() {
   const cookieStore = await cookies()
-  const hasSessionCookie = Boolean(cookieStore.get("at")?.value || cookieStore.get("rt")?.value)
+  const hasAccessCookie = Boolean(cookieStore.get("at")?.value)
 
-  if (hasSessionCookie) {
+  if (hasAccessCookie) {
     redirect("/projects")
   }
 

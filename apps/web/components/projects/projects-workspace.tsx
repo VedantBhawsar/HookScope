@@ -32,18 +32,8 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@workspace/ui/components/dropdown-menu"
-import {
-  Select,
-  SelectContent,
-  SelectGroup,
-  SelectItem,
-  SelectLabel,
-  SelectTrigger,
-  SelectValue,
-} from "@workspace/ui/components/select"
 import { getRequestErrorMessage } from "@/lib/http"
 import { useLogoutMutation, useMeQuery } from "@/hooks/use-auth"
-import { useEndpointsQuery } from "@/hooks/use-endpoints"
 import {
   useCreateProjectMutation,
   useDeleteProjectMutation,
@@ -52,11 +42,7 @@ import {
   type ProjectRecord,
 } from "@/hooks/use-projects"
 import { ThemeToggle } from "@/components/theme-toggle"
-import {
-  clearActiveEndpointForProject,
-  getActiveEndpointForProject,
-  setActiveEndpointForProject,
-} from "@/lib/endpoint-selection"
+import { CreateEndpointDialog } from "@/components/endpoints/create-endpoint-dialog"
 
 const LAST_OPENED_KEY = "last_opened_project"
 
@@ -129,13 +115,7 @@ export function ProjectsWorkspace() {
   }, [])
 
   const projects = projectsQuery.data?.data ?? []
-  const lastOpenedProject = React.useMemo(() => {
-    if (!lastOpened) return null
-    return projects.find((project) => project.id === lastOpened.id) ?? null
-  }, [lastOpened, projects])
-  const endpointsQuery = useEndpointsQuery(lastOpenedProject?.id ?? null)
-  const endpoints = endpointsQuery.data?.data ?? []
-  const [selectedEndpointId, setSelectedEndpointId] = React.useState<string | null>(null)
+  const [endpointDialogProject, setEndpointDialogProject] = React.useState<ProjectRecord | null>(null)
   const user = meQuery.data?.user
 
   React.useEffect(() => {
@@ -243,56 +223,6 @@ export function ProjectsWorkspace() {
     }
   }
 
-  const setSelectedEndpointById = (endpointId: string) => {
-    if (!lastOpenedProject?.id) return
-
-    const endpoint = endpoints.find((item) => item.id === endpointId)
-    if (!endpoint) return
-
-    setSelectedEndpointId(endpoint.id)
-    setActiveEndpointForProject(lastOpenedProject.id, {
-      id: endpoint.id,
-      name: endpoint.name,
-    })
-  }
-
-  React.useEffect(() => {
-    if (!lastOpenedProject?.id) {
-      setSelectedEndpointId(null)
-      return
-    }
-
-    if (endpointsQuery.isLoading) return
-
-    if (endpoints.length === 0) {
-      clearActiveEndpointForProject(lastOpenedProject.id)
-      setSelectedEndpointId(null)
-      return
-    }
-
-    const storedSelection = getActiveEndpointForProject(lastOpenedProject.id)
-    const storedEndpointExists = storedSelection
-      ? endpoints.some((endpoint) => endpoint.id === storedSelection.id)
-      : false
-
-    if (storedSelection && storedEndpointExists) {
-      setSelectedEndpointId(storedSelection.id)
-      return
-    }
-
-    const fallbackEndpoint = endpoints[0]
-    if (!fallbackEndpoint) {
-      setSelectedEndpointId(null)
-      return
-    }
-
-    setSelectedEndpointId(fallbackEndpoint.id)
-    setActiveEndpointForProject(lastOpenedProject.id, {
-      id: fallbackEndpoint.id,
-      name: fallbackEndpoint.name,
-    })
-  }, [endpoints, endpointsQuery.isLoading, lastOpenedProject?.id])
-
   if (meQuery.isLoading) {
     return (
       <div className="flex min-h-screen items-center justify-center">
@@ -301,7 +231,9 @@ export function ProjectsWorkspace() {
     )
   }
 
-  const selectedEndpoint = endpoints.find((endpoint) => endpoint.id === selectedEndpointId) ?? null
+  const lastOpenedProject = lastOpened
+    ? projects.find((project) => project.id === lastOpened.id) ?? null
+    : null
 
   const firstName = user?.name.split(" ")[0] ?? ""
   const companyName = user?.onboarding.companyName
@@ -332,7 +264,7 @@ export function ProjectsWorkspace() {
                 className="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm transition-colors hover:bg-muted focus:outline-none"
               >
                 <UserAvatar name={user.name} />
-                <span className="hidden max-w-[140px] truncate font-medium sm:block">{user.name}</span>
+                <span className="hidden max-w-35 truncate font-medium sm:block">{user.name}</span>
                 <ChevronDown className="size-3.5 text-muted-foreground" />
               </button>
             </DropdownMenuTrigger>
@@ -391,57 +323,6 @@ export function ProjectsWorkspace() {
               Open Dashboard
               <ArrowRight className="size-3.5" />
             </Button>
-          </div>
-        ) : null}
-
-        {lastOpenedProject ? (
-          <div className="mb-6 rounded-xl border border-border bg-card px-5 py-4 shadow-sm">
-            <div className="mb-2.5">
-              <p className="text-[11px] uppercase tracking-[0.18em] text-muted-foreground">Endpoint</p>
-              <p className="text-sm text-muted-foreground">
-                Choose the active endpoint for {lastOpenedProject.name}.
-              </p>
-            </div>
-
-            <Select
-              value={selectedEndpoint?.id ?? ""}
-              onValueChange={setSelectedEndpointById}
-              disabled={endpointsQuery.isLoading || endpoints.length === 0}
-            >
-              <SelectTrigger id="project-endpoint-select" className="w-full" aria-label="Select endpoint">
-                <SelectValue
-                  placeholder={
-                    endpointsQuery.isLoading
-                      ? "Loading endpoints"
-                      : endpoints.length === 0
-                        ? "No endpoints found"
-                        : "Select an endpoint"
-                  }
-                />
-              </SelectTrigger>
-              <SelectContent position="popper">
-                <SelectGroup>
-                  <SelectLabel>Endpoints</SelectLabel>
-                  {endpoints.map((endpoint) => (
-                    <SelectItem key={endpoint.id} value={endpoint.id}>
-                      {endpoint.name}
-                    </SelectItem>
-                  ))}
-                </SelectGroup>
-              </SelectContent>
-            </Select>
-
-            <p className="mt-2 text-xs text-muted-foreground">
-              {selectedEndpoint
-                ? `Active endpoint: ${selectedEndpoint.name} (${selectedEndpoint.source})`
-                : "Create an endpoint in this project to start receiving and routing events."}
-            </p>
-
-            {endpointsQuery.error ? (
-              <p className="mt-2 text-xs text-destructive">
-                {getRequestErrorMessage(endpointsQuery.error)}
-              </p>
-            ) : null}
           </div>
         ) : null}
 
@@ -577,6 +458,14 @@ export function ProjectsWorkspace() {
                             <Trash2 className="size-3" />
                           )}
                           <span className="hidden sm:inline">Delete</span>
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="h-7 px-2.5 text-xs"
+                          onClick={() => setEndpointDialogProject(project)}
+                        >
+                          Create Endpoint
                         </Button>
                         <Button
                           size="sm"
@@ -720,6 +609,17 @@ export function ProjectsWorkspace() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <CreateEndpointDialog
+        open={endpointDialogProject !== null}
+        onOpenChange={(open) => {
+          if (!open) {
+            setEndpointDialogProject(null)
+          }
+        }}
+        projectId={endpointDialogProject?.id ?? null}
+        projectName={endpointDialogProject?.name}
+      />
     </div>
   )
 }

@@ -1,6 +1,6 @@
 "use client"
 
-import { useQuery } from "@tanstack/react-query"
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { http, unwrapResponse, type ApiResponse } from "@/lib/http"
 
 export interface EndpointRecord {
@@ -28,6 +28,13 @@ export interface EndpointsQueryInput {
   page?: number
   limit?: number
   search?: string
+}
+
+export interface CreateEndpointPayload {
+  projectId: string
+  name: string
+  source: "STRIPE" | "GITHUB" | "SHOPIFY" | "SLACK" | "TWILIO" | "GENERIC"
+  destinationUrl: string
 }
 
 export const endpointsQueryKeys = {
@@ -67,6 +74,25 @@ export function useEndpointsQuery(projectId: string | null, input?: EndpointsQue
       )
 
       return unwrapResponse(response.data)
+    },
+  })
+}
+
+export function useCreateEndpointMutation() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async ({ projectId, ...payload }: CreateEndpointPayload) => {
+      const response = await http.post<ApiResponse<EndpointRecord>>(
+        `/api/projects/${projectId}/endpoints`,
+        payload
+      )
+
+      return unwrapResponse(response.data)
+    },
+    onSuccess: async (_, variables) => {
+      await queryClient.invalidateQueries({ queryKey: endpointsQueryKeys.byProject(variables.projectId) })
+      await queryClient.invalidateQueries({ queryKey: endpointsQueryKeys.all })
     },
   })
 }

@@ -26,15 +26,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@workspace/ui/components/dropdown-menu"
-import {
-  Select,
-  SelectContent,
-  SelectGroup,
-  SelectItem,
-  SelectLabel,
-  SelectTrigger,
-  SelectValue,
-} from "@workspace/ui/components/select"
 import { cn } from "@workspace/ui/lib/utils"
 import { getRequestErrorMessage } from "@/lib/http"
 import { useLogoutMutation, useMeQuery } from "@/hooks/use-auth"
@@ -42,6 +33,7 @@ import { useEndpointsQuery } from "@/hooks/use-endpoints"
 import { useProjectsQuery } from "@/hooks/use-projects"
 import { DashboardProjectProvider } from "@/components/dashboard/dashboard-project-context"
 import { AvatarUploadDialog } from "@/components/dashboard/avatar-upload-dialog"
+import { CreateEndpointDialog } from "@/components/endpoints/create-endpoint-dialog"
 import {
   getActiveEndpointForProject,
   setActiveEndpointForProject,
@@ -93,6 +85,7 @@ export function DashboardShell({ children }: DashboardShellProps) {
   const logoutMutation = useLogoutMutation()
   const projectsQuery = useProjectsQuery()
   const [avatarUploadOpen, setAvatarUploadOpen] = React.useState(false)
+  const [endpointDialogOpen, setEndpointDialogOpen] = React.useState(false)
 
   const projects = projectsQuery.data?.data ?? []
   const selectedProjectIdFromUrl = typeof routeParams.projectId === "string" ? routeParams.projectId : null
@@ -100,29 +93,12 @@ export function DashboardShell({ children }: DashboardShellProps) {
   const endpointsQuery = useEndpointsQuery(selectedProject?.id ?? null)
   const endpoints = endpointsQuery.data?.data ?? []
   const [selectedEndpointId, setSelectedEndpointId] = React.useState<string | null>(null)
-  const canChangeEndpoint = pathname.startsWith("/projects")
 
   const setSelectedProjectId = React.useCallback(
     (projectId: string) => {
       router.replace(`/dashboard/${projectId}`, { scroll: false })
     },
     [router]
-  )
-
-  const setSelectedEndpointById = React.useCallback(
-    (endpointId: string) => {
-      if (!selectedProject?.id) return
-
-      const endpoint = endpoints.find((item) => item.id === endpointId)
-      if (!endpoint) return
-
-      setSelectedEndpointId(endpoint.id)
-      setActiveEndpointForProject(selectedProject.id, {
-        id: endpoint.id,
-        name: endpoint.name,
-      })
-    },
-    [endpoints, selectedProject?.id]
   )
 
   const selectedEndpoint = endpoints.find((endpoint) => endpoint.id === selectedEndpointId) ?? null
@@ -232,43 +208,27 @@ export function DashboardShell({ children }: DashboardShellProps) {
 
             <div className="mb-3 rounded-xl border border-border bg-card p-2.5">
               <p className="text-[11px] uppercase tracking-[0.18em] text-muted-foreground">Endpoint</p>
-              <Select
-                value={selectedEndpoint?.id ?? ""}
-                onValueChange={setSelectedEndpointById}
-                disabled={!canChangeEndpoint || endpointsQuery.isLoading || endpoints.length === 0}
-              >
-                <SelectTrigger id="endpoint-select" size="sm" className="mt-1.5 w-full" aria-label="Select endpoint">
-                  <SelectValue
-                    placeholder={
-                      endpointsQuery.isLoading
-                        ? "Loading endpoints"
-                        : endpoints.length === 0
-                          ? "No endpoints found"
-                          : "Select an endpoint"
-                    }
-                  />
-                </SelectTrigger>
-                <SelectContent position="popper">
-                  <SelectGroup>
-                    <SelectLabel>Endpoints</SelectLabel>
-                    {endpoints.map((endpoint) => (
-                      <SelectItem key={endpoint.id} value={endpoint.id}>
-                        {endpoint.name}
-                      </SelectItem>
-                    ))}
-                  </SelectGroup>
-                </SelectContent>
-              </Select>
-
-              <div className="mt-2 rounded-md bg-muted/20 px-2.5 py-2">
-                <p className="truncate text-xs font-medium">{selectedEndpoint?.name ?? "No endpoint selected"}</p>
+              <div className="mt-1.5 rounded-md border border-border bg-background px-2.5 py-2">
+                <p className="truncate text-xs font-medium">
+                  {selectedEndpoint?.name ?? (endpointsQuery.isLoading ? "Loading endpoints..." : "No endpoint yet")}
+                </p>
                 <p className="mt-0.5 truncate text-[11px] leading-4 text-muted-foreground">
                   {selectedEndpoint
                     ? `${selectedEndpoint.source} · ${selectedEndpoint.status}`
-                    : "Endpoint-scoped metrics and events will appear below."}
+                    : "Create an endpoint to begin receiving and forwarding webhooks."}
                 </p>
               </div>
-              <p className="mt-1.5 text-[11px] text-muted-foreground">Endpoint can be changed from Projects workspace.</p>
+
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="mt-2 w-full"
+                onClick={() => setEndpointDialogOpen(true)}
+                disabled={!selectedProject?.id}
+              >
+                Create Endpoint
+              </Button>
               {endpointsQuery.error ? (
                 <p className="mt-1.5 text-[11px] text-destructive">
                   {getRequestErrorMessage(endpointsQuery.error)}
@@ -388,6 +348,13 @@ export function DashboardShell({ children }: DashboardShellProps) {
         onOpenChange={setAvatarUploadOpen}
         currentAvatarUrl={user.avatarUrl}
         userName={user.name}
+      />
+
+      <CreateEndpointDialog
+        open={endpointDialogOpen}
+        onOpenChange={setEndpointDialogOpen}
+        projectId={selectedProject?.id ?? null}
+        projectName={selectedProject?.name}
       />
     </DashboardProjectProvider>
   )
