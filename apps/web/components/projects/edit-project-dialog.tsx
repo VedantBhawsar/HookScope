@@ -21,6 +21,7 @@ import {
   FormMessage,
 } from "@workspace/ui/components/form"
 import { Input } from "@workspace/ui/components/input"
+import { toast } from "@workspace/ui/components/sonner"
 import { Textarea } from "@workspace/ui/components/textarea"
 import { getRequestErrorMessage } from "@/lib/http"
 import { useUpdateProjectMutation, type ProjectRecord } from "@/hooks/use-projects"
@@ -53,8 +54,8 @@ export function EditProjectDialog({
   const resetUpdateProjectMutation = updateProjectMutation.reset
   const form = useForm<EditProjectFormValues>({
     defaultValues: {
-      name: "",
-      description: "",
+      name:  project?.name || "",
+      description:  project?.description || "",
     },
   })
 
@@ -69,7 +70,7 @@ export function EditProjectDialog({
   }, [form, open, project, resetUpdateProjectMutation])
 
   const resetForm = () => {
-    form.reset({ name: "", description: "" })
+    form.reset({ name: project?.name || "", description: project?.description || "" })
     resetUpdateProjectMutation()
   }
 
@@ -103,10 +104,11 @@ export function EditProjectDialog({
         description: parsedValues.data.description?.trim() || undefined,
       })
 
+      toast.success("Project updated")
       onUpdated?.(updatedProject)
       handleOpenChange(false)
-    } catch {
-      // Error is rendered in the dialog.
+    } catch (error) {
+      toast.error(getRequestErrorMessage(error))
     }
   }
 
@@ -156,13 +158,6 @@ export function EditProjectDialog({
                 </FormItem>
               )}
             />
-
-            {updateProjectMutation.error ? (
-              <p className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
-                {getRequestErrorMessage(updateProjectMutation.error)}
-              </p>
-            ) : null}
-
             <DialogFooter>
               <Button type="button" variant="outline" onClick={() => handleOpenChange(false)}>
                 Cancel

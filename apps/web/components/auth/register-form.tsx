@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation"
 import * as React from "react"
 import { LoaderCircle } from "lucide-react"
 import { Button } from "@workspace/ui/components/button"
+import { toast } from "@workspace/ui/components/sonner"
 import { getRequestErrorMessage } from "@/lib/http"
 import { useRegisterMutation } from "@/hooks/use-auth"
 import { PasswordField } from "@/components/auth/password-field"
@@ -37,12 +38,12 @@ function RegisterForm() {
       const destination = result.user.onboarding?.onboardingCompleted ? "/projects" : "/onboarding?step=verify"
       router.push(destination)
       router.refresh()
-    } catch {
-      // Error is rendered through mutation.error state.
+    } catch (error) {
+      toast.error(getRequestErrorMessage(error))
     }
   }
 
-  const errorMessage = formError ?? (registerMutation.error ? getRequestErrorMessage(registerMutation.error) : null)
+  const errorMessage = formError
 
   return (
     <form className="space-y-4" onSubmit={onSubmit}>

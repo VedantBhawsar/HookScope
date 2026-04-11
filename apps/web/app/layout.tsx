@@ -4,6 +4,7 @@ import "@workspace/ui/globals.css"
 import "./landing.css"
 import { ThemeProvider } from "@/components/theme-provider"
 import { QueryProvider } from "@/components/providers/query-provider"
+import { Toaster } from "@workspace/ui/components/sonner"
 import { cn } from "@workspace/ui/lib/utils";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-sans" })
@@ -39,6 +40,7 @@ export default function RootLayout({
       <body>
         <ThemeProvider defaultTheme="system">
           <QueryProvider>{children}</QueryProvider>
+          <Toaster />
         </ThemeProvider>
       </body>
     </html>

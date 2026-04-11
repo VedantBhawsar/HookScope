@@ -5,6 +5,7 @@ import Link from "next/link"
 import { useRouter, useSearchParams } from "next/navigation"
 import { LoaderCircle } from "lucide-react"
 import { Button } from "@workspace/ui/components/button"
+import { toast } from "@workspace/ui/components/sonner"
 import { getRequestErrorMessage } from "@/lib/http"
 import { useCompleteOnboardingMutation, useMeQuery } from "@/hooks/use-auth"
 import { useCreateProjectMutation } from "@/hooks/use-projects"
@@ -88,9 +89,10 @@ export function OnboardingFlow() {
         companySize,
         useCase,
       })
+      toast.success("Company details saved")
       router.replace("/onboarding?step=project")
-    } catch {
-      // Error surfaced below from mutation state.
+    } catch (error) {
+      toast.error(getRequestErrorMessage(error))
     }
   }
 
@@ -102,10 +104,11 @@ export function OnboardingFlow() {
         name: projectName,
         description: projectDescription || undefined,
       })
+      toast.success("Project created")
       router.replace("/projects")
       router.refresh()
-    } catch {
-      // Error surfaced below from mutation state.
+    } catch (error) {
+      toast.error(getRequestErrorMessage(error))
     }
   }
 
@@ -210,13 +213,6 @@ export function OnboardingFlow() {
                   placeholder="Observe Stripe and GitHub webhooks"
                   onChange={setUseCase}
                 />
-
-                {onboardingMutation.error ? (
-                  <p className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
-                    {getRequestErrorMessage(onboardingMutation.error)}
-                  </p>
-                ) : null}
-
                 <div className="mt-6 flex items-center justify-between gap-3">
                   <Button type="button" variant="outline" onClick={() => goToStep("verify")}>
                     Back
@@ -265,13 +261,6 @@ export function OnboardingFlow() {
                   placeholder="Capture and inspect Stripe events"
                   onChange={setProjectDescription}
                 />
-
-                {projectMutation.error ? (
-                  <p className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
-                    {getRequestErrorMessage(projectMutation.error)}
-                  </p>
-                ) : null}
-
                 <div className="mt-6 flex items-center justify-between gap-3">
                   <Button type="button" variant="outline" onClick={() => goToStep("company")}>
                     Back

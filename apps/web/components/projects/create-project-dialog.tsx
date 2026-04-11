@@ -21,6 +21,7 @@ import {
   FormMessage,
 } from "@workspace/ui/components/form"
 import { Input } from "@workspace/ui/components/input"
+import { toast } from "@workspace/ui/components/sonner"
 import { Textarea } from "@workspace/ui/components/textarea"
 import { getRequestErrorMessage } from "@/lib/http"
 import { useCreateProjectMutation, type ProjectRecord } from "@/hooks/use-projects"
@@ -87,10 +88,11 @@ export function CreateProjectDialog({
         description: parsedValues.data.description?.trim() || undefined,
       })
 
+      toast.success("Project created")
       onCreated(project)
       handleOpenChange(false)
-    } catch {
-      // Error is rendered in the dialog.
+    } catch (error) {
+      toast.error(getRequestErrorMessage(error))
     }
   }
 
@@ -140,13 +142,6 @@ export function CreateProjectDialog({
                 </FormItem>
               )}
             />
-
-            {createProjectMutation.error ? (
-              <p className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
-                {getRequestErrorMessage(createProjectMutation.error)}
-              </p>
-            ) : null}
-
             <DialogFooter>
               <Button type="button" variant="outline" onClick={() => handleOpenChange(false)}>
                 Cancel

@@ -11,7 +11,9 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@workspace/ui/components/dialog"
+import { toast } from "@workspace/ui/components/sonner"
 import { cn } from "@workspace/ui/lib/utils"
+import { getRequestErrorMessage } from "@/lib/http"
 import { useUploadAvatarMutation } from "@/hooks/use-auth"
 
 const ACCEPTED_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"]
@@ -84,8 +86,13 @@ export function AvatarUploadDialog({ open, onOpenChange, currentAvatarUrl, userN
 
   async function handleUpload() {
     if (!selectedFile) return
-    await uploadMutation.mutateAsync(selectedFile)
-    handleClose()
+    try {
+      await uploadMutation.mutateAsync(selectedFile)
+      toast.success("Profile photo updated")
+      handleClose()
+    } catch (error) {
+      toast.error(getRequestErrorMessage(error))
+    }
   }
 
   function handleClose() {
@@ -161,11 +168,6 @@ export function AvatarUploadDialog({ open, onOpenChange, currentAvatarUrl, userN
           />
 
           {validationError && <p className="text-xs text-destructive">{validationError}</p>}
-          {uploadMutation.error && (
-            <p className="text-xs text-destructive">
-              {uploadMutation.error instanceof Error ? uploadMutation.error.message : "Upload failed"}
-            </p>
-          )}
         </div>
 
         <DialogFooter>

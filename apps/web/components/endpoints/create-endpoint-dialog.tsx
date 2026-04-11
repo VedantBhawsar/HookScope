@@ -19,6 +19,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@workspace/ui/components/select"
+import { toast } from "@workspace/ui/components/sonner"
 import { getRequestErrorMessage } from "@/lib/http"
 import {
   useCreateEndpointMutation,
@@ -87,9 +88,10 @@ export function CreateEndpointDialog({
         name: endpoint.name,
       })
 
+      toast.success("Endpoint created")
       onOpenChange(false)
-    } catch {
-      // Error is shown in dialog.
+    } catch (error) {
+      toast.error(getRequestErrorMessage(error))
     }
   }
 
@@ -154,12 +156,6 @@ export function CreateEndpointDialog({
               className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm outline-none transition focus:border-ring focus:ring-2 focus:ring-ring/40"
             />
           </div>
-
-          {createEndpointMutation.error ? (
-            <p className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
-              {getRequestErrorMessage(createEndpointMutation.error)}
-            </p>
-          ) : null}
         </form>
 
         <DialogFooter>

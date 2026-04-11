@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation"
 import * as React from "react"
 import { LoaderCircle } from "lucide-react"
 import { Button } from "@workspace/ui/components/button"
+import { toast } from "@workspace/ui/components/sonner"
 import { getRequestErrorMessage } from "@/lib/http"
 import { useLoginMutation } from "@/hooks/use-auth"
 import { PasswordField } from "@/components/auth/password-field"
@@ -26,12 +27,10 @@ function LoginForm() {
       const destination = result.user.onboarding?.onboardingCompleted ? "/projects" : "/onboarding?step=verify"
       router.push(destination)
       router.refresh()
-    } catch {
-      // Error is rendered through mutation.error state.
+    } catch (error) {
+      toast.error(getRequestErrorMessage(error))
     }
   }
-
-  const errorMessage = loginMutation.error ? getRequestErrorMessage(loginMutation.error) : null
 
   return (
     <form className="space-y-4" onSubmit={onSubmit}>
@@ -52,13 +51,6 @@ function LoginForm() {
         onChange={setPassword}
         placeholder="Enter your password"
       />
-
-      {errorMessage ? (
-        <p className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
-          {errorMessage}
-        </p>
-      ) : null}
-
       <Button className="w-full" type="submit" disabled={loginMutation.isPending}>
         {loginMutation.isPending ? <LoaderCircle className="size-4 animate-spin" /> : null}
         {loginMutation.isPending ? "Signing in..." : "Sign in"}
