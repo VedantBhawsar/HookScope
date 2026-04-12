@@ -227,4 +227,18 @@ export class EndpointController {
       error(res, "Failed to fetch event volume")
     }
   }
+
+  getDeliveryStats = async (req: Request<{ projectId: string; id: string }>, res: Response): Promise<void> => {
+    try {
+      const projectId = await this.ensureOwnership(req, res)
+      if (!projectId) return
+
+      const stats = await this.service.getDeliveryStats(req.params.id, projectId)
+      if (!stats) return notFound(res, `Endpoint '${req.params.id}' not found`)
+      json(res, stats)
+    } catch (err) {
+      console.error("[EndpointController.getDeliveryStats]", err)
+      error(res, "Failed to fetch delivery stats")
+    }
+  }
 }

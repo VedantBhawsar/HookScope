@@ -96,3 +96,15 @@ export interface EndpointVolumeDto {
   /** 'hour' when windowHours ≤ 72, 'day' when > 72 */
   granularity: 'hour' | 'day'
 }
+
+export interface DeliveryStatsDto {
+  totalDeliveries: number
+  latency: {
+    avg: number | null
+    min: number | null
+    max: number | null
+  }
+  statusBreakdown: Record<string, number>
+  errorCodeBreakdown: Record<string, number>
+  eventTypeBreakdown: { eventType: string; count: number }[]
+}

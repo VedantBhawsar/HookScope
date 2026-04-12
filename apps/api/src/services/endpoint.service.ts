@@ -2,6 +2,7 @@ import { createHash, randomBytes } from "crypto"
 import type { EndpointRepository } from "../repositories/endpoint.repository"
 import type {
   CreateEndpointDto,
+  DeliveryStatsDto,
   EndpointCreatedDto,
   EndpointListQuery,
   EndpointStatsDto,
@@ -134,5 +135,38 @@ export class EndpointService {
     }
 
     return { data, windowHours: hours, granularity }
+  }
+
+  async getDeliveryStats(id: string, projectId: string): Promise<DeliveryStatsDto | null> {
+    const result = await this.repository.findDeliveryStatsByEndpointId(id, projectId)
+    if (!result) return null
+
+    const { latency, statusGroups, errorGroups, totalDeliveries, eventTypeGroups } = result
+
+    const statusBreakdown: Record<string, number> = {}
+    for (const g of statusGroups) {
+      statusBreakdown[g.status] = g._count._all
+    }
+
+    const errorCodeBreakdown: Record<string, number> = {}
+    for (const g of errorGroups) {
+      if (g.errorCode) errorCodeBreakdown[g.errorCode] = g._count._all
+    }
+
+    const eventTypeBreakdown = eventTypeGroups
+      .filter((g) => g.eventType != null)
+      .map((g) => ({ eventType: g.eventType as string, count: g._count._all }))
+
+    return {
+      totalDeliveries,
+      latency: {
+        avg: latency._avg.latencyMs != null ? Math.round(latency._avg.latencyMs) : null,
+        min: latency._min.latencyMs ?? null,
+        max: latency._max.latencyMs ?? null,
+      },
+      statusBreakdown,
+      errorCodeBreakdown,
+      eventTypeBreakdown,
+    }
   }
 }

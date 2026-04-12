@@ -277,3 +277,33 @@ export function useEndpointVolumeQuery(
     },
   })
 }
+
+// ─── Delivery Stats ──────────────────────────────────────────────────────────
+
+export interface EndpointDeliveryStatsResult {
+  totalDeliveries: number
+  latency: {
+    avg: number | null
+    min: number | null
+    max: number | null
+  }
+  statusBreakdown: Record<string, number>
+  errorCodeBreakdown: Record<string, number>
+  eventTypeBreakdown: { eventType: string; count: number }[]
+}
+
+export function useEndpointDeliveryStatsQuery(
+  projectId: string | null,
+  endpointId: string | null
+) {
+  return useQuery({
+    queryKey: ["endpoints", projectId ?? "", endpointId ?? "", "delivery-stats"],
+    enabled: Boolean(projectId && endpointId),
+    queryFn: async () => {
+      const response = await http.get<ApiResponse<EndpointDeliveryStatsResult>>(
+        `/api/projects/${projectId}/endpoints/${endpointId}/delivery-stats`
+      )
+      return unwrapResponse(response.data)
+    },
+  })
+}

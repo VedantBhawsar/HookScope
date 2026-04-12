@@ -186,4 +186,56 @@ export class EndpointRepository {
 
     return { rows, granularity }
   }
+
+  /**
+   * Aggregate delivery stats for one endpoint:
+   * latency (avg/min/max), status breakdown, error code breakdown, event type breakdown.
+   */
+  async findDeliveryStatsByEndpointId(id: string, projectId: string) {
+    const endpoint = await prisma.endpoint.findFirst({
+      where: { id, projectId, deletedAt: null },
+      select: { id: true },
+    })
+    if (!endpoint) return null
+
+    // groupBy/aggregate don't support relation filters — resolve event IDs first
+    const eventIds = (
+      await prisma.webhookEvent.findMany({
+        where: { endpointId: id, deletedAt: null },
+        select: { id: true },
+      })
+    ).map((e) => e.id)
+
+    const deliveryWhere = { webhookEventId: { in: eventIds } }
+
+    const [latency, statusGroups, errorGroups, totalDeliveries, eventTypeGroups] =
+      await Promise.all([
+        prisma.delivery.aggregate({
+          where: deliveryWhere,
+          _avg: { latencyMs: true },
+          _min: { latencyMs: true },
+          _max: { latencyMs: true },
+        }),
+        prisma.delivery.groupBy({
+          by: ["status"],
+          where: deliveryWhere,
+          _count: { _all: true },
+        }),
+        prisma.delivery.groupBy({
+          by: ["errorCode"],
+          where: { ...deliveryWhere, errorCode: { not: null } },
+          _count: { _all: true },
+        }),
+        prisma.delivery.count({ where: deliveryWhere }),
+        prisma.webhookEvent.groupBy({
+          by: ["eventType"],
+          where: { endpointId: id, deletedAt: null, eventType: { not: null } },
+          _count: { _all: true },
+          orderBy: { _count: { eventType: "desc" } },
+          take: 10,
+        }),
+      ])
+
+    return { latency, statusGroups, errorGroups, totalDeliveries, eventTypeGroups }
+  }
 }

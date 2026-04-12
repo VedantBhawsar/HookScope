@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation"
 import * as React from "react"
 import type { ComponentType } from "react"
 import {
-  BarChart3,
+  Activity,
   Bell,
   Check,
   ChevronsUpDown,
@@ -69,10 +69,10 @@ const DASHBOARD_NAV_ITEMS: readonly DashboardNavItem[] = [
     icon: Webhook,
   },
   {
-    label: "Metrics",
-    segment: "/metrics",
+    label: "Deliveries",
+    segment: "/deliveries",
     absoluteHref: null,
-    icon: BarChart3,
+    icon: Activity,
   },
   {
     label: "Alerts",
