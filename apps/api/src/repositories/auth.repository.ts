@@ -1,4 +1,5 @@
 import { prisma } from "@workspace/db/client"
+import type { OAuthProvider } from "@workspace/db"
 
 export class AuthRepository {
   findUserByEmail(email: string) {
@@ -111,6 +112,70 @@ export class AuthRepository {
         ...(data.companyRole !== undefined && { companyRole: data.companyRole }),
         ...(data.useCase !== undefined && { useCase: data.useCase }),
       },
+    })
+  }
+
+  // ── Password reset ────────────────────────────────────────────────────────────
+
+  createPasswordResetToken(data: { userId: string; tokenHash: string; expiresAt: Date }) {
+    return prisma.passwordResetToken.create({ data })
+  }
+
+  findPasswordResetToken(tokenHash: string) {
+    return prisma.passwordResetToken.findUnique({
+      where: { tokenHash },
+      include: { user: true },
+    })
+  }
+
+  markPasswordResetTokenUsed(id: string) {
+    return prisma.passwordResetToken.update({
+      where: { id },
+      data: { usedAt: new Date() },
+    })
+  }
+
+  /** Clean up unused unexpired tokens for a user before issuing a new one. */
+  deleteUnusedResetTokensForUser(userId: string) {
+    return prisma.passwordResetToken.deleteMany({
+      where: { userId, usedAt: null },
+    })
+  }
+
+  updateUserPassword(userId: string, passwordHash: string) {
+    return prisma.user.update({
+      where: { id: userId },
+      data: { passwordHash },
+    })
+  }
+
+  // ── OAuth accounts ────────────────────────────────────────────────────────────
+
+  /** Look up the OAuthAccount row and include the linked user. */
+  findOAuthAccount(provider: OAuthProvider, providerAccountId: string) {
+    return prisma.oAuthAccount.findUnique({
+      where: { provider_providerAccountId: { provider, providerAccountId } },
+      include: { user: true },
+    })
+  }
+
+  /** Create a new user without a password (OAuth-only sign-up). */
+  createOAuthUser(data: { name: string; email: string; avatarUrl?: string }) {
+    return prisma.user.create({
+      data: {
+        name: data.name,
+        email: data.email,
+        avatarUrl: data.avatarUrl,
+        // passwordHash intentionally null — user authenticates via OAuth only
+        emailVerifiedAt: new Date(), // provider verified the email
+      },
+    })
+  }
+
+  /** Attach an OAuth provider account to an existing user. */
+  linkOAuthAccount(userId: string, provider: OAuthProvider, providerAccountId: string) {
+    return prisma.oAuthAccount.create({
+      data: { userId, provider, providerAccountId },
     })
   }
 }

@@ -9,6 +9,7 @@ import { toast } from "@workspace/ui/components/sonner"
 import { getRequestErrorMessage } from "@/lib/http"
 import { useLoginMutation } from "@/hooks/use-auth"
 import { PasswordField } from "@/components/auth/password-field"
+import { Divider, SocialLoginButtons } from "@/components/auth/social-login-buttons"
 
 function LoginForm() {
   const router = useRouter()
@@ -33,6 +34,9 @@ function LoginForm() {
   }
 
   return (
+    <div>
+      <SocialLoginButtons />
+      <Divider />
     <form className="space-y-4" onSubmit={onSubmit}>
       <Field
         id="email"
@@ -44,9 +48,17 @@ function LoginForm() {
         placeholder="you@company.com"
       />
       <div className="space-y-1.5">
-        <label htmlFor="password" className="text-sm font-medium text-foreground">
-          Password
-        </label>
+        <div className="flex items-center justify-between">
+          <label htmlFor="password" className="text-sm font-medium text-foreground">
+            Password
+          </label>
+          <Link
+            href="/auth/forgot-password"
+            className="text-xs text-muted-foreground underline underline-offset-4 hover:text-foreground"
+          >
+            Forgot password?
+          </Link>
+        </div>
         <PasswordField
           id="password"
           autoComplete="current-password"
@@ -68,6 +80,7 @@ function LoginForm() {
         </Link>
       </p>
     </form>
+    </div>
   )
 }
 

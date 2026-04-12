@@ -11,4 +11,5 @@ export {
   PlanTier,
   SubscriptionStatus,
   VerificationMode,
+  OAuthProvider,
 } from "../generated/client/client.js"

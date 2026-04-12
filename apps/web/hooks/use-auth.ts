@@ -201,6 +201,24 @@ export function useUpdateProfileMutation() {
   })
 }
 
+export function useForgotPasswordMutation() {
+  return useMutation({
+    mutationFn: async (email: string) => {
+      const response = await http.post<ApiResponse<null>>("/api/auth/forgot-password", { email })
+      return { message: response.data.message }
+    },
+  })
+}
+
+export function useResetPasswordMutation() {
+  return useMutation({
+    mutationFn: async (payload: { token: string; password: string }) => {
+      const response = await http.post<ApiResponse<null>>("/api/auth/reset-password", payload)
+      return { message: response.data.message }
+    },
+  })
+}
+
 export function useUploadAvatarMutation() {
   const queryClient = useQueryClient()
 

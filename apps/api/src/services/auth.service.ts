@@ -7,6 +7,8 @@ import {
 } from "../lib/tokens"
 import { hashPassword, verifyPassword } from "../lib/password"
 import { putObject, deleteObject, getS3Client } from "@workspace/s3"
+import { sendPasswordResetEmail } from "../lib/email"
+import type { OAuthProvider } from "@workspace/db"
 import type {
   AuthOnboardingState,
   AuthResponse,
@@ -140,6 +142,107 @@ export class AuthService {
     const user = await this.repo.updateUserProfile(userId, data)
     const projectCount = await this.repo.getActiveProjectCount(user.id)
     return this.toAuthUser(user, projectCount)
+  }
+
+  // ── Forgot / reset password ──────────────────────────────────────────────────
+
+  /**
+   * Trigger a password reset email. Intentionally silent if the email is not
+   * registered — prevents user enumeration via response timing.
+   */
+  async forgotPassword(email: string): Promise<void> {
+    const user = await this.repo.findUserByEmail(email)
+    if (!user) return // silent — do not reveal whether email exists
+
+    const RESET_TOKEN_TTL_MS = 15 * 60 * 1000 // 15 minutes
+
+    // Invalidate any outstanding unused tokens before issuing a new one
+    await this.repo.deleteUnusedResetTokensForUser(user.id)
+
+    const rawToken = generateRefreshToken() // 64-char hex via Web Crypto
+    const tokenHash = await hashToken(rawToken)
+    const expiresAt = new Date(Date.now() + RESET_TOKEN_TTL_MS)
+
+    await this.repo.createPasswordResetToken({ userId: user.id, tokenHash, expiresAt })
+
+    const frontendUrl = (process.env["FRONTEND_URL"] ?? "http://localhost:3000").replace(/\/$/, "")
+    const resetUrl = `${frontendUrl}/auth/reset-password?token=${rawToken}`
+
+    await sendPasswordResetEmail(email, resetUrl)
+  }
+
+  /** Validate a reset token and update the user's password. */
+  async resetPassword(rawToken: string, newPassword: string): Promise<void> {
+    const tokenHash = await hashToken(rawToken)
+    const record = await this.repo.findPasswordResetToken(tokenHash)
+
+    if (!record) throw new Error("INVALID_RESET_TOKEN")
+    if (record.usedAt) throw new Error("TOKEN_ALREADY_USED")
+    if (record.expiresAt < new Date()) throw new Error("RESET_TOKEN_EXPIRED")
+
+    const passwordHash = await hashPassword(newPassword)
+
+    // Atomically: update password, mark token used, revoke all sessions
+    await Promise.all([
+      this.repo.updateUserPassword(record.userId, passwordHash),
+      this.repo.markPasswordResetTokenUsed(record.id),
+      this.repo.revokeAllUserTokens(record.userId), // force re-login on all devices
+    ])
+  }
+
+  // ── Social OAuth sign-in ─────────────────────────────────────────────────────
+
+  async oauthSignin(
+    provider: OAuthProvider,
+    providerAccountId: string,
+    email: string,
+    name: string,
+    avatarUrl?: string
+  ): Promise<AuthResponse & { refreshToken: string }> {
+    const { user, isNew } = await this.findOrCreateOAuthUser(
+      provider, providerAccountId, email, name, avatarUrl
+    )
+
+    const projectCount = isNew ? 0 : await this.repo.getActiveProjectCount(user.id)
+    const { accessToken, refreshToken } = await this.issueTokenPair(user.id, user.email)
+
+    return {
+      user: this.toAuthUser(user, projectCount),
+      tokens: { accessToken, expiresIn: ACCESS_TOKEN_EXPIRES_IN },
+      refreshToken,
+    }
+  }
+
+  /**
+   * Resolve a user for OAuth sign-in (find existing or create new).
+   *
+   * TODO: Implement the find-or-create strategy below (~8 lines).
+   *
+   * Three cases to handle in order:
+   *
+   * 1. **Re-login** — `this.repo.findOAuthAccount(provider, providerAccountId)` returns
+   *    a record → the user has signed in with this provider before. Return `{ user, isNew: false }`.
+   *
+   * 2. **Email collision** — no OAuthAccount exists, but `this.repo.findUserByEmail(email)`
+   *    finds a user. Two valid strategies:
+   *    - **Auto-link** (UX-friendly): link the OAuth account to the existing user.
+   *      Risk: if the provider is compromised, an attacker can take over the email account.
+   *    - **Reject** (security-strict): throw `new Error("EMAIL_TAKEN_DIFFERENT_PROVIDER")`.
+   *      Safer, but requires the user to log in with password first and explicitly link OAuth.
+   *
+   * 3. **New sign-up** — no match anywhere →
+   *    `this.repo.createOAuthUser(...)` then `this.repo.linkOAuthAccount(...)`.
+   *    Return `{ user, isNew: true }`.
+   */
+  private async findOrCreateOAuthUser(
+    provider: OAuthProvider,
+    providerAccountId: string,
+    email: string,
+    name: string,
+    avatarUrl?: string
+  ): Promise<{ user: { id: string; email: string; name: string; avatarUrl: string | null; emailVerifiedAt: Date | null; companyName: string | null; companySize: string | null; companyRole: string | null; useCase: string | null; onboardingCompletedAt: Date | null }; isNew: boolean }> {
+    // TODO: implement here
+    throw new Error("findOrCreateOAuthUser not implemented yet")
   }
 
   async logout(rawRefreshToken: string): Promise<void> {
