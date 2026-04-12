@@ -114,11 +114,7 @@ export function DashboardSidebar({
   const selectedEndpointMeta = selectedEndpoint
     ? `${selectedEndpoint.source} · ${selectedEndpoint.status}`
     : "Create an endpoint to begin receiving and forwarding webhooks."
-  const endpointSettingsHref = selectedProject?.id
-    ? selectedEndpointId
-      ? `/dashboard/${selectedProject.id}/${selectedEndpointId}/settings`
-      : null
-    : null
+  const endpointSettingsHref = "/settings"
 
   const filteredEndpoints = React.useMemo(() => {
     const query = endpointSearch.trim().toLowerCase()
@@ -261,7 +257,10 @@ export function DashboardSidebar({
           const href = item.absoluteHref
             ? item.absoluteHref
             : `${endpointScopedBaseHref}${item.segment}`
-          const isActive = pathname === href || pathname.startsWith(`${href}/`)
+          const isActive =
+            item.segment === ""
+              ? pathname === href
+              : pathname === href || pathname.startsWith(`${href}/`)
 
           return (
             <Link
@@ -318,13 +317,13 @@ export function DashboardSidebar({
               <DropdownMenuItem asChild>
                 <Link href={endpointSettingsHref}>
                   <Settings data-icon="inline-start" />
-                  Endpoint settings
+                  Settings
                 </Link>
               </DropdownMenuItem>
             ) : (
               <DropdownMenuItem disabled>
                 <Settings data-icon="inline-start" />
-                Endpoint settings
+                Settings
               </DropdownMenuItem>
             )}
           </DropdownMenuGroup>
