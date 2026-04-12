@@ -72,3 +72,25 @@ export interface PaginatedEndpointList {
     totalPages: number
   }
 }
+
+// ─── Overview DTOs ────────────────────────────────────────────────────────────
+
+export interface EndpointStatsDto {
+  totalEvents: number
+  statusBreakdown: Record<string, number>
+  successRate: number
+  failureRate: number
+}
+
+export interface VolumeDataPoint {
+  /** ISO-8601 string for the start of the hour bucket */
+  hour: string
+  delivered: number
+  failed: number
+  other: number
+}
+
+export interface EndpointVolumeDto {
+  data: VolumeDataPoint[]
+  windowHours: number
+}

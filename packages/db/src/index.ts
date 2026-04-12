@@ -1,5 +1,6 @@
 export { prisma } from "./client.js"
 export type { Prisma } from "../generated/client/client.js"
+export { Prisma } from "../generated/client/client.js"
 export {
   EventStatus,
   SourceProvider,

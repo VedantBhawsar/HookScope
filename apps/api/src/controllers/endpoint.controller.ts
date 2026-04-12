@@ -193,4 +193,38 @@ export class EndpointController {
       error(res, "Failed to delete endpoint")
     }
   }
+
+  getStats = async (req: Request<{ projectId: string; id: string }>, res: Response): Promise<void> => {
+    try {
+      const projectId = await this.ensureOwnership(req, res)
+      if (!projectId) return
+
+      const stats = await this.service.getStats(req.params.id, projectId)
+      if (!stats) return notFound(res, `Endpoint '${req.params.id}' not found`)
+      json(res, stats)
+    } catch (err) {
+      console.error("[EndpointController.getStats]", err)
+      error(res, "Failed to fetch endpoint stats")
+    }
+  }
+
+  getVolume = async (req: Request<{ projectId: string; id: string }>, res: Response): Promise<void> => {
+    try {
+      const projectId = await this.ensureOwnership(req, res)
+      if (!projectId) return
+
+      const hoursRaw = req.query.hours as string | undefined
+      const hours = hoursRaw ? Number(hoursRaw) : 24
+      if (!Number.isInteger(hours) || hours < 1 || hours > 168) {
+        return badRequest(res, "'hours' must be an integer between 1 and 168")
+      }
+
+      const volume = await this.service.getVolume(req.params.id, projectId, hours)
+      if (!volume) return notFound(res, `Endpoint '${req.params.id}' not found`)
+      json(res, volume)
+    } catch (err) {
+      console.error("[EndpointController.getVolume]", err)
+      error(res, "Failed to fetch event volume")
+    }
+  }
 }

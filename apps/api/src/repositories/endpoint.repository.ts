@@ -1,4 +1,5 @@
 import { prisma } from "@workspace/db/client"
+import { Prisma } from "@workspace/db"
 import type { CreateEndpointDto, EndpointListQuery, UpdateEndpointDto } from "../types/endpoint"
 
 const ENDPOINT_SELECT = {
@@ -129,5 +130,58 @@ export class EndpointRepository {
       where: { id, projectId, deletedAt: null },
       data: { deletedAt: new Date() },
     })
+  }
+
+  /**
+   * Count webhook events grouped by status for one endpoint.
+   * Uses Prisma groupBy — single DB round trip, no raw SQL needed.
+   */
+  async findStatsByEndpointId(id: string, projectId: string) {
+    // Verify the endpoint belongs to this project first
+    const endpoint = await prisma.endpoint.findFirst({
+      where: { id, projectId, deletedAt: null },
+      select: { id: true },
+    })
+    if (!endpoint) return null
+
+    const groups = await prisma.webhookEvent.groupBy({
+      by: ["status"],
+      where: { endpointId: id, deletedAt: null },
+      _count: { _all: true },
+    })
+
+    return groups
+  }
+
+  /**
+   * Hourly event volume for the last N hours, grouped by status bucket.
+   * Uses $queryRaw with date_trunc — the only way to do date bucketing in Prisma.
+   * Table: webhook_events, columns: endpoint_id, created_at, deleted_at, status
+   */
+  async findVolumeByEndpointId(id: string, projectId: string, hours: number) {
+    // Verify the endpoint belongs to this project first
+    const endpoint = await prisma.endpoint.findFirst({
+      where: { id, projectId, deletedAt: null },
+      select: { id: true },
+    })
+    if (!endpoint) return null
+
+    const rows = await prisma.$queryRaw<
+      { hour: Date; status: string; count: number }[]
+    >(Prisma.sql`
+      SELECT
+        date_trunc('hour', "created_at") AS hour,
+        "status",
+        COUNT(*)::int                    AS count
+      FROM "webhook_events"
+      WHERE
+        "endpoint_id" = ${id}
+        AND "deleted_at" IS NULL
+        AND "created_at" >= NOW() - (${hours}::int * INTERVAL '1 hour')
+      GROUP BY 1, 2
+      ORDER BY 1 ASC
+    `)
+
+    return rows
   }
 }

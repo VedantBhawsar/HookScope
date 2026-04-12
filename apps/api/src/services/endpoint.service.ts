@@ -4,8 +4,11 @@ import type {
   CreateEndpointDto,
   EndpointCreatedDto,
   EndpointListQuery,
+  EndpointStatsDto,
+  EndpointVolumeDto,
   PaginatedEndpointList,
   UpdateEndpointDto,
+  VolumeDataPoint,
 } from "../types/endpoint"
 
 export class EndpointService {
@@ -62,5 +65,58 @@ export class EndpointService {
   async softDelete(id: string, projectId: string) {
     const result = await this.repository.softDelete(id, projectId)
     return result.count > 0
+  }
+
+  async getStats(id: string, projectId: string): Promise<EndpointStatsDto | null> {
+    const groups = await this.repository.findStatsByEndpointId(id, projectId)
+    if (!groups) return null
+
+    const breakdown: Record<string, number> = {}
+    let totalEvents = 0
+
+    for (const g of groups) {
+      breakdown[g.status] = g._count._all
+      totalEvents += g._count._all
+    }
+
+    const delivered = breakdown["DELIVERED"] ?? 0
+    const failed = (breakdown["FAILED"] ?? 0) + (breakdown["DEAD_LETTER"] ?? 0)
+
+    return {
+      totalEvents,
+      statusBreakdown: breakdown,
+      successRate: totalEvents > 0 ? parseFloat(((delivered / totalEvents) * 100).toFixed(2)) : 0,
+      failureRate: totalEvents > 0 ? parseFloat(((failed / totalEvents) * 100).toFixed(2)) : 0,
+    }
+  }
+
+  async getVolume(id: string, projectId: string, hours: number): Promise<EndpointVolumeDto | null> {
+    const rows = await this.repository.findVolumeByEndpointId(id, projectId, hours)
+    if (!rows) return null
+
+    // Index raw rows by hour+status for fast lookup
+    const byHour = new Map<string, { delivered: number; failed: number; other: number }>()
+    for (const row of rows) {
+      const key = new Date(row.hour).toISOString()
+      const bucket = byHour.get(key) ?? { delivered: 0, failed: 0, other: 0 }
+      if (row.status === "DELIVERED") bucket.delivered += row.count
+      else if (row.status === "FAILED" || row.status === "DEAD_LETTER") bucket.failed += row.count
+      else bucket.other += row.count
+      byHour.set(key, bucket)
+    }
+
+    // Build evenly-spaced hour buckets so the chart always shows the full window
+    const now = new Date()
+    now.setMinutes(0, 0, 0)
+    const data: VolumeDataPoint[] = []
+    for (let i = hours - 1; i >= 0; i--) {
+      const d = new Date(now)
+      d.setHours(d.getHours() - i)
+      const key = d.toISOString()
+      const bucket = byHour.get(key) ?? { delivered: 0, failed: 0, other: 0 }
+      data.push({ hour: key, ...bucket })
+    }
+
+    return { data, windowHours: hours }
   }
 }

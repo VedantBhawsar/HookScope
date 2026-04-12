@@ -218,3 +218,60 @@ export function useDeleteEndpointMutation() {
     },
   })
 }
+
+// ─── Overview: Stats ─────────────────────────────────────────────────────────
+
+export interface EndpointStatsResult {
+  totalEvents: number
+  statusBreakdown: Record<string, number>
+  successRate: number
+  failureRate: number
+}
+
+export function useEndpointStatsQuery(
+  projectId: string | null,
+  endpointId: string | null
+) {
+  return useQuery({
+    queryKey: ["endpoints", projectId ?? "", endpointId ?? "", "stats"],
+    enabled: Boolean(projectId && endpointId),
+    queryFn: async () => {
+      const response = await http.get<ApiResponse<EndpointStatsResult>>(
+        `/api/projects/${projectId}/endpoints/${endpointId}/stats`
+      )
+      return unwrapResponse(response.data)
+    },
+  })
+}
+
+// ─── Overview: Volume ────────────────────────────────────────────────────────
+
+export interface VolumeDataPoint {
+  hour: string
+  delivered: number
+  failed: number
+  other: number
+}
+
+export interface EndpointVolumeResult {
+  data: VolumeDataPoint[]
+  windowHours: number
+}
+
+export function useEndpointVolumeQuery(
+  projectId: string | null,
+  endpointId: string | null,
+  hours = 24
+) {
+  return useQuery({
+    queryKey: ["endpoints", projectId ?? "", endpointId ?? "", "volume", hours],
+    enabled: Boolean(projectId && endpointId),
+    queryFn: async () => {
+      const response = await http.get<ApiResponse<EndpointVolumeResult>>(
+        `/api/projects/${projectId}/endpoints/${endpointId}/volume`,
+        { params: { hours } }
+      )
+      return unwrapResponse(response.data)
+    },
+  })
+}
