@@ -30,6 +30,16 @@ export interface EndpointsQueryInput {
   search?: string
 }
 
+export interface EndpointDetailRecord extends EndpointRecord {
+  _count: { events: number }
+  signingSecret: string | null
+  signatureHeader: string | null
+  signatureType: string | null
+  timestampHeader: string | null
+  toleranceSec: number | null
+  eventFilters: unknown
+}
+
 export interface CreateEndpointPayload {
   projectId: string
   name: string
@@ -37,11 +47,23 @@ export interface CreateEndpointPayload {
   destinationUrl: string
 }
 
+export interface UpdateEndpointPayload {
+  projectId: string
+  endpointId: string
+  name?: string
+  destinationUrl?: string
+  verificationMode?: string
+  signingSecret?: string
+  status?: "ACTIVE" | "PAUSED"
+}
+
 export const endpointsQueryKeys = {
   all: ["endpoints"] as const,
   byProject: (projectId: string) => ["endpoints", projectId] as const,
   list: (projectId: string, input: Required<EndpointsQueryInput>) =>
     ["endpoints", projectId, input] as const,
+  detail: (projectId: string, endpointId: string) =>
+    ["endpoints", projectId, endpointId] as const,
 }
 
 export function useEndpointsQuery(projectId: string | null, input?: EndpointsQueryInput) {
@@ -78,6 +100,22 @@ export function useEndpointsQuery(projectId: string | null, input?: EndpointsQue
   })
 }
 
+export function useEndpointDetailQuery(
+  projectId: string | null,
+  endpointId: string | null
+) {
+  return useQuery({
+    queryKey: endpointsQueryKeys.detail(projectId ?? "", endpointId ?? ""),
+    enabled: Boolean(projectId && endpointId),
+    queryFn: async () => {
+      const response = await http.get<ApiResponse<EndpointDetailRecord>>(
+        `/api/projects/${projectId}/endpoints/${endpointId}`
+      )
+      return unwrapResponse(response.data)
+    },
+  })
+}
+
 export function useCreateEndpointMutation() {
   const queryClient = useQueryClient()
 
@@ -93,6 +131,89 @@ export function useCreateEndpointMutation() {
     },
     onSuccess: async (_, variables) => {
       await queryClient.invalidateQueries({ queryKey: endpointsQueryKeys.byProject(variables.projectId) })
+      await queryClient.invalidateQueries({ queryKey: endpointsQueryKeys.all })
+    },
+  })
+}
+
+export function useToggleEndpointStatusMutation() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async ({
+      projectId,
+      endpointId,
+      status,
+    }: {
+      projectId: string
+      endpointId: string
+      status: "ACTIVE" | "PAUSED"
+    }) => {
+      const response = await http.patch<ApiResponse<EndpointRecord>>(
+        `/api/projects/${projectId}/endpoints/${endpointId}/status`,
+        { status }
+      )
+      const { message } = response.data
+      const endpoint = unwrapResponse(response.data)
+      return { endpoint, message }
+    },
+    onSuccess: async (_, variables) => {
+      await queryClient.invalidateQueries({
+        queryKey: endpointsQueryKeys.byProject(variables.projectId),
+      })
+      await queryClient.invalidateQueries({
+        queryKey: endpointsQueryKeys.detail(variables.projectId, variables.endpointId),
+      })
+    },
+  })
+}
+
+export function useUpdateEndpointMutation() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async ({ projectId, endpointId, ...payload }: UpdateEndpointPayload) => {
+      const response = await http.put<ApiResponse<EndpointRecord>>(
+        `/api/projects/${projectId}/endpoints/${endpointId}`,
+        payload
+      )
+      const { message } = response.data
+      const endpoint = unwrapResponse(response.data)
+      return { endpoint, message }
+    },
+    onSuccess: async (_, variables) => {
+      await queryClient.invalidateQueries({
+        queryKey: endpointsQueryKeys.byProject(variables.projectId),
+      })
+      await queryClient.invalidateQueries({
+        queryKey: endpointsQueryKeys.detail(variables.projectId, variables.endpointId),
+      })
+    },
+  })
+}
+
+export function useDeleteEndpointMutation() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async ({
+      projectId,
+      endpointId,
+    }: {
+      projectId: string
+      endpointId: string
+    }) => {
+      const response = await http.delete<ApiResponse<null>>(
+        `/api/projects/${projectId}/endpoints/${endpointId}`
+      )
+      const { success, message } = response.data
+      if (!success) throw new Error(message || "Delete failed")
+      return { message }
+    },
+    onSuccess: async (_, variables) => {
+      await queryClient.invalidateQueries({
+        queryKey: endpointsQueryKeys.byProject(variables.projectId),
+      })
       await queryClient.invalidateQueries({ queryKey: endpointsQueryKeys.all })
     },
   })
