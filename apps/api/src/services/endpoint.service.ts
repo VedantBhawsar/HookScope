@@ -91,32 +91,48 @@ export class EndpointService {
   }
 
   async getVolume(id: string, projectId: string, hours: number): Promise<EndpointVolumeDto | null> {
-    const rows = await this.repository.findVolumeByEndpointId(id, projectId, hours)
-    if (!rows) return null
+    const result = await this.repository.findVolumeByEndpointId(id, projectId, hours)
+    if (!result) return null
 
-    // Index raw rows by hour+status for fast lookup
-    const byHour = new Map<string, { delivered: number; failed: number; other: number }>()
+    const { rows, granularity } = result
+
+    // Index raw rows by bucket+status for fast lookup
+    const byBucket = new Map<string, { delivered: number; failed: number; other: number }>()
     for (const row of rows) {
-      const key = new Date(row.hour).toISOString()
-      const bucket = byHour.get(key) ?? { delivered: 0, failed: 0, other: 0 }
-      if (row.status === "DELIVERED") bucket.delivered += row.count
-      else if (row.status === "FAILED" || row.status === "DEAD_LETTER") bucket.failed += row.count
-      else bucket.other += row.count
-      byHour.set(key, bucket)
+      const key = new Date(row.bucket).toISOString()
+      const entry = byBucket.get(key) ?? { delivered: 0, failed: 0, other: 0 }
+      if (row.status === "DELIVERED") entry.delivered += row.count
+      else if (row.status === "FAILED" || row.status === "DEAD_LETTER") entry.failed += row.count
+      else entry.other += row.count
+      byBucket.set(key, entry)
     }
 
-    // Build evenly-spaced hour buckets so the chart always shows the full window
+    // Build evenly-spaced buckets so the chart always covers the full window
     const now = new Date()
-    now.setMinutes(0, 0, 0)
     const data: VolumeDataPoint[] = []
-    for (let i = hours - 1; i >= 0; i--) {
-      const d = new Date(now)
-      d.setHours(d.getHours() - i)
-      const key = d.toISOString()
-      const bucket = byHour.get(key) ?? { delivered: 0, failed: 0, other: 0 }
-      data.push({ hour: key, ...bucket })
+
+    if (granularity === 'hour') {
+      now.setUTCMinutes(0, 0, 0)
+      for (let i = hours - 1; i >= 0; i--) {
+        const d = new Date(now)
+        d.setUTCHours(d.getUTCHours() - i)
+        const key = d.toISOString()
+        const bucket = byBucket.get(key) ?? { delivered: 0, failed: 0, other: 0 }
+        data.push({ hour: key, ...bucket })
+      }
+    } else {
+      // day granularity — one bucket per calendar day
+      now.setUTCHours(0, 0, 0, 0)
+      const days = Math.ceil(hours / 24)
+      for (let i = days - 1; i >= 0; i--) {
+        const d = new Date(now)
+        d.setUTCDate(d.getUTCDate() - i)
+        const key = d.toISOString()
+        const bucket = byBucket.get(key) ?? { delivered: 0, failed: 0, other: 0 }
+        data.push({ hour: key, ...bucket })
+      }
     }
 
-    return { data, windowHours: hours }
+    return { data, windowHours: hours, granularity }
   }
 }

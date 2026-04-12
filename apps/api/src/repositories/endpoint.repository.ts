@@ -166,13 +166,15 @@ export class EndpointRepository {
     })
     if (!endpoint) return null
 
+    const granularity: 'hour' | 'day' = hours > 72 ? 'day' : 'hour'
+
     const rows = await prisma.$queryRaw<
-      { hour: Date; status: string; count: number }[]
+      { bucket: Date; status: string; count: number }[]
     >(Prisma.sql`
       SELECT
-        date_trunc('hour', "created_at") AS hour,
+        date_trunc(${granularity}, "created_at") AS bucket,
         "status",
-        COUNT(*)::int                    AS count
+        COUNT(*)::int                            AS count
       FROM "webhook_events"
       WHERE
         "endpoint_id" = ${id}
@@ -182,6 +184,6 @@ export class EndpointRepository {
       ORDER BY 1 ASC
     `)
 
-    return rows
+    return { rows, granularity }
   }
 }

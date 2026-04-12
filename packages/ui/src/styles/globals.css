@@ -82,12 +82,12 @@
     --input:                oklch(0.833 0.022 78.2);
     --ring:                 oklch(0.543 0.107 72.4);
 
-    /* chart */
-    --chart-1:              oklch(0.543 0.107 72.4);
-    --chart-2:              oklch(0.670 0.083 73.5);
-    --chart-3:              oklch(0.497 0.018 60.4);
-    --chart-4:              oklch(0.668 0.055 68.9);
-    --chart-5:              oklch(0.833 0.022 78.2);
+    /* chart — higher-contrast categorical palette */
+    --chart-1:              oklch(0.660 0.160 78);
+    --chart-2:              oklch(0.620 0.185 42);
+    --chart-3:              oklch(0.590 0.125 238);
+    --chart-4:              oklch(0.650 0.140 154);
+    --chart-5:              oklch(0.590 0.145 322);
 
     --radius: 0.25rem;
 
@@ -134,12 +134,12 @@
     --input:                oklch(0.341 0 0);
     --ring:                 oklch(0.670 0.083 73.5);
 
-    /* chart */
-    --chart-1:              oklch(0.812 0.098 84.3);
-    --chart-2:              oklch(0.670 0.083 73.5);
-    --chart-3:              oklch(0.497 0.009 68.9);
-    --chart-4:              oklch(0.310 0.016 68.9);
-    --chart-5:              oklch(0.341 0 0);
+    /* chart — bright enough for dark surfaces */
+    --chart-1:              oklch(0.800 0.150 84);
+    --chart-2:              oklch(0.750 0.185 42);
+    --chart-3:              oklch(0.760 0.130 238);
+    --chart-4:              oklch(0.780 0.145 154);
+    --chart-5:              oklch(0.760 0.150 322);
 
     /* sidebar — inherit from dark surface tokens */
     --sidebar:                      oklch(0.239 0 0);

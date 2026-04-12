@@ -83,7 +83,7 @@ export interface EndpointStatsDto {
 }
 
 export interface VolumeDataPoint {
-  /** ISO-8601 string for the start of the hour bucket */
+  /** ISO-8601 string for the start of the hour or day bucket */
   hour: string
   delivered: number
   failed: number
@@ -93,4 +93,6 @@ export interface VolumeDataPoint {
 export interface EndpointVolumeDto {
   data: VolumeDataPoint[]
   windowHours: number
+  /** 'hour' when windowHours ≤ 72, 'day' when > 72 */
+  granularity: 'hour' | 'day'
 }

@@ -256,6 +256,8 @@ export interface VolumeDataPoint {
 export interface EndpointVolumeResult {
   data: VolumeDataPoint[]
   windowHours: number
+  /** 'hour' when windowHours ≤ 72, 'day' when > 72 */
+  granularity: 'hour' | 'day'
 }
 
 export function useEndpointVolumeQuery(

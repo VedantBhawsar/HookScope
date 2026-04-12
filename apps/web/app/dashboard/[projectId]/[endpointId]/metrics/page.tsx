@@ -2,10 +2,11 @@
 
 import { useParams } from "next/navigation"
 import * as React from "react"
-import { BarChart3, LoaderCircle } from "lucide-react"
 import { useDashboardProjectContext } from "@/components/dashboard/dashboard-project-context"
 import { useEndpointDetailQuery } from "@/hooks/use-endpoints"
 import { useWebhookEventsQuery } from "@/hooks/use-webhook-events"
+import { EventVolumeChart } from "@/components/overview/event-volume-chart"
+import { EventStatusChart } from "@/components/overview/event-status-chart"
 
 function StatCard({ label, value }: { label: string; value: React.ReactNode }) {
   return (
@@ -77,16 +78,27 @@ export default function EndpointMetricsPage() {
         </div>
       )}
 
-      <div className="rounded-2xl border border-border bg-card p-6 shadow-sm">
-        <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">
-          Delivery Volume
-        </p>
-        <div className="mt-4 flex flex-col items-center justify-center gap-3 py-16 text-center">
-          <BarChart3 className="size-10 text-muted-foreground/40" />
-          <p className="text-sm font-medium text-muted-foreground">Charts coming soon</p>
-          <p className="max-w-xs text-xs text-muted-foreground/70">
-            Time-series delivery volume charts require an aggregation API endpoint.
+      <div className="grid gap-6 lg:grid-cols-2">
+        <div className="rounded-2xl border border-border bg-card p-6 shadow-sm">
+          <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">
+            Delivery Volume (Last 24h)
           </p>
+          <div className="mt-4">
+            {projectId && endpointId ? (
+              <EventVolumeChart projectId={projectId} endpointId={endpointId} />
+            ) : null}
+          </div>
+        </div>
+
+        <div className="rounded-2xl border border-border bg-card p-6 shadow-sm">
+          <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">
+            Event Status Breakdown
+          </p>
+          <div className="mt-4">
+            {endpointId ? (
+              <EventStatusChart endpointId={endpointId} />
+            ) : null}
+          </div>
         </div>
       </div>
     </section>

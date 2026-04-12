@@ -215,8 +215,8 @@ export class EndpointController {
 
       const hoursRaw = req.query.hours as string | undefined
       const hours = hoursRaw ? Number(hoursRaw) : 24
-      if (!Number.isInteger(hours) || hours < 1 || hours > 168) {
-        return badRequest(res, "'hours' must be an integer between 1 and 168")
+      if (!Number.isInteger(hours) || hours < 1 || hours > 720) {
+        return badRequest(res, "'hours' must be an integer between 1 and 720")
       }
 
       const volume = await this.service.getVolume(req.params.id, projectId, hours)
