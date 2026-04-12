@@ -176,6 +176,30 @@ export function useCompleteOnboardingMutation() {
   })
 }
 
+export interface UpdateProfilePayload {
+  name?: string
+  companyName?: string
+  companySize?: string
+  companyRole?: string
+  useCase?: string
+}
+
+export function useUpdateProfileMutation() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async (payload: UpdateProfilePayload) => {
+      const response = await http.patch<ApiResponse<{ user: RawAuthUser }>>("/api/auth/profile", payload)
+      const { message } = response.data
+      const data = unwrapResponse(response.data)
+      return { user: normalizeAuthUser(data.user), message }
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: authQueryKeys.me })
+    },
+  })
+}
+
 export function useUploadAvatarMutation() {
   const queryClient = useQueryClient()
 

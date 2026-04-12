@@ -17,7 +17,7 @@ import {
 import { Input } from "@workspace/ui/components/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@workspace/ui/components/select"
 import { toast } from "@workspace/ui/components/sonner"
-import { useCompleteOnboardingMutation, type AuthUser } from "@/hooks/use-auth"
+import { useUpdateProfileMutation, type AuthUser } from "@/hooks/use-auth"
 import { getRequestErrorMessage } from "@/lib/http"
 
 const COMPANY_SIZES = ["1-10", "11-50", "51-200", "201-500", "500+"] as const
@@ -37,7 +37,7 @@ interface WorkspaceSectionProps {
 }
 
 export function WorkspaceSection({ user }: WorkspaceSectionProps) {
-  const mutation = useCompleteOnboardingMutation()
+  const mutation = useUpdateProfileMutation()
 
   const form = useForm<WorkspaceFormValues>({
     resolver: zodResolver(workspaceSchema),

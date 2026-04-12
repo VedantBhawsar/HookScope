@@ -13,6 +13,7 @@ import type {
   CompleteOnboardingDto,
   LoginDto,
   RegisterDto,
+  UpdateProfileDto,
 } from "../types/auth"
 
 const REFRESH_TOKEN_TTL_MS = 7 * 24 * 60 * 60 * 1000 // 7 days
@@ -124,6 +125,19 @@ export class AuthService {
       onboardingCompletedAt: undefined,
     })
 
+    const projectCount = await this.repo.getActiveProjectCount(user.id)
+    return this.toAuthUser(user, projectCount)
+  }
+
+  async updateProfile(userId: string, dto: UpdateProfileDto) {
+    const data: Parameters<typeof this.repo.updateUserProfile>[1] = {}
+    if (dto.name !== undefined) data.name = dto.name.trim()
+    if (dto.companyName !== undefined) data.companyName = dto.companyName.trim() || undefined
+    if (dto.companySize !== undefined) data.companySize = dto.companySize.trim() || undefined
+    if (dto.companyRole !== undefined) data.companyRole = dto.companyRole.trim() || undefined
+    if (dto.useCase !== undefined) data.useCase = dto.useCase.trim() || undefined
+
+    const user = await this.repo.updateUserProfile(userId, data)
     const projectCount = await this.repo.getActiveProjectCount(user.id)
     return this.toAuthUser(user, projectCount)
   }

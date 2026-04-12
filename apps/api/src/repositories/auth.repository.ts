@@ -91,4 +91,26 @@ export class AuthRepository {
       data: { avatarUrl },
     })
   }
+
+  updateUserProfile(
+    userId: string,
+    data: {
+      name?: string
+      companyName?: string
+      companySize?: string
+      companyRole?: string
+      useCase?: string
+    }
+  ) {
+    return prisma.user.update({
+      where: { id: userId },
+      data: {
+        ...(data.name !== undefined && { name: data.name }),
+        ...(data.companyName !== undefined && { companyName: data.companyName }),
+        ...(data.companySize !== undefined && { companySize: data.companySize }),
+        ...(data.companyRole !== undefined && { companyRole: data.companyRole }),
+        ...(data.useCase !== undefined && { useCase: data.useCase }),
+      },
+    })
+  }
 }

@@ -65,18 +65,29 @@ export function ProjectsTableCard({
   onProjectUpdated,
 }: ProjectsTableCardProps) {
   const [searchTerm, setSearchTerm] = React.useState("")
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = React.useState("")
   const [page, setPage] = React.useState(1)
   const [editProject, setEditProject] = React.useState<ProjectRecord | null>(null)
   const [deleteTarget, setDeleteTarget] = React.useState<ProjectRecord | null>(null)
   const [endpointDialogProject, setEndpointDialogProject] = React.useState<ProjectRecord | null>(null)
   const deleteProjectMutation = useDeleteProjectMutation()
 
-  // Reset to page 1 whenever the search term changes
   React.useEffect(() => {
-    setPage(1)
+    const timeoutId = window.setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm)
+    }, 300)
+
+    return () => {
+      window.clearTimeout(timeoutId)
+    }
   }, [searchTerm])
 
-  const projectsQuery = useProjectsQuery({ page, limit: PAGE_LIMIT, search: searchTerm })
+  // Reset to page 1 whenever the debounced search term changes
+  React.useEffect(() => {
+    setPage(1)
+  }, [debouncedSearchTerm])
+
+  const projectsQuery = useProjectsQuery({ page, limit: PAGE_LIMIT, search: debouncedSearchTerm })
 
   const projects = projectsQuery.data?.data ?? []
   const pagination = projectsQuery.data?.pagination

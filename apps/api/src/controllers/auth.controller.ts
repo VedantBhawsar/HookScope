@@ -3,7 +3,7 @@ import { badRequest, conflict, created, error, json, noContent, unauthorized } f
 import { REFRESH_TOKEN_COOKIE, clearAuthCookies, setAuthCookies } from "../lib/cookies"
 import type { AuthService } from "../services/auth.service"
 import type { AuthenticatedRequest } from "../middleware/require-auth"
-import type { CompleteOnboardingDto, LoginDto, RegisterDto } from "../types/auth"
+import type { CompleteOnboardingDto, LoginDto, RegisterDto, UpdateProfileDto } from "../types/auth"
 
 export class AuthController {
   constructor(private readonly service: AuthService) {}
@@ -116,6 +116,23 @@ export class AuthController {
     } catch (err) {
       console.error("[AuthController.me]", err)
       error(res, "Failed to fetch session")
+    }
+  }
+
+  updateProfile = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const { userId } = (req as AuthenticatedRequest).user
+      const body = req.body as Partial<UpdateProfileDto>
+
+      if (body.name !== undefined && !body.name.trim()) {
+        return badRequest(res, "name cannot be empty")
+      }
+
+      const user = await this.service.updateProfile(userId, body)
+      json(res, { user }, 200, "Profile updated")
+    } catch (err) {
+      console.error("[AuthController.updateProfile]", err)
+      error(res, "Failed to update profile")
     }
   }
 

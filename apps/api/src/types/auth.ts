@@ -49,3 +49,11 @@ export interface CompleteOnboardingDto {
   companyRole?: string
   useCase?: string
 }
+
+export interface UpdateProfileDto {
+  name?: string
+  companyName?: string
+  companySize?: string
+  companyRole?: string
+  useCase?: string
+}

@@ -2,7 +2,7 @@
 
 import * as React from "react"
 import { useRouter } from "next/navigation"
-import { ChevronDown, LoaderCircle, LogOut, Webhook } from "lucide-react"
+import { ChevronDown, LoaderCircle, LogOut, Settings, Webhook } from "lucide-react"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { useMeQuery, useLogoutMutation } from "@/hooks/use-auth"
 import { Button } from "@workspace/ui/components/button"
@@ -74,6 +74,14 @@ export function ProjectsTopbar() {
                 <span className="text-xs text-muted-foreground">{user.email}</span>
               </div>
             </DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem
+              className="cursor-pointer"
+              onSelect={() => router.push("/settings")}
+            >
+              <Settings className="size-4" />
+              Settings
+            </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem
               className="cursor-pointer text-destructive focus:text-destructive"
