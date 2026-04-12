@@ -17,6 +17,7 @@ export class WebhookController {
       const pageRaw = req.query.page as string | undefined
       const limitRaw = req.query.limit as string | undefined
       const searchRaw = req.query.search as string | undefined
+      const eventTypeRaw = req.query.eventType as string | undefined
       const projectId = req.query.projectId as string | undefined
       const endpointId = req.query.endpointId as string | undefined
       const statusRaw = req.query.status as string | undefined
@@ -42,6 +43,7 @@ export class WebhookController {
         page,
         limit,
         search: searchRaw?.trim() || undefined,
+        eventType: eventTypeRaw?.trim() || undefined,
         projectId,
         endpointId,
         status: statusRaw as EventStatus | undefined,

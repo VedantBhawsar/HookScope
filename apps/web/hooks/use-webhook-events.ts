@@ -87,6 +87,7 @@ export interface WebhookEventsQueryInput {
   page?: number
   limit?: number
   status?: EventStatus | ""
+  eventType?: string
   search?: string
 }
 
@@ -114,6 +115,7 @@ export function useWebhookEventsQuery(input: WebhookEventsQueryInput) {
     page: input.page ?? 1,
     limit: input.limit ?? 20,
     status: input.status || undefined,
+    eventType: input.eventType?.trim() || undefined,
     search: input.search?.trim() || undefined,
   }
 

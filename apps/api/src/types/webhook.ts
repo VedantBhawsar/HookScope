@@ -6,6 +6,7 @@ export interface WebhookEventListQuery {
   page: number
   limit: number
   search?: string
+  eventType?: string
   projectId?: string
   endpointId?: string
   status?: EventStatus

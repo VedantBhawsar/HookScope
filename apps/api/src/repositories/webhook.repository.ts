@@ -10,7 +10,7 @@ export class WebhookRepository {
    * Find all webhook events for a user's projects (paginated + filterable).
    */
   async findAllByUserId(userId: string, query: WebhookEventListQuery) {
-    const { page, limit, search, projectId, endpointId, status, source } = query
+    const { page, limit, search, eventType, projectId, endpointId, status, source } = query
     const skip = (page - 1) * limit
 
     const where = {
@@ -26,6 +26,14 @@ export class WebhookRepository {
       deletedAt: null,
       ...(status ? { status } : {}),
       ...(source ? { source } : {}),
+      ...(eventType
+        ? {
+            eventType: {
+              contains: eventType,
+              mode: "insensitive" as const,
+            },
+          }
+        : {}),
       ...(search
         ? {
             OR: [

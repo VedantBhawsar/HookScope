@@ -57,20 +57,23 @@ interface EventsTableProps {
 export function EventsTable({ endpointId }: EventsTableProps) {
   const [page, setPage] = React.useState(1)
   const [search, setSearch] = React.useState("")
+  const [eventType, setEventType] = React.useState("")
   const [status, setStatus] = React.useState<EventStatus | "">("")
   const [selectedEventId, setSelectedEventId] = React.useState<string | null>(null)
 
   const debouncedSearch = useDebounced(search, 300)
+  const debouncedEventType = useDebounced(eventType, 300)
 
   // Reset to page 1 whenever filters change
   React.useEffect(() => {
     setPage(1)
-  }, [debouncedSearch, status])
+  }, [debouncedEventType, debouncedSearch, status])
 
   const queryInput: WebhookEventsQueryInput = {
     endpointId,
     page,
     limit: 20,
+    eventType: debouncedEventType || undefined,
     search: debouncedSearch || undefined,
     status: status || undefined,
   }
@@ -78,6 +81,14 @@ export function EventsTable({ endpointId }: EventsTableProps) {
   const query = useWebhookEventsQuery(queryInput)
   const events = query.data?.data ?? []
   const pagination = query.data?.pagination
+  const hasActiveFilters = Boolean(search || eventType || status)
+
+  const clearFilters = React.useCallback(() => {
+    setSearch("")
+    setEventType("")
+    setStatus("")
+    setPage(1)
+  }, [])
 
   return (
     <>
@@ -88,6 +99,12 @@ export function EventsTable({ endpointId }: EventsTableProps) {
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           className="h-8 w-64 text-sm"
+        />
+        <Input
+          placeholder="Filter by event type…"
+          value={eventType}
+          onChange={(e) => setEventType(e.target.value)}
+          className="h-8 w-56 text-sm"
         />
         <Select
           value={status}
@@ -105,6 +122,16 @@ export function EventsTable({ endpointId }: EventsTableProps) {
             ))}
           </SelectContent>
         </Select>
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          className="h-8 px-3 text-xs"
+          onClick={clearFilters}
+          disabled={!hasActiveFilters}
+        >
+          Clear filters
+        </Button>
         {query.isFetching && !query.isLoading && (
           <LoaderCircle className="size-4 animate-spin text-muted-foreground" />
         )}
@@ -136,7 +163,7 @@ export function EventsTable({ endpointId }: EventsTableProps) {
                   <div className="flex flex-col items-center gap-2">
                     <Webhook className="size-8 text-muted-foreground/40" />
                     <p className="text-sm text-muted-foreground">No events found</p>
-                    {(search || status) && (
+                    {hasActiveFilters && (
                       <p className="text-xs text-muted-foreground/70">
                         Try clearing your filters
                       </p>

@@ -28,7 +28,7 @@ export default function EndpointEventsPage() {
           {endpoint?.name ?? "Event Stream"}
         </h1>
         <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
-          Inspect incoming webhook events. Filter by status or search by event ID and type.
+          Inspect incoming webhook events. Search by event ID and narrow the table with backend filters for status and event type.
         </p>
       </header>
 
