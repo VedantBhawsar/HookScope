@@ -2,6 +2,7 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { http, unwrapResponse, type ApiResponse } from "@/lib/http"
+import type { DeliveryStatus, SourceProvider } from "@workspace/db"
 
 export type EndpointSource = "STRIPE" | "GITHUB" | "SHOPIFY" | "SLACK" | "TWILIO" | "GENERIC"
 export type EndpointVerificationMode = "NONE" | "OPTIONAL" | "STRICT"
@@ -327,5 +328,68 @@ export function useEndpointDeliveryStatsQuery(
       )
       return unwrapResponse(response.data)
     },
+  })
+}
+
+// ─── Endpoint Deliveries List ────────────────────────────────────────────────
+
+export interface EndpointDeliveryRecord {
+  id: string
+  webhookEventId: string
+  destinationUrl: string
+  status: DeliveryStatus
+  responseCode: number | null
+  latencyMs: number | null
+  retryCount: number
+  isReplay: boolean
+  errorCode: string | null
+  nextRetryAt: string | null
+  createdAt: string
+  event: {
+    eventId: string
+    eventType: string | null
+    source: SourceProvider
+  }
+}
+
+export interface EndpointDeliveriesResult {
+  data: EndpointDeliveryRecord[]
+  pagination: {
+    page: number
+    limit: number
+    total: number
+    totalPages: number
+  }
+}
+
+export interface EndpointDeliveriesQueryInput {
+  page?: number
+  limit?: number
+  status?: DeliveryStatus | ""
+}
+
+export function useEndpointDeliveriesQuery(
+  projectId: string | null,
+  endpointId: string | null,
+  input: EndpointDeliveriesQueryInput = {}
+) {
+  const params = {
+    page: input.page ?? 1,
+    limit: input.limit ?? 20,
+    status: input.status || undefined,
+  }
+
+  return useQuery({
+    queryKey: ["endpoints", projectId ?? "", endpointId ?? "", "deliveries", params],
+    enabled: Boolean(projectId && endpointId),
+    queryFn: async () => {
+      const response = await http.get<ApiResponse<EndpointDeliveriesResult>>(
+        `/api/projects/${projectId}/endpoints/${endpointId}/deliveries`,
+        { params }
+      )
+      return unwrapResponse(response.data)
+    },
+    staleTime: 30_000,
+    placeholderData: (prev) => prev,
   })
 }

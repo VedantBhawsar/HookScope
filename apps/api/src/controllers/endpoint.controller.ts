@@ -255,4 +255,40 @@ export class EndpointController {
       error(res, "Failed to fetch delivery stats")
     }
   }
+
+  getDeliveries = async (req: Request<{ projectId: string; id: string }>, res: Response): Promise<void> => {
+    try {
+      const projectId = await this.ensureOwnership(req, res)
+      if (!projectId) return
+
+      const pageRaw = req.query.page as string | undefined
+      const limitRaw = req.query.limit as string | undefined
+      const statusRaw = req.query.status as string | undefined
+
+      const page = pageRaw ? Number(pageRaw) : 1
+      const limit = limitRaw ? Number(limitRaw) : 20
+      if (!Number.isInteger(page) || page < 1) {
+        return badRequest(res, "'page' must be a positive integer")
+      }
+      if (!Number.isInteger(limit) || limit < 1 || limit > 100) {
+        return badRequest(res, "'limit' must be an integer between 1 and 100")
+      }
+
+      const VALID_DELIVERY_STATUSES = new Set(["PENDING", "SUCCESS", "FAILED", "RETRYING"])
+      if (statusRaw && !VALID_DELIVERY_STATUSES.has(statusRaw)) {
+        return badRequest(res, `'status' must be one of: ${[...VALID_DELIVERY_STATUSES].join(", ")}`)
+      }
+
+      const result = await this.service.getDeliveries(req.params.id, projectId, {
+        page,
+        limit,
+        status: statusRaw as import("@workspace/db").DeliveryStatus | undefined,
+      })
+      if (!result) return notFound(res, `Endpoint '${req.params.id}' not found`)
+      json(res, result)
+    } catch (err) {
+      console.error("[EndpointController.getDeliveries]", err)
+      error(res, "Failed to fetch deliveries")
+    }
+  }
 }

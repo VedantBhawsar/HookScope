@@ -1,6 +1,6 @@
 import { prisma } from "@workspace/db/client"
 import { Prisma } from "@workspace/db"
-import type { CreateEndpointDto, EndpointListQuery, UpdateEndpointDto } from "../types/endpoint"
+import type { CreateEndpointDto, EndpointDeliveryListQuery, EndpointListQuery, UpdateEndpointDto } from "../types/endpoint"
 
 const ENDPOINT_SELECT = {
   id: true,
@@ -238,5 +238,58 @@ export class EndpointRepository {
       ])
 
     return { latency, statusGroups, errorGroups, totalDeliveries, eventTypeGroups }
+  }
+
+  /**
+   * Paginated delivery attempts across all events for an endpoint.
+   * Joins through webhook_events → endpoint → project to enforce ownership.
+   */
+  async findDeliveriesByEndpointId(id: string, projectId: string, query: EndpointDeliveryListQuery) {
+    const { page, limit, status } = query
+    const skip = (page - 1) * limit
+
+    // Verify endpoint ownership first
+    const endpoint = await prisma.endpoint.findFirst({
+      where: { id, projectId, deletedAt: null },
+      select: { id: true },
+    })
+    if (!endpoint) return null
+
+    const where = {
+      webhookEvent: { endpointId: id, deletedAt: null },
+      ...(status ? { status } : {}),
+    }
+
+    const [total, data] = await prisma.$transaction([
+      prisma.delivery.count({ where }),
+      prisma.delivery.findMany({
+        where,
+        skip,
+        take: limit,
+        orderBy: { createdAt: "desc" },
+        select: {
+          id: true,
+          webhookEventId: true,
+          destinationUrl: true,
+          status: true,
+          responseCode: true,
+          latencyMs: true,
+          retryCount: true,
+          isReplay: true,
+          errorCode: true,
+          nextRetryAt: true,
+          createdAt: true,
+          webhookEvent: {
+            select: {
+              eventId: true,
+              eventType: true,
+              source: true,
+            },
+          },
+        },
+      }),
+    ])
+
+    return { total, data }
   }
 }

@@ -8,6 +8,8 @@ import { Button } from "@workspace/ui/components/button"
 import { Separator } from "@workspace/ui/components/separator"
 import { useDashboardProjectContext } from "@/components/dashboard/dashboard-project-context"
 import { EndpointStatsCards } from "@/components/overview/endpoint-stats-cards"
+import { DeliveryMetricsCards } from "@/components/overview/delivery-metrics-cards"
+import { DeliveryInsightsCharts } from "@/components/overview/delivery-insights-charts"
 import { EventStatusChart } from "@/components/overview/event-status-chart"
 import { EventVolumeChart } from "@/components/overview/event-volume-chart"
 import { LiveEventFeed } from "@/components/overview/live-event-feed"
@@ -110,6 +112,8 @@ export default function ProjectDashboardPage() {
 
       {/* ── Stat Cards ── */}
       <EndpointStatsCards projectId={projectId} endpointId={endpointId} />
+      <DeliveryMetricsCards projectId={projectId} endpointId={endpointId} />
+      <DeliveryInsightsCharts projectId={projectId} endpointId={endpointId} />
 
       {/* ── Charts + Live Feed ── */}
       <div className="grid gap-6 lg:grid-cols-3">

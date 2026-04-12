@@ -1,4 +1,4 @@
-import type { SourceProvider, VerificationMode } from "@workspace/db"
+import type { SourceProvider, VerificationMode, DeliveryStatus } from "@workspace/db"
 
 // ─── Request DTOs ─────────────────────────────────────────────────────────────
 
@@ -108,4 +108,41 @@ export interface DeliveryStatsDto {
   statusBreakdown: Record<string, number>
   errorCodeBreakdown: Record<string, number>
   eventTypeBreakdown: { eventType: string; count: number }[]
+}
+
+// ─── Delivery List DTOs ───────────────────────────────────────────────────────
+
+export interface EndpointDeliveryListQuery {
+  page: number
+  limit: number
+  status?: DeliveryStatus
+}
+
+export interface EndpointDeliveryDto {
+  id: string
+  webhookEventId: string
+  destinationUrl: string
+  status: DeliveryStatus
+  responseCode: number | null
+  latencyMs: number | null
+  retryCount: number
+  isReplay: boolean
+  errorCode: string | null
+  nextRetryAt: Date | null
+  createdAt: Date
+  event: {
+    eventId: string
+    eventType: string | null
+    source: SourceProvider
+  }
+}
+
+export interface PaginatedEndpointDeliveryList {
+  data: EndpointDeliveryDto[]
+  pagination: {
+    page: number
+    limit: number
+    total: number
+    totalPages: number
+  }
 }

@@ -4,9 +4,11 @@ import type {
   CreateEndpointDto,
   DeliveryStatsDto,
   EndpointCreatedDto,
+  EndpointDeliveryListQuery,
   EndpointListQuery,
   EndpointStatsDto,
   EndpointVolumeDto,
+  PaginatedEndpointDeliveryList,
   PaginatedEndpointList,
   UpdateEndpointDto,
   VolumeDataPoint,
@@ -167,6 +169,41 @@ export class EndpointService {
       statusBreakdown,
       errorCodeBreakdown,
       eventTypeBreakdown,
+    }
+  }
+
+  async getDeliveries(
+    id: string,
+    projectId: string,
+    query: EndpointDeliveryListQuery,
+  ): Promise<PaginatedEndpointDeliveryList | null> {
+    const result = await this.repository.findDeliveriesByEndpointId(id, projectId, query)
+    if (!result) return null
+    return {
+      data: result.data.map((d) => ({
+        id: d.id,
+        webhookEventId: d.webhookEventId,
+        destinationUrl: d.destinationUrl,
+        status: d.status,
+        responseCode: d.responseCode,
+        latencyMs: d.latencyMs,
+        retryCount: d.retryCount,
+        isReplay: d.isReplay,
+        errorCode: d.errorCode,
+        nextRetryAt: d.nextRetryAt,
+        createdAt: d.createdAt,
+        event: {
+          eventId: d.webhookEvent.eventId,
+          eventType: d.webhookEvent.eventType,
+          source: d.webhookEvent.source,
+        },
+      })),
+      pagination: {
+        page: query.page,
+        limit: query.limit,
+        total: result.total,
+        totalPages: Math.max(1, Math.ceil(result.total / query.limit)),
+      },
     }
   }
 }
