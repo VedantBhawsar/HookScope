@@ -43,14 +43,19 @@ function LoginForm() {
         onChange={setEmail}
         placeholder="you@company.com"
       />
-      <PasswordField
-        id="password"
-        label="Password"
-        autoComplete="current-password"
-        value={password}
-        onChange={setPassword}
-        placeholder="Enter your password"
-      />
+      <div className="space-y-1.5">
+        <label htmlFor="password" className="text-sm font-medium text-foreground">
+          Password
+        </label>
+        <PasswordField
+          id="password"
+          autoComplete="current-password"
+          value={password}
+          onChange={(event) => setPassword(event.target.value)}
+          placeholder="Enter your password"
+          required
+        />
+      </div>
       <Button className="w-full" type="submit" disabled={loginMutation.isPending}>
         {loginMutation.isPending ? <LoaderCircle className="size-4 animate-spin" /> : null}
         {loginMutation.isPending ? "Signing in..." : "Sign in"}

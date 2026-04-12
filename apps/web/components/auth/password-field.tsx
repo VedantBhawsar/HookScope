@@ -2,56 +2,33 @@
 
 import * as React from "react"
 import { Eye, EyeOff } from "lucide-react"
+import { Button } from "@workspace/ui/components/button"
+import { Input } from "@workspace/ui/components/input"
+import { cn } from "@workspace/ui/lib/utils"
 
-interface PasswordFieldProps {
-  id: string
-  label: string
-  autoComplete: string
-  value: string
-  onChange: (value: string) => void
-  placeholder: string
-  minLength?: number
-}
+type PasswordFieldProps = Omit<React.ComponentProps<typeof Input>, "type">
 
-function PasswordField({
-  id,
-  label,
-  autoComplete,
-  value,
-  onChange,
-  placeholder,
-  minLength,
-}: PasswordFieldProps) {
-  const [showPassword, setShowPassword] = React.useState(false)
+const PasswordField = React.forwardRef<HTMLInputElement, PasswordFieldProps>(function PasswordField(
+  { className, ...props },
+  ref
+) {
+  const [isVisible, setIsVisible] = React.useState(false)
 
   return (
-    <div className="space-y-1.5">
-      <label htmlFor={id} className="text-sm font-medium text-foreground">
-        {label}
-      </label>
-      <div className="relative">
-        <input
-          id={id}
-          type={showPassword ? "text" : "password"}
-          autoComplete={autoComplete}
-          value={value}
-          placeholder={placeholder}
-          onChange={(event) => onChange(event.target.value)}
-          minLength={minLength}
-          required
-          className="h-11 w-full rounded-md border border-input bg-background px-3 pr-11 text-sm outline-none transition focus:border-ring focus:ring-2 focus:ring-ring/40"
-        />
-        <button
-          type="button"
-          onClick={() => setShowPassword((current) => !current)}
-          className="absolute top-1/2 right-2 inline-flex size-7 -translate-y-1/2 items-center justify-center rounded-md text-muted-foreground transition hover:bg-muted hover:text-foreground"
-          aria-label={showPassword ? "Hide password" : "Show password"}
-        >
-          {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
-        </button>
-      </div>
+    <div className="relative">
+      <Input ref={ref} type={isVisible ? "text" : "password"} className={cn("pr-11", className)} {...props} />
+      <Button
+        type="button"
+        variant="ghost"
+        size="icon-sm"
+        onClick={() => setIsVisible((current) => !current)}
+        className="absolute top-1/2 right-1 -translate-y-1/2 text-muted-foreground"
+        aria-label={isVisible ? "Hide password" : "Show password"}
+      >
+        {isVisible ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+      </Button>
     </div>
   )
-}
+})
 
 export { PasswordField }
