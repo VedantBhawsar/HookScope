@@ -87,3 +87,10 @@ export function getRequestErrorMessage(error: unknown): string {
 
   return "Something went wrong. Please try again."
 }
+
+
+export function getRequestSuccessMessage(data: {
+  message?: string
+}): string {
+  return data.message || "Request completed successfully."
+}

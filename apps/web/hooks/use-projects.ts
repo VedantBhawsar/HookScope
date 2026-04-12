@@ -101,8 +101,11 @@ export function useDeleteProjectMutation() {
 
   return useMutation({
     mutationFn: async (id: string) => {
-      await http.delete(`/api/projects/${id}`)
-      return id
+      const response = await http.delete<ApiResponse<{
+          success: boolean
+          message: string
+      }>>(`/api/projects/${id}`)
+      return unwrapResponse(response.data)
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: projectsQueryKeys.all })

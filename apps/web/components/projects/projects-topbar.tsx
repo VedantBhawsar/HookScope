@@ -1,6 +1,10 @@
+"use client"
+
+import * as React from "react"
+import { useRouter } from "next/navigation"
 import { ChevronDown, LoaderCircle, LogOut, Webhook } from "lucide-react"
 import { ThemeToggle } from "@/components/theme-toggle"
-import type { AuthUser } from "@/hooks/use-auth"
+import { useMeQuery, useLogoutMutation } from "@/hooks/use-auth"
 import { Button } from "@workspace/ui/components/button"
 import {
   DropdownMenu,
@@ -10,12 +14,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@workspace/ui/components/dropdown-menu"
-
-interface ProjectsTopbarProps {
-  user: AuthUser | null
-  isLogoutPending: boolean
-  onLogout: () => void
-}
 
 function UserAvatar({ name }: { name: string }) {
   const initials = name
@@ -32,7 +30,21 @@ function UserAvatar({ name }: { name: string }) {
   )
 }
 
-export function ProjectsTopbar({ user, isLogoutPending, onLogout }: ProjectsTopbarProps) {
+export function ProjectsTopbar() {
+  const router = useRouter()
+  const meQuery = useMeQuery()
+  const logoutMutation = useLogoutMutation()
+  const user = meQuery.data?.user ?? null
+
+  const handleLogout = async () => {
+    try {
+      await logoutMutation.mutateAsync()
+      router.replace("/auth/login")
+    } catch {
+      router.replace("/auth/login")
+    }
+  }
+
   return (
     <header className="sticky top-0 z-40 flex h-14 items-center gap-4 border-b border-border bg-background/95 px-4 backdrop-blur-sm sm:px-6">
       <div className="flex items-center gap-2.5">
@@ -65,10 +77,10 @@ export function ProjectsTopbar({ user, isLogoutPending, onLogout }: ProjectsTopb
             <DropdownMenuSeparator />
             <DropdownMenuItem
               className="cursor-pointer text-destructive focus:text-destructive"
-              onSelect={onLogout}
-              disabled={isLogoutPending}
+              onSelect={handleLogout}
+              disabled={logoutMutation.isPending}
             >
-              {isLogoutPending ? (
+              {logoutMutation.isPending ? (
                 <LoaderCircle className="size-4 animate-spin" />
               ) : (
                 <LogOut className="size-4" />
