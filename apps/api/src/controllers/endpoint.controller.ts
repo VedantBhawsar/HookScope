@@ -3,7 +3,7 @@ import { badRequest, created, error, json, noContent, notFound } from "../lib/re
 import type { AuthenticatedRequest } from "../middleware/require-auth"
 import type { EndpointService } from "../services/endpoint.service"
 import type { CreateEndpointDto, UpdateEndpointDto } from "../types/endpoint"
-import { SourceProvider, VerificationMode } from "@workspace/db"
+import { DeliveryErrorCode, SourceProvider, VerificationMode } from "@workspace/db"
 
 const VALID_SOURCES = new Set(Object.values(SourceProvider))
 const VALID_VERIFICATION_MODES = new Set(Object.values(VerificationMode))
@@ -264,6 +264,8 @@ export class EndpointController {
       const pageRaw = req.query.page as string | undefined
       const limitRaw = req.query.limit as string | undefined
       const statusRaw = req.query.status as string | undefined
+      const errorCodeRaw = req.query.errorCode as string | undefined
+      const searchRaw = req.query.search as string | undefined
 
       const page = pageRaw ? Number(pageRaw) : 1
       const limit = limitRaw ? Number(limitRaw) : 20
@@ -279,10 +281,17 @@ export class EndpointController {
         return badRequest(res, `'status' must be one of: ${[...VALID_DELIVERY_STATUSES].join(", ")}`)
       }
 
+      const VALID_ERROR_CODES = new Set(Object.values(DeliveryErrorCode))
+      if (errorCodeRaw && !VALID_ERROR_CODES.has(errorCodeRaw as DeliveryErrorCode)) {
+        return badRequest(res, `'errorCode' must be one of: ${[...VALID_ERROR_CODES].join(", ")}`)
+      }
+
       const result = await this.service.getDeliveries(req.params.id, projectId, {
         page,
         limit,
         status: statusRaw as import("@workspace/db").DeliveryStatus | undefined,
+        errorCode: errorCodeRaw as DeliveryErrorCode | undefined,
+        search: searchRaw?.trim() || undefined,
       })
       if (!result) return notFound(res, `Endpoint '${req.params.id}' not found`)
       json(res, result)

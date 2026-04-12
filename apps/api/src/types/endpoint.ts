@@ -1,4 +1,4 @@
-import type { SourceProvider, VerificationMode, DeliveryStatus } from "@workspace/db"
+import type { SourceProvider, VerificationMode, DeliveryStatus, DeliveryErrorCode } from "@workspace/db"
 
 // ─── Request DTOs ─────────────────────────────────────────────────────────────
 
@@ -116,6 +116,8 @@ export interface EndpointDeliveryListQuery {
   page: number
   limit: number
   status?: DeliveryStatus
+  errorCode?: DeliveryErrorCode
+  search?: string
 }
 
 export interface EndpointDeliveryDto {
@@ -124,6 +126,7 @@ export interface EndpointDeliveryDto {
   destinationUrl: string
   status: DeliveryStatus
   responseCode: number | null
+  responseBody: string | null
   latencyMs: number | null
   retryCount: number
   isReplay: boolean

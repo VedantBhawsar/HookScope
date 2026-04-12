@@ -256,9 +256,9 @@ model Delivery {
   status         DeliveryStatus @default(PENDING)
   responseCode   Int?           @map("response_code")
 
-  /// Response body moved to object storage — S3 URL stored here.
-  /// Prevents this table from becoming a multi-GB text dump.
-  responseBodyUrl String? @map("response_body_url")
+  /// First 300 chars of the destination's response body, stored directly.
+  /// Replaces the never-implemented responseBodyUrl S3 approach.
+  responseBody String? @map("response_body")
 
   latencyMs  Int?    @map("latency_ms")
   retryCount Int     @default(0) @map("retry_count")

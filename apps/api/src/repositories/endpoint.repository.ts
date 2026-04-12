@@ -245,7 +245,7 @@ export class EndpointRepository {
    * Joins through webhook_events → endpoint → project to enforce ownership.
    */
   async findDeliveriesByEndpointId(id: string, projectId: string, query: EndpointDeliveryListQuery) {
-    const { page, limit, status } = query
+    const { page, limit, status, errorCode, search } = query
     const skip = (page - 1) * limit
 
     // Verify endpoint ownership first
@@ -256,8 +256,20 @@ export class EndpointRepository {
     if (!endpoint) return null
 
     const where = {
-      webhookEvent: { endpointId: id, deletedAt: null },
+      webhookEvent: {
+        endpointId: id,
+        deletedAt: null,
+        ...(search
+          ? {
+              OR: [
+                { eventId: { contains: search, mode: "insensitive" as const } },
+                { eventType: { contains: search, mode: "insensitive" as const } },
+              ],
+            }
+          : {}),
+      },
       ...(status ? { status } : {}),
+      ...(errorCode ? { errorCode } : {}),
     }
 
     const [total, data] = await prisma.$transaction([
@@ -273,6 +285,7 @@ export class EndpointRepository {
           destinationUrl: true,
           status: true,
           responseCode: true,
+          responseBody: true,
           latencyMs: true,
           retryCount: true,
           isReplay: true,

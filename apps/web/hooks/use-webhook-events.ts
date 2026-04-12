@@ -37,7 +37,7 @@ export interface DeliveryRecord {
   destinationUrl: string
   status: DeliveryStatus
   responseCode: number | null
-  responseBodyUrl: string | null
+  responseBody: string | null
   latencyMs: number | null
   retryCount: number
   isReplay: boolean

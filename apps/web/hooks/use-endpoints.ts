@@ -339,6 +339,7 @@ export interface EndpointDeliveryRecord {
   destinationUrl: string
   status: DeliveryStatus
   responseCode: number | null
+  responseBody: string | null
   latencyMs: number | null
   retryCount: number
   isReplay: boolean
@@ -366,6 +367,8 @@ export interface EndpointDeliveriesQueryInput {
   page?: number
   limit?: number
   status?: DeliveryStatus | ""
+  errorCode?: string | ""
+  search?: string
 }
 
 export function useEndpointDeliveriesQuery(
@@ -377,6 +380,8 @@ export function useEndpointDeliveriesQuery(
     page: input.page ?? 1,
     limit: input.limit ?? 20,
     status: input.status || undefined,
+    errorCode: input.errorCode || undefined,
+    search: input.search?.trim() || undefined,
   }
 
   return useQuery({

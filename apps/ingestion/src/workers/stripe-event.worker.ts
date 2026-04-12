@@ -213,6 +213,7 @@ async function forwardAndPersist(
       data: {
         status: isSuccess ? DeliveryStatus.SUCCESS : DeliveryStatus.FAILED,
         responseCode: fetchResponse.status,
+        responseBody: responseText || null,
         latencyMs,
         errorCode: isSuccess
           ? null

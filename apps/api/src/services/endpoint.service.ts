@@ -186,6 +186,7 @@ export class EndpointService {
         destinationUrl: d.destinationUrl,
         status: d.status,
         responseCode: d.responseCode,
+        responseBody: d.responseBody,
         latencyMs: d.latencyMs,
         retryCount: d.retryCount,
         isReplay: d.isReplay,
