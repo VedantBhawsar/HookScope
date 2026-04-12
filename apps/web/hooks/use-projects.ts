@@ -73,7 +73,9 @@ export function useCreateProjectMutation() {
   return useMutation({
     mutationFn: async (payload: CreateProjectPayload) => {
       const response = await http.post<ApiResponse<ProjectRecord>>("/api/projects", payload)
-      return unwrapResponse(response.data)
+      const { message } = response.data
+      const project = unwrapResponse(response.data)
+      return { project, message }
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: projectsQueryKeys.all })

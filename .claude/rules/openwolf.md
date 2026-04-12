@@ -9,6 +9,7 @@ globs: **/*
 - For frontend UI: BEFORE implementation, check `packages/ui/src/components/` for existing shadcn components. If a required component is missing, use the `shadcn` skill to install it into `@workspace/ui` first, then import from there. Never use raw HTML when a shadcn equivalent should exist.
 - For ANY delete functionality: always use `<ConfirmDeleteDialog>` from `@workspace/ui/components/confirm-delete-dialog`. Never implement an inline confirm or browser `window.confirm()`. Pass `entityName`, optional `entityLabel`, `onConfirm`, and `isPending` props.
 - Extract reusable layout sections (for example header/sidebar/table sections) into dedicated components when touching or adding page-level UI.
+- API mutation functions must return `{ ...data, message }` so callers can show the server's `message` in toast notifications. Never hardcode toast strings when the API response already provides one. Always destructure `message` from `response.data` before calling `unwrapResponse`.
 - After writing or editing files, update .wolf/anatomy.md and append to .wolf/memory.md
 - After receiving a user correction, update .wolf/cerebrum.md immediately (Preferences, Learnings, or Do-Not-Repeat)
 - LEARN from every interaction: if you discover a convention, user preference, or project pattern, add it to .wolf/cerebrum.md. Low threshold — when in doubt, log it.

@@ -83,12 +83,12 @@ export function CreateProjectDialog({
     }
 
     try {
-      const project = await createProjectMutation.mutateAsync({
+      const { project, message } = await createProjectMutation.mutateAsync({
         name: parsedValues.data.name,
         description: parsedValues.data.description?.trim() || undefined,
       })
 
-      toast.success("Project created")
+      toast.success(message)
       onCreated(project)
       handleOpenChange(false)
     } catch (error) {

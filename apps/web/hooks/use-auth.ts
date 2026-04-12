@@ -166,8 +166,9 @@ export function useCompleteOnboardingMutation() {
   return useMutation({
     mutationFn: async (payload: CompleteOnboardingPayload) => {
       const response = await http.patch<ApiResponse<{ user: RawAuthUser }>>("/api/auth/onboarding", payload)
+      const { message } = response.data
       const data = unwrapResponse(response.data)
-      return { user: normalizeAuthUser(data.user) }
+      return { user: normalizeAuthUser(data.user), message }
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: authQueryKeys.me })
