@@ -2,8 +2,11 @@
 
 import * as React from "react"
 import { useParams, useRouter } from "next/navigation"
-import { LoaderCircle } from "lucide-react"
+import { LoaderCircle, Plus } from "lucide-react"
+import { Button } from "@workspace/ui/components/button"
 import { useEndpointsQuery } from "@/hooks/use-endpoints"
+import { useProjectsQuery } from "@/hooks/use-projects"
+import { CreateEndpointDialog } from "@/components/endpoints/create-endpoint-dialog"
 import {
   getActiveEndpointForProject,
   setActiveEndpointForProject,
@@ -14,8 +17,15 @@ export default function ProjectDashboardRedirectPage() {
   const routeParams = useParams<{ projectId?: string }>()
   const projectId =
     typeof routeParams.projectId === "string" ? routeParams.projectId : null
-  const endpointsQuery = useEndpointsQuery(projectId)
 
+  const endpointsQuery = useEndpointsQuery(projectId)
+  const projectsQuery = useProjectsQuery()
+
+  const [dialogOpen, setDialogOpen] = React.useState(false)
+  // Tracks whether the dialog closed because an endpoint was created (vs. cancelled).
+  const createdRef = React.useRef(false)
+
+  // Redirect once a valid endpoint is resolved.
   React.useEffect(() => {
     if (!projectId) {
       router.replace("/projects")
@@ -31,8 +41,7 @@ export default function ProjectDashboardRedirectPage() {
     const preferredEndpoint = storedEndpoint
       ? endpoints.find((endpoint) => endpoint.id === storedEndpoint.id) ?? null
       : null
-    const fallbackEndpoint = endpoints[0]
-    const targetEndpoint = preferredEndpoint ?? fallbackEndpoint
+    const targetEndpoint = preferredEndpoint ?? endpoints[0]
 
     if (!targetEndpoint) return
 
@@ -45,6 +54,30 @@ export default function ProjectDashboardRedirectPage() {
       scroll: false,
     })
   }, [endpointsQuery.data?.data, endpointsQuery.isLoading, projectId, router])
+
+  // Auto-open the creation dialog when the project has no endpoints.
+  React.useEffect(() => {
+    if (!endpointsQuery.isLoading && (endpointsQuery.data?.data ?? []).length === 0) {
+      setDialogOpen(true)
+    }
+  }, [endpointsQuery.isLoading, endpointsQuery.data?.data])
+
+  const handleDialogOpenChange = (open: boolean) => {
+    setDialogOpen(open)
+    if (!open) {
+      if (createdRef.current) {
+        // Endpoint was created — the query invalidation will trigger the redirect effect.
+        createdRef.current = false
+      } else {
+        // User cancelled — send them back to the projects page.
+        router.replace("/projects")
+      }
+    }
+  }
+
+  const handleCreated = () => {
+    createdRef.current = true
+  }
 
   if (!projectId || endpointsQuery.isLoading) {
     return (
@@ -70,18 +103,34 @@ export default function ProjectDashboardRedirectPage() {
     )
   }
 
+  const projectName =
+    projectsQuery.data?.data.find((p) => p.id === projectId)?.name
+
   return (
-    <section className="space-y-4 rounded-2xl border border-border bg-card p-6 shadow-sm">
-      <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
-        Endpoint Required
-      </p>
-      <h1 className="font-heading text-2xl font-semibold">No endpoints found for this project</h1>
-      <p className="text-sm text-muted-foreground">
-        Create an endpoint from the sidebar to open a scoped dashboard URL.
-      </p>
-      {endpointsQuery.error ? (
-        <p className="text-sm text-destructive">Unable to load endpoints right now.</p>
-      ) : null}
-    </section>
+    <>
+      <section className="flex min-h-[50vh] flex-col items-center justify-center gap-4 text-center">
+        <div className="space-y-2">
+          <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
+            Endpoint Required
+          </p>
+          <h1 className="text-2xl font-semibold">No endpoints yet</h1>
+          <p className="max-w-sm text-sm text-muted-foreground">
+            Create your first endpoint to start receiving webhooks on this project.
+          </p>
+        </div>
+        <Button onClick={() => setDialogOpen(true)}>
+          <Plus className="size-4" />
+          Create Endpoint
+        </Button>
+      </section>
+
+      <CreateEndpointDialog
+        open={dialogOpen}
+        onOpenChange={handleDialogOpenChange}
+        projectId={projectId}
+        projectName={projectName}
+        onCreated={handleCreated}
+      />
+    </>
   )
 }

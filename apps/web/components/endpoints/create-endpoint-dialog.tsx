@@ -41,6 +41,8 @@ interface CreateEndpointDialogProps {
   onOpenChange: (open: boolean) => void
   projectId: string | null
   projectName?: string
+  /** Called after a successful endpoint creation, before the dialog closes. */
+  onCreated?: () => void
 }
 
 export function CreateEndpointDialog({
@@ -48,6 +50,7 @@ export function CreateEndpointDialog({
   onOpenChange,
   projectId,
   projectName,
+  onCreated,
 }: CreateEndpointDialogProps) {
   const createEndpointMutation = useCreateEndpointMutation()
 
@@ -89,6 +92,7 @@ export function CreateEndpointDialog({
       })
 
       toast.success("Endpoint created")
+      onCreated?.()
       onOpenChange(false)
     } catch (error) {
       toast.error(getRequestErrorMessage(error))
