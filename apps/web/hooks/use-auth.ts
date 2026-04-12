@@ -151,7 +151,8 @@ export function useLogoutMutation() {
   return useMutation({
     mutationFn: async () => {
       const response = await http.post<ApiResponse<null>>("/api/auth/logout")
-      return response.data.data
+      const { message } = response.data
+      return { message }
     },
     onSuccess: async () => {
       queryClient.setQueryData(authQueryKeys.me, null)
@@ -210,10 +211,9 @@ export function useUploadAvatarMutation() {
       const response = await http.post<ApiResponse<{ avatarUrl: string }>>("/api/auth/avatar", formData, {
         headers: { "Content-Type": "multipart/form-data" },
       })
-      if (!response.data.success || !response.data.data) {
-        throw new Error(response.data.message ?? "Avatar upload failed")
-      }
-      return response.data.data
+      const { message } = response.data
+      const data = unwrapResponse(response.data)
+      return { ...data, message }
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: authQueryKeys.me })

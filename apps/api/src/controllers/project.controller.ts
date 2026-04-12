@@ -54,7 +54,7 @@ export class ProjectController {
       const body = req.body as CreateProjectDto
       if (!body.name?.trim()) return badRequest(res, "'name' is required")
       const project = await this.service.create(userId, body)
-      created(res, project)
+      created(res, project, "Project created")
     } catch (err) {
       console.error("[ProjectController.create]", err)
       error(res, "Failed to create project")
@@ -67,7 +67,7 @@ export class ProjectController {
       const body = req.body as UpdateProjectDto
       const project = await this.service.update(req.params.id, userId, body)
       if (!project) return notFound(res, `Project '${req.params.id}' not found`)
-      json(res, project)
+      json(res, project, 200, "Project updated")
     } catch (err) {
       console.error("[ProjectController.update]", err)
       error(res, "Failed to update project")
@@ -79,7 +79,7 @@ export class ProjectController {
       const { userId } = (req as unknown as AuthenticatedRequest).user
       const deleted = await this.service.softDelete(req.params.id, userId)
       if (!deleted) return notFound(res, `Project '${req.params.id}' not found`)
-      noContent(res)
+      noContent(res, "Project deleted")
     } catch (err) {
       console.error("[ProjectController.delete]", err)
       error(res, "Failed to delete project")

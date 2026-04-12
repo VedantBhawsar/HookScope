@@ -87,8 +87,9 @@ export function useCreateEndpointMutation() {
         `/api/projects/${projectId}/endpoints`,
         payload
       )
-
-      return unwrapResponse(response.data)
+      const { message } = response.data
+      const endpoint = unwrapResponse(response.data)
+      return { endpoint, message }
     },
     onSuccess: async (_, variables) => {
       await queryClient.invalidateQueries({ queryKey: endpointsQueryKeys.byProject(variables.projectId) })

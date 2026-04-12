@@ -117,7 +117,7 @@ export class EndpointController {
       }
 
       const endpoint = await this.service.create(projectId, body)
-      created(res, endpoint)
+      created(res, endpoint, "Endpoint created")
     } catch (err) {
       console.error("[EndpointController.create]", err)
       error(res, "Failed to create endpoint")
@@ -154,7 +154,7 @@ export class EndpointController {
 
       const endpoint = await this.service.update(req.params.id, projectId, body)
       if (!endpoint) return notFound(res, `Endpoint '${req.params.id}' not found`)
-      json(res, endpoint)
+      json(res, endpoint, 200, "Endpoint updated")
     } catch (err) {
       console.error("[EndpointController.update]", err)
       error(res, "Failed to update endpoint")
@@ -173,7 +173,7 @@ export class EndpointController {
 
       const endpoint = await this.service.toggleStatus(req.params.id, projectId, status as string)
       if (!endpoint) return notFound(res, `Endpoint '${req.params.id}' not found`)
-      json(res, endpoint)
+      json(res, endpoint, 200, "Endpoint status updated")
     } catch (err) {
       console.error("[EndpointController.updateStatus]", err)
       error(res, "Failed to update endpoint status")
@@ -187,7 +187,7 @@ export class EndpointController {
 
       const deleted = await this.service.softDelete(req.params.id, projectId)
       if (!deleted) return notFound(res, `Endpoint '${req.params.id}' not found`)
-      noContent(res)
+      noContent(res, "Endpoint deleted")
     } catch (err) {
       console.error("[EndpointController.delete]", err)
       error(res, "Failed to delete endpoint")

@@ -87,8 +87,8 @@ export function AvatarUploadDialog({ open, onOpenChange, currentAvatarUrl, userN
   async function handleUpload() {
     if (!selectedFile) return
     try {
-      await uploadMutation.mutateAsync(selectedFile)
-      toast.success("Profile photo updated")
+      const result = await uploadMutation.mutateAsync(selectedFile)
+      toast.success(result.message)
       handleClose()
     } catch (error) {
       toast.error(getRequestErrorMessage(error))

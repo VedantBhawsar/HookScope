@@ -20,7 +20,7 @@ export class AuthController {
 
       const result = await this.service.register(body as RegisterDto)
       setAuthCookies(res, result.tokens.accessToken, result.refreshToken)
-      created(res, { user: result.user, tokens: result.tokens })
+      created(res, { user: result.user, tokens: result.tokens }, "Account created successfully")
     } catch (err) {
       if (err instanceof Error && err.message === "EMAIL_TAKEN") {
         return conflict(res, "Email is already registered")
@@ -39,7 +39,7 @@ export class AuthController {
 
       const result = await this.service.login(body as LoginDto)
       setAuthCookies(res, result.tokens.accessToken, result.refreshToken)
-      json(res, { user: result.user, tokens: result.tokens })
+      json(res, { user: result.user, tokens: result.tokens }, 200, "Logged in successfully")
     } catch (err) {
       if (err instanceof Error && err.message === "INVALID_CREDENTIALS") {
         return unauthorized(res, "Invalid email or password")
@@ -70,7 +70,7 @@ export class AuthController {
       const rawRefreshToken = req.cookies[REFRESH_TOKEN_COOKIE] as string | undefined
       if (rawRefreshToken) await this.service.logout(rawRefreshToken)
       clearAuthCookies(res)
-      noContent(res)
+      noContent(res, "Logged out successfully")
     } catch (err) {
       console.error("[AuthController.logout]", err)
       error(res, "Logout failed")

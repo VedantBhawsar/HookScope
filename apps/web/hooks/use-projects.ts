@@ -90,7 +90,9 @@ export function useUpdateProjectMutation() {
   return useMutation({
     mutationFn: async ({ id, ...payload }: UpdateProjectPayload) => {
       const response = await http.put<ApiResponse<ProjectRecord>>(`/api/projects/${id}`, payload)
-      return unwrapResponse(response.data)
+      const { message } = response.data
+      const project = unwrapResponse(response.data)
+      return { project, message }
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: projectsQueryKeys.all })
@@ -103,11 +105,10 @@ export function useDeleteProjectMutation() {
 
   return useMutation({
     mutationFn: async (id: string) => {
-      const response = await http.delete<ApiResponse<{
-          success: boolean
-          message: string
-      }>>(`/api/projects/${id}`)
-      return unwrapResponse(response.data)
+      const response = await http.delete<ApiResponse<null>>(`/api/projects/${id}`)
+      const { success, message } = response.data
+      if (!success) throw new Error(message || "Delete failed")
+      return { message }
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: projectsQueryKeys.all })

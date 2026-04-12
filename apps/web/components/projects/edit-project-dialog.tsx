@@ -98,13 +98,13 @@ export function EditProjectDialog({
     }
 
     try {
-      const updatedProject = await updateProjectMutation.mutateAsync({
+      const { project: updatedProject, message } = await updateProjectMutation.mutateAsync({
         id: project.id,
         name: parsedValues.data.name,
         description: parsedValues.data.description?.trim() || undefined,
       })
 
-      toast.success("Project updated")
+      toast.success(message)
       onUpdated?.(updatedProject)
       handleOpenChange(false)
     } catch (error) {

@@ -79,7 +79,7 @@ export function CreateEndpointDialog({
     if (!projectId) return
 
     try {
-      const endpoint = await createEndpointMutation.mutateAsync({
+      const { endpoint, message } = await createEndpointMutation.mutateAsync({
         projectId,
         name: name.trim(),
         source,
@@ -91,7 +91,7 @@ export function CreateEndpointDialog({
         name: endpoint.name,
       })
 
-      toast.success("Endpoint created")
+      toast.success(message)
       onCreated?.()
       onOpenChange(false)
     } catch (error) {
