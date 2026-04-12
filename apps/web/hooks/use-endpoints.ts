@@ -3,15 +3,25 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { http, unwrapResponse, type ApiResponse } from "@/lib/http"
 
+export type EndpointSource = "STRIPE" | "GITHUB" | "SHOPIFY" | "SLACK" | "TWILIO" | "GENERIC"
+export type EndpointVerificationMode = "NONE" | "OPTIONAL" | "STRICT"
+export type EndpointStatus = "active" | "paused"
+
 export interface EndpointRecord {
   id: string
   projectId: string
   name: string
-  source: string
+  source: EndpointSource
   destinationUrl: string
-  status: string
-  verificationMode: string
+  status: EndpointStatus
+  verificationMode: EndpointVerificationMode
   createdAt: string
+  signingSecret: string | null
+  signatureHeader: string | null
+  signatureType: string | null
+  timestampHeader: string | null
+  toleranceSec: number | null
+  eventFilters: unknown
 }
 
 export interface EndpointListResult {
@@ -32,19 +42,26 @@ export interface EndpointsQueryInput {
 
 export interface EndpointDetailRecord extends EndpointRecord {
   _count: { events: number }
-  signingSecret: string | null
-  signatureHeader: string | null
-  signatureType: string | null
-  timestampHeader: string | null
-  toleranceSec: number | null
-  eventFilters: unknown
+}
+
+export interface EndpointCreatedRecord extends EndpointRecord {
+  token: string
+  webhookUrl: string
 }
 
 export interface CreateEndpointPayload {
   projectId: string
   name: string
-  source: "STRIPE" | "GITHUB" | "SHOPIFY" | "SLACK" | "TWILIO" | "GENERIC"
+  source: EndpointSource
   destinationUrl: string
+  verificationMode?: EndpointVerificationMode
+  signingSecret?: string
+  signatureHeader?: string
+  signatureType?: string
+  timestampHeader?: string
+  toleranceSec?: number
+  eventFilters?: unknown
+  status?: EndpointStatus
 }
 
 export interface UpdateEndpointPayload {
@@ -52,9 +69,14 @@ export interface UpdateEndpointPayload {
   endpointId: string
   name?: string
   destinationUrl?: string
-  verificationMode?: string
+  verificationMode?: EndpointVerificationMode
   signingSecret?: string
-  status?: "ACTIVE" | "PAUSED"
+  signatureHeader?: string
+  signatureType?: string
+  timestampHeader?: string
+  toleranceSec?: number
+  eventFilters?: unknown
+  status?: EndpointStatus
 }
 
 export const endpointsQueryKeys = {
@@ -121,7 +143,7 @@ export function useCreateEndpointMutation() {
 
   return useMutation({
     mutationFn: async ({ projectId, ...payload }: CreateEndpointPayload) => {
-      const response = await http.post<ApiResponse<EndpointRecord>>(
+      const response = await http.post<ApiResponse<EndpointCreatedRecord>>(
         `/api/projects/${projectId}/endpoints`,
         payload
       )
@@ -147,7 +169,7 @@ export function useToggleEndpointStatusMutation() {
     }: {
       projectId: string
       endpointId: string
-      status: "ACTIVE" | "PAUSED"
+      status: EndpointStatus
     }) => {
       const response = await http.patch<ApiResponse<EndpointRecord>>(
         `/api/projects/${projectId}/endpoints/${endpointId}/status`,

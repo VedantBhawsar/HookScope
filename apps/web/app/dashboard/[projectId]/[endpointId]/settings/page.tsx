@@ -3,8 +3,9 @@
 import { useParams } from "next/navigation"
 import * as React from "react"
 import { LoaderCircle } from "lucide-react"
+import { EndpointSettingsForm } from "@/components/endpoints/endpoint-settings-form"
 import { useDashboardProjectContext } from "@/components/dashboard/dashboard-project-context"
-import { useEndpointsQuery } from "@/hooks/use-endpoints"
+import { useEndpointDetailQuery } from "@/hooks/use-endpoints"
 
 export default function EndpointSettingsPage() {
   const routeParams = useParams<{ endpointId?: string }>()
@@ -12,15 +13,11 @@ export default function EndpointSettingsPage() {
     typeof routeParams.endpointId === "string" ? routeParams.endpointId : null
 
   const { selectedProject } = useDashboardProjectContext()
-  const endpointsQuery = useEndpointsQuery(selectedProject?.id ?? null)
-  const endpoints = endpointsQuery.data?.data ?? []
+  const projectId = selectedProject?.id ?? null
+  const endpointQuery = useEndpointDetailQuery(projectId, endpointId)
+  const endpoint = endpointQuery.data ?? null
 
-  const endpoint = React.useMemo(
-    () => endpoints.find((item) => item.id === endpointId) ?? null,
-    [endpointId, endpoints]
-  )
-
-  if (endpointsQuery.isLoading) {
+  if (endpointQuery.isLoading) {
     return (
       <section className="rounded-2xl border border-border bg-card p-6 shadow-sm">
         <div className="inline-flex items-center gap-2 text-sm text-muted-foreground">
@@ -77,6 +74,10 @@ export default function EndpointSettingsPage() {
               <dt className="text-muted-foreground">Created At</dt>
               <dd className="font-medium">{new Date(endpoint.createdAt).toLocaleString()}</dd>
             </div>
+            <div>
+              <dt className="text-muted-foreground">Received Events</dt>
+              <dd className="font-medium">{endpoint._count.events}</dd>
+            </div>
           </dl>
         </article>
 
@@ -88,11 +89,11 @@ export default function EndpointSettingsPage() {
               {endpoint.destinationUrl}
             </p>
           </div>
-          <p className="mt-4 text-xs text-muted-foreground">
-            Editable endpoint controls can be added here next (URL update, verification policy, and rotate secret).
-          </p>
+          <p className="mt-4 text-xs text-muted-foreground">Use the form below to edit and save endpoint configuration.</p>
         </article>
       </div>
+
+      {projectId ? <EndpointSettingsForm projectId={projectId} endpoint={endpoint} /> : null}
     </section>
   )
 }

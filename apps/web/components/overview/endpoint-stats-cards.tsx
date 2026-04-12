@@ -79,7 +79,7 @@ export function EndpointStatsCards({ projectId, endpointId }: EndpointStatsCards
   const failed = stats.statusBreakdown["FAILED"] ?? 0
   const deadLetters = stats.statusBreakdown["DEAD_LETTER"] ?? 0
   const processing = stats.statusBreakdown["PROCESSING"] ?? 0
-  const isActive = endpoint.status === "ACTIVE"
+  const isActive = endpoint.status === "active"
 
   return (
     <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">

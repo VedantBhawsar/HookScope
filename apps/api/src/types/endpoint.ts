@@ -13,6 +13,7 @@ export interface CreateEndpointDto {
   timestampHeader?: string
   toleranceSec?: number
   eventFilters?: unknown
+  status?: string
 }
 
 export interface UpdateEndpointDto {

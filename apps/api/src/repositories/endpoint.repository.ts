@@ -88,6 +88,7 @@ export class EndpointRepository {
         timestampHeader: data.timestampHeader,
         toleranceSec: data.toleranceSec,
         eventFilters: data.eventFilters ?? undefined,
+        status: data.status,
       },
       select: ENDPOINT_SELECT,
     })

@@ -40,6 +40,7 @@ export class EndpointController {
       const searchRaw = req.query.search as string | undefined
       const sourceRaw = req.query.source as string | undefined
       const statusRaw = req.query.status as string | undefined
+      const normalizedStatus = statusRaw?.toLowerCase()
 
       const page = pageRaw ? Number(pageRaw) : 1
       const limit = limitRaw ? Number(limitRaw) : 10
@@ -52,7 +53,7 @@ export class EndpointController {
       if (sourceRaw && !VALID_SOURCES.has(sourceRaw as SourceProvider)) {
         return badRequest(res, `'source' must be one of: ${[...VALID_SOURCES].join(", ")}`)
       }
-      if (statusRaw && !VALID_STATUSES.has(statusRaw)) {
+      if (normalizedStatus && !VALID_STATUSES.has(normalizedStatus)) {
         return badRequest(res, `'status' must be one of: ${[...VALID_STATUSES].join(", ")}`)
       }
 
@@ -61,7 +62,7 @@ export class EndpointController {
         limit,
         search: searchRaw?.trim() || undefined,
         source: sourceRaw as SourceProvider | undefined,
-        status: statusRaw,
+        status: normalizedStatus,
       })
       json(res, result)
     } catch (err) {
@@ -90,6 +91,7 @@ export class EndpointController {
       if (!projectId) return
 
       const body = req.body as CreateEndpointDto
+      const normalizedStatus = body.status?.toLowerCase()
 
       if (!body.name?.trim()) return badRequest(res, "'name' is required")
       if (!body.source) return badRequest(res, "'source' is required")
@@ -116,7 +118,14 @@ export class EndpointController {
         return badRequest(res, "'toleranceSec' must be a non-negative number")
       }
 
-      const endpoint = await this.service.create(projectId, body)
+      if (normalizedStatus && !VALID_STATUSES.has(normalizedStatus)) {
+        return badRequest(res, `'status' must be one of: ${[...VALID_STATUSES].join(", ")}`)
+      }
+
+      const endpoint = await this.service.create(projectId, {
+        ...body,
+        status: normalizedStatus,
+      })
       created(res, endpoint, "Endpoint created")
     } catch (err) {
       console.error("[EndpointController.create]", err)
@@ -130,6 +139,7 @@ export class EndpointController {
       if (!projectId) return
 
       const body = req.body as UpdateEndpointDto
+      const normalizedStatus = body.status?.toLowerCase()
 
       if (body.destinationUrl !== undefined) {
         if (!body.destinationUrl.trim()) return badRequest(res, "'destinationUrl' cannot be empty")
@@ -144,7 +154,7 @@ export class EndpointController {
         return badRequest(res, `'verificationMode' must be one of: ${[...VALID_VERIFICATION_MODES].join(", ")}`)
       }
 
-      if (body.status !== undefined && !VALID_STATUSES.has(body.status)) {
+      if (normalizedStatus !== undefined && !VALID_STATUSES.has(normalizedStatus)) {
         return badRequest(res, `'status' must be one of: ${[...VALID_STATUSES].join(", ")}`)
       }
 
@@ -152,7 +162,10 @@ export class EndpointController {
         return badRequest(res, "'toleranceSec' must be a non-negative number")
       }
 
-      const endpoint = await this.service.update(req.params.id, projectId, body)
+      const endpoint = await this.service.update(req.params.id, projectId, {
+        ...body,
+        status: normalizedStatus,
+      })
       if (!endpoint) return notFound(res, `Endpoint '${req.params.id}' not found`)
       json(res, endpoint, 200, "Endpoint updated")
     } catch (err) {
@@ -167,11 +180,12 @@ export class EndpointController {
       if (!projectId) return
 
       const { status } = req.body as { status?: unknown }
-      if (!status || !VALID_STATUSES.has(status as string)) {
+      const normalizedStatus = typeof status === "string" ? status.toLowerCase() : undefined
+      if (!normalizedStatus || !VALID_STATUSES.has(normalizedStatus)) {
         return badRequest(res, `'status' must be one of: ${[...VALID_STATUSES].join(", ")}`)
       }
 
-      const endpoint = await this.service.toggleStatus(req.params.id, projectId, status as string)
+      const endpoint = await this.service.toggleStatus(req.params.id, projectId, normalizedStatus)
       if (!endpoint) return notFound(res, `Endpoint '${req.params.id}' not found`)
       json(res, endpoint, 200, "Endpoint status updated")
     } catch (err) {

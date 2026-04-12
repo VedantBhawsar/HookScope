@@ -29,7 +29,7 @@ export default function ProjectDashboardPage() {
 
   async function handleToggleStatus() {
     if (!projectId || !endpointId || !endpoint) return
-    const next = endpoint.status === "ACTIVE" ? "PAUSED" : "ACTIVE"
+    const next = endpoint.status === "active" ? "paused" : "active"
     try {
       const { message } = await toggleStatus.mutateAsync({ projectId, endpointId, status: next })
       toast.success(message ?? `Endpoint ${next.toLowerCase()}`)
@@ -65,7 +65,7 @@ export default function ProjectDashboardPage() {
 
   if (!projectId || !endpointId) return null
 
-  const isActive = endpoint?.status === "ACTIVE"
+  const isActive = endpoint?.status === "active"
 
   return (
     <section className="space-y-6">
