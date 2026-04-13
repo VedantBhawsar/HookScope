@@ -1,4 +1,5 @@
 import { ThemeToggle } from "@/components/theme-toggle"
+import { NotificationBell } from "@/components/alerts/notification-bell"
 
 interface DashboardHeaderProps {
   title: string
@@ -15,7 +16,10 @@ export function DashboardHeader({ title, projectsErrorMessage, logoutErrorMessag
           <p className="truncate font-heading text-lg font-semibold">{title}</p>
         </div>
 
-        <ThemeToggle />
+        <div className="flex items-center gap-1">
+          <NotificationBell />
+          <ThemeToggle />
+        </div>
       </div>
       {projectsErrorMessage ? <p className="mx-auto mt-2 w-full text-xs text-destructive">{projectsErrorMessage}</p> : null}
       {logoutErrorMessage ? <p className="mx-auto mt-2 w-full text-xs text-destructive">{logoutErrorMessage}</p> : null}

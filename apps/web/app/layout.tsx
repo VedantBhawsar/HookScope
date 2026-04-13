@@ -1,3 +1,4 @@
+import type { Metadata } from "next"
 import { Geist_Mono, Inter, Space_Grotesk, Space_Mono } from "next/font/google"
 
 import "@workspace/ui/globals.css"
@@ -5,7 +6,8 @@ import "./landing.css"
 import { ThemeProvider } from "@/components/theme-provider"
 import { QueryProvider } from "@/components/providers/query-provider"
 import { Toaster } from "@workspace/ui/components/sonner"
-import { cn } from "@workspace/ui/lib/utils";
+import { cn } from "@workspace/ui/lib/utils"
+import { APP_DESCRIPTION, APP_NAME, getMetadataBase } from "./metadata"
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-sans" })
 
@@ -25,6 +27,27 @@ const fontMono = Geist_Mono({
   subsets: ["latin"],
   variable: "--font-mono",
 })
+
+export const metadata: Metadata = {
+  metadataBase: getMetadataBase(),
+  title: {
+    default: APP_NAME,
+    template: `%s | ${APP_NAME}`,
+  },
+  description: APP_DESCRIPTION,
+  applicationName: APP_NAME,
+  openGraph: {
+    title: APP_NAME,
+    description: APP_DESCRIPTION,
+    type: "website",
+    siteName: APP_NAME,
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: APP_NAME,
+    description: APP_DESCRIPTION,
+  },
+}
 
 export default function RootLayout({
   children,

@@ -4,6 +4,7 @@ import * as React from "react"
 import { useRouter } from "next/navigation"
 import { ChevronDown, LoaderCircle, LogOut, Settings, Webhook } from "lucide-react"
 import { ThemeToggle } from "@/components/theme-toggle"
+import { NotificationBell } from "@/components/alerts/notification-bell"
 import { useMeQuery, useLogoutMutation } from "@/hooks/use-auth"
 import { Button } from "@workspace/ui/components/button"
 import {
@@ -56,6 +57,7 @@ export function ProjectsTopbar() {
 
       <div className="flex-1" />
 
+      <NotificationBell />
       <ThemeToggle />
 
       {user ? (

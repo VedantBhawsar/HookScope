@@ -1,5 +1,13 @@
 import { AuthShell } from "@/components/auth/auth-shell"
 import { ForgotPasswordForm } from "@/components/auth/forgot-password-form"
+import { createPageMetadata } from "@/app/metadata"
+
+export const metadata = createPageMetadata({
+  title: "Forgot Password",
+  description: "Request a password reset link for your webhook observability workspace.",
+  path: "/auth/forgot-password",
+  noIndex: true,
+})
 
 export default function ForgotPasswordPage() {
   return (

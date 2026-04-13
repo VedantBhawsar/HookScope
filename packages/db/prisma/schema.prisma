@@ -86,6 +86,19 @@ enum OAuthProvider {
   GITHUB
 }
 
+enum AlertType {
+  DELIVERY_FAILURE_RATE /// X% of deliveries fail within a time window
+  DELIVERY_ERROR_CODE   /// Specific DeliveryErrorCode is observed
+  EVENT_FAILED          /// Event reaches FAILED or DEAD_LETTER status
+  ENDPOINT_SILENCE      /// No events received in N minutes
+}
+
+enum AlertSeverity {
+  INFO
+  WARNING
+  CRITICAL
+}
+
 // ─── Identity ─────────────────────────────────────────────────────────────────
 
 model User {
@@ -112,6 +125,7 @@ model User {
   refreshTokens       RefreshToken[]
   passwordResetTokens PasswordResetToken[]
   oauthAccounts       OAuthAccount[]
+  alerts              Alert[]
 
   @@map("users")
 }
@@ -229,6 +243,7 @@ model Endpoint {
   createdAt DateTime  @default(now()) @map("created_at")
 
   events WebhookEvent[]
+  alerts Alert[]
 
   @@index([projectId])
   @@map("endpoints")
@@ -423,4 +438,51 @@ model Subscription {
 
   @@index([status])
   @@map("subscriptions")
+}
+
+// ─── Alerts ───────────────────────────────────────────────────────────────────
+
+/// User-defined alert rule. Fires an AlertTrigger when the condition is met.
+/// config shape is validated in the API layer by alertConfigByType.
+model Alert {
+  id         String        @id @default(uuid())
+  userId     String        @map("user_id")
+  user       User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  /// Null = applies to all endpoints under the user.
+  endpointId String?       @map("endpoint_id")
+  endpoint   Endpoint?     @relation(fields: [endpointId], references: [id], onDelete: Cascade)
+
+  name     String
+  type     AlertType
+  /// JSON payload whose shape depends on `type` — validated by API layer Zod schemas.
+  config   Json
+  severity AlertSeverity @default(WARNING)
+  isActive Boolean       @default(true) @map("is_active")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  triggers AlertTrigger[]
+
+  @@index([userId])
+  @@index([endpointId])
+  @@map("alerts")
+}
+
+/// Append-only record of each time an Alert condition was met.
+model AlertTrigger {
+  id      String @id @default(uuid())
+  alertId String @map("alert_id")
+  alert   Alert  @relation(fields: [alertId], references: [id], onDelete: Cascade)
+
+  message  String
+  /// Extra context — e.g. { errorCode, failureRate, lastEventAt }.
+  metadata Json?
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([alertId])
+  @@index([createdAt])
+  @@map("alert_triggers")
 }

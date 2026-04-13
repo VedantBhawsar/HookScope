@@ -1,0 +1,513 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Alerts Tester</title>
+    <style>
+      :root {
+        color-scheme: light;
+        font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+      }
+
+      body {
+        margin: 0;
+        background: #f8fafc;
+        color: #0f172a;
+      }
+
+      .container {
+        max-width: 960px;
+        margin: 0 auto;
+        padding: 20px;
+      }
+
+      .card {
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 10px;
+        padding: 16px;
+        margin-bottom: 16px;
+      }
+
+      h1, h2 {
+        margin: 0 0 10px;
+      }
+
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 12px;
+      }
+
+      label {
+        display: block;
+        font-size: 13px;
+        margin-bottom: 4px;
+      }
+
+      input, select, textarea, button {
+        width: 100%;
+        box-sizing: border-box;
+        border: 1px solid #cbd5e1;
+        border-radius: 8px;
+        padding: 8px 10px;
+        font-size: 14px;
+      }
+
+      textarea {
+        min-height: 96px;
+      }
+
+      .row {
+        display: flex;
+        gap: 10px;
+      }
+
+      .row > * {
+        flex: 1;
+      }
+
+      .status-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 6px;
+      }
+
+      .status-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        padding: 8px;
+        font-size: 13px;
+      }
+
+      .status-item input {
+        width: auto;
+      }
+
+      .btn {
+        cursor: pointer;
+        background: #0f172a;
+        color: #ffffff;
+      }
+
+      .btn.secondary {
+        background: #334155;
+      }
+
+      .log {
+        white-space: pre-wrap;
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+        font-size: 12px;
+        background: #0f172a;
+        color: #e2e8f0;
+        border-radius: 8px;
+        padding: 12px;
+        max-height: 300px;
+        overflow: auto;
+      }
+
+      .alerts-list {
+        margin: 0;
+        padding-left: 18px;
+      }
+
+      .alert-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        margin-bottom: 8px;
+      }
+
+      .alert-row button {
+        width: auto;
+        min-width: 130px;
+      }
+
+      .muted {
+        color: #64748b;
+        font-size: 12px;
+      }
+
+      @media (max-width: 800px) {
+        .grid {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>Alerts Tester</h1>
+      <p class="muted">Use this page to create alerts, create test triggers, list alerts, and verify SSE alert_triggered events.</p>
+
+      <div class="card">
+        <h2>Connection</h2>
+        <div class="row">
+          <div>
+            <label for="apiUrl">API URL</label>
+            <input id="apiUrl" value="http://localhost:5000" />
+          </div>
+          <div>
+            <label>&nbsp;</label>
+            <button id="connectSseBtn" class="btn secondary" type="button">Connect SSE</button>
+          </div>
+          <div>
+            <label>&nbsp;</label>
+            <button id="loadAlertsBtn" class="btn secondary" type="button">Load Alerts</button>
+          </div>
+        </div>
+        <p class="muted">You must be logged in to the API domain for cookie auth (withCredentials).</p>
+      </div>
+
+      <div class="card">
+        <h2>Create Alert</h2>
+        <form id="createAlertForm">
+          <div class="grid">
+            <div>
+              <label for="name">Name</label>
+              <input id="name" required placeholder="Signature invalid spikes" />
+            </div>
+            <div>
+              <label for="severity">Severity</label>
+              <select id="severity">
+                <option>INFO</option>
+                <option selected>WARNING</option>
+                <option>CRITICAL</option>
+              </select>
+            </div>
+            <div>
+              <label for="type">Type</label>
+              <select id="type" required>
+                <option value="DELIVERY_ERROR_CODE" selected>DELIVERY_ERROR_CODE</option>
+                <option value="DELIVERY_FAILURE_RATE">DELIVERY_FAILURE_RATE</option>
+                <option value="EVENT_FAILED">EVENT_FAILED</option>
+                <option value="ENDPOINT_SILENCE">ENDPOINT_SILENCE</option>
+              </select>
+            </div>
+            <div>
+              <label for="endpointId">Endpoint ID (optional)</label>
+              <input id="endpointId" placeholder="Leave blank for all endpoints" />
+            </div>
+          </div>
+
+          <div id="config-delivery-error-code" class="grid" style="margin-top: 10px;">
+            <div>
+              <label for="errorCode">Error Code</label>
+              <select id="errorCode">
+                <option>SIGNATURE_INVALID</option>
+                <option>RATE_LIMITED</option>
+                <option>DESTINATION_UNREACHABLE</option>
+                <option>TIMEOUT</option>
+                <option>PAYLOAD_TOO_LARGE</option>
+                <option>PROCESSING_ERROR</option>
+              </select>
+            </div>
+          </div>
+
+          <div id="config-delivery-failure-rate" class="grid" style="display: none; margin-top: 10px;">
+            <div>
+              <label for="threshold">Threshold % (1-100)</label>
+              <input id="threshold" type="number" min="1" max="100" value="50" />
+            </div>
+            <div>
+              <label for="windowMinutesFailure">Window Minutes</label>
+              <input id="windowMinutesFailure" type="number" min="1" value="10" />
+            </div>
+          </div>
+
+          <div id="config-event-failed" style="display: none; margin-top: 10px;">
+            <label>Statuses</label>
+            <div class="status-grid">
+              <label class="status-item"><input id="statusFailed" type="checkbox" checked />FAILED</label>
+              <label class="status-item"><input id="statusDeadLetter" type="checkbox" />DEAD_LETTER</label>
+            </div>
+          </div>
+
+          <div id="config-endpoint-silence" class="grid" style="display: none; margin-top: 10px;">
+            <div>
+              <label for="windowMinutesSilence">Silence Window Minutes</label>
+              <input id="windowMinutesSilence" type="number" min="1" value="30" />
+            </div>
+          </div>
+
+          <div class="row" style="margin-top: 12px;">
+            <button class="btn" type="submit">Create Alert</button>
+          </div>
+        </form>
+      </div>
+
+      <div class="card">
+        <h2>Alerts</h2>
+        <ul id="alertsList" class="alerts-list"></ul>
+      </div>
+
+      <div class="card">
+        <h2>Trigger Existing Alert</h2>
+        <form id="triggerAlertForm">
+          <div class="grid">
+            <div>
+              <label for="triggerAlertId">Alert ID</label>
+              <input id="triggerAlertId" required placeholder="Paste alert id or use list button" />
+            </div>
+            <div>
+              <label for="triggerMessage">Message (optional)</label>
+              <input id="triggerMessage" placeholder="Manual trigger from tester" />
+            </div>
+          </div>
+          <div class="row" style="margin-top: 12px;">
+            <button class="btn" type="submit">Create Trigger</button>
+          </div>
+          <p class="muted">This creates AlertTrigger and emits SSE event <code>alert_triggered</code>.</p>
+        </form>
+      </div>
+
+      <div class="card">
+        <h2>Event Log</h2>
+        <div id="log" class="log"></div>
+      </div>
+    </div>
+
+    <script>
+      const els = {
+        apiUrl: document.getElementById("apiUrl"),
+        connectSseBtn: document.getElementById("connectSseBtn"),
+        loadAlertsBtn: document.getElementById("loadAlertsBtn"),
+        createAlertForm: document.getElementById("createAlertForm"),
+        type: document.getElementById("type"),
+        endpointId: document.getElementById("endpointId"),
+        name: document.getElementById("name"),
+        severity: document.getElementById("severity"),
+        errorCode: document.getElementById("errorCode"),
+        threshold: document.getElementById("threshold"),
+        windowMinutesFailure: document.getElementById("windowMinutesFailure"),
+        statusFailed: document.getElementById("statusFailed"),
+        statusDeadLetter: document.getElementById("statusDeadLetter"),
+        windowMinutesSilence: document.getElementById("windowMinutesSilence"),
+        triggerAlertForm: document.getElementById("triggerAlertForm"),
+        triggerAlertId: document.getElementById("triggerAlertId"),
+        triggerMessage: document.getElementById("triggerMessage"),
+        alertsList: document.getElementById("alertsList"),
+        log: document.getElementById("log"),
+        cfgDeliveryErrorCode: document.getElementById("config-delivery-error-code"),
+        cfgDeliveryFailureRate: document.getElementById("config-delivery-failure-rate"),
+        cfgEventFailed: document.getElementById("config-event-failed"),
+        cfgEndpointSilence: document.getElementById("config-endpoint-silence")
+      };
+
+      let source = null;
+
+      function now() {
+        return new Date().toLocaleTimeString();
+      }
+
+      function log(message, obj) {
+        const prefix = `[${now()}] ${message}`;
+        const line = obj ? `${prefix}\n${JSON.stringify(obj, null, 2)}\n` : `${prefix}\n`;
+        els.log.textContent += line;
+        els.log.scrollTop = els.log.scrollHeight;
+      }
+
+      function getApiBase() {
+        return String(els.apiUrl.value || "").replace(/\/$/, "");
+      }
+
+      function setConfigSectionVisibility() {
+        const type = els.type.value;
+        els.cfgDeliveryErrorCode.style.display = type === "DELIVERY_ERROR_CODE" ? "grid" : "none";
+        els.cfgDeliveryFailureRate.style.display = type === "DELIVERY_FAILURE_RATE" ? "grid" : "none";
+        els.cfgEventFailed.style.display = type === "EVENT_FAILED" ? "block" : "none";
+        els.cfgEndpointSilence.style.display = type === "ENDPOINT_SILENCE" ? "grid" : "none";
+      }
+
+      function buildConfigFromType() {
+        const type = els.type.value;
+
+        if (type === "DELIVERY_ERROR_CODE") {
+          return { errorCode: els.errorCode.value };
+        }
+
+        if (type === "DELIVERY_FAILURE_RATE") {
+          return {
+            threshold: Number(els.threshold.value),
+            windowMinutes: Number(els.windowMinutesFailure.value)
+          };
+        }
+
+        if (type === "EVENT_FAILED") {
+          const statuses = [];
+          if (els.statusFailed.checked) statuses.push("FAILED");
+          if (els.statusDeadLetter.checked) statuses.push("DEAD_LETTER");
+          return { statuses };
+        }
+
+        return { windowMinutes: Number(els.windowMinutesSilence.value) };
+      }
+
+      async function callApi(path, options) {
+        const res = await fetch(`${getApiBase()}${path}`, {
+          credentials: "include",
+          headers: {
+            "content-type": "application/json"
+          },
+          ...options
+        });
+
+        const json = await res.json().catch(() => ({}));
+        if (!res.ok || json.success === false) {
+          const msg = json.message || `Request failed (${res.status})`;
+          throw new Error(msg);
+        }
+        return json;
+      }
+
+      async function loadAlerts() {
+        try {
+          const json = await callApi("/api/alerts?page=1&limit=50", { method: "GET" });
+          const list = (json.data && json.data.data) || [];
+          els.alertsList.innerHTML = "";
+          list.forEach((item) => {
+            const li = document.createElement("li");
+            const row = document.createElement("div");
+            row.className = "alert-row";
+
+            const text = document.createElement("span");
+            text.textContent = `${item.name} [${item.type}] id=${item.id} severity=${item.severity} active=${item.isActive}`;
+
+            const triggerBtn = document.createElement("button");
+            triggerBtn.type = "button";
+            triggerBtn.className = "btn secondary";
+            triggerBtn.textContent = "Trigger";
+            triggerBtn.addEventListener("click", async () => {
+              try {
+                els.triggerAlertId.value = item.id;
+                await createTrigger(item.id, els.triggerMessage.value || undefined);
+              } catch (err) {
+                log(`Trigger button failed: ${String(err.message || err)}`);
+              }
+            });
+
+            row.appendChild(text);
+            row.appendChild(triggerBtn);
+            li.appendChild(row);
+            els.alertsList.appendChild(li);
+          });
+          log(`Loaded ${list.length} alerts.`);
+        } catch (err) {
+          log(`Load alerts failed: ${String(err.message || err)}`);
+        }
+      }
+
+      async function createTrigger(alertId, message) {
+        const payload = {
+          message: message && String(message).trim() ? String(message).trim() : undefined,
+          metadata: { source: "alerts-test-html" }
+        };
+
+        const json = await callApi(`/api/alerts/${encodeURIComponent(alertId)}/test-trigger`, {
+          method: "POST",
+          body: JSON.stringify(payload)
+        });
+
+        log("Test trigger created", json.data);
+      }
+
+      function connectSse() {
+        if (source) {
+          log("Closing previous SSE connection before reconnect.");
+          source.close();
+          source = null;
+        }
+
+        const url = `${getApiBase()}/api/alerts/stream`;
+        source = new EventSource(url, { withCredentials: true });
+
+        source.addEventListener("connected", (e) => {
+          let data = null;
+          try {
+            data = JSON.parse(e.data);
+          } catch {
+            data = e.data;
+          }
+          log("SSE connected", data);
+        });
+
+        source.addEventListener("alert_triggered", (e) => {
+          let data = null;
+          try {
+            data = JSON.parse(e.data);
+          } catch {
+            data = e.data;
+          }
+          log("alert_triggered event", data);
+        });
+
+        source.addEventListener("ping", () => {
+          log("SSE ping");
+        });
+
+        source.onerror = () => {
+          log("SSE connection dropped. Browser will auto-reconnect.");
+        };
+
+        log("Connecting SSE...");
+      }
+
+      els.type.addEventListener("change", setConfigSectionVisibility);
+      els.connectSseBtn.addEventListener("click", connectSse);
+      els.loadAlertsBtn.addEventListener("click", loadAlerts);
+
+      els.createAlertForm.addEventListener("submit", async (event) => {
+        event.preventDefault();
+
+        const payload = {
+          name: els.name.value,
+          type: els.type.value,
+          severity: els.severity.value,
+          endpointId: els.endpointId.value ? els.endpointId.value : null,
+          config: buildConfigFromType(),
+          isActive: true
+        };
+
+        try {
+          const json = await callApi("/api/alerts", {
+            method: "POST",
+            body: JSON.stringify(payload)
+          });
+
+          log("Alert created", json.data);
+          await loadAlerts();
+        } catch (err) {
+          log(`Create alert failed: ${String(err.message || err)}`);
+        }
+      });
+
+      els.triggerAlertForm.addEventListener("submit", async (event) => {
+        event.preventDefault();
+
+        const alertId = String(els.triggerAlertId.value || "").trim();
+        if (!alertId) {
+          log("Trigger failed: Alert ID is required.");
+          return;
+        }
+
+        try {
+          await createTrigger(alertId, els.triggerMessage.value);
+        } catch (err) {
+          log(`Create trigger failed: ${String(err.message || err)}`);
+        }
+      });
+
+      window.addEventListener("beforeunload", () => {
+        if (source) source.close();
+      });
+
+      setConfigSectionVisibility();
+      log("Ready. Login first, then connect SSE and create alerts/triggers.");
+    </script>
+  </body>
+</html>

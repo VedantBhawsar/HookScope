@@ -10,6 +10,8 @@ import { STRIPE_EVENT_QUEUE } from "../queues/stripe-event.queue.js"
 import type { StripeEventJob } from "../queues/stripe-event.queue.js"
 import type Stripe from "stripe"
 
+const ALERT_CHANNEL = "wh:alert:events"
+
 type PrismaClient = typeof prisma
 
 const ERROR_PREVIEW_LIMIT = 300
@@ -74,10 +76,18 @@ export function createStripeWorker(connection: ConnectionOptions, deps: WorkerDe
         )
       }
 
+      // ── Resolve userId for alert evaluation (via endpoint → project) ───────
+      const endpointWithUser = await deps.prisma.endpoint.findUnique({
+        where: { id: endpointId },
+        select: { project: { select: { userId: true } } },
+      })
+      const userId = endpointWithUser?.project.userId ?? null
+
       // ── Step 4: Forward to destination (throws on failure → BullMQ retries)
-      await forwardAndPersist(deps.prisma, deps.log, {
+      await forwardAndPersist(deps.prisma, deps.log, deps.redis, {
         webhookEventId: result.webhookEventId,
         endpointId,
+        userId,
         event,
         destinationUrl,
         signature,
@@ -111,19 +121,43 @@ export function createStripeWorker(connection: ConnectionOptions, deps: WorkerDe
   return worker
 }
 
+async function publishAlertEvent(
+  redis: Redis,
+  payload: {
+    endpointId: string
+    userId: string | null
+    deliveryStatus: string
+    errorCode: string | null
+    eventStatus: string
+  }
+): Promise<void> {
+  if (!payload.userId) return
+  try {
+    await redis.publish(
+      ALERT_CHANNEL,
+      JSON.stringify({ ...payload, timestamp: new Date().toISOString() })
+    )
+  } catch (err) {
+    // Non-fatal — alert publish failure must never break delivery
+    console.error("[StripeWorker] Failed to publish alert event:", err)
+  }
+}
+
 async function forwardAndPersist(
   db: PrismaClient,
   log: FastifyBaseLogger,
+  redis: Redis,
   params: {
     webhookEventId: string
     endpointId: string
+    userId: string | null
     event: Stripe.Event
     destinationUrl: string
     signature: string | null
     paymentValidation: StripeEventJob["paymentValidation"]
   }
 ): Promise<void> {
-  const { webhookEventId, endpointId, event, destinationUrl, signature, paymentValidation } = params
+  const { webhookEventId, endpointId, userId, event, destinationUrl, signature, paymentValidation } = params
 
   const delivery = await db.delivery.create({
     data: { webhookEventId, destinationUrl, status: DeliveryStatus.PENDING },
@@ -199,6 +233,13 @@ async function forwardAndPersist(
     ])
 
     log.warn({ webhookEventId, endpointId, destinationUrl, err: networkErr }, "Delivery network error")
+    await publishAlertEvent(redis, {
+      endpointId,
+      userId,
+      deliveryStatus: DeliveryStatus.FAILED,
+      errorCode: DeliveryErrorCode.DESTINATION_UNREACHABLE,
+      eventStatus: EventStatus.FAILED,
+    })
     throw networkErr
   }
 
@@ -244,6 +285,20 @@ async function forwardAndPersist(
       },
     }),
   ])
+
+  // Publish alert event after terminal delivery state
+  const errorCode = isSuccess
+    ? null
+    : fetchResponse.status === 429
+      ? DeliveryErrorCode.RATE_LIMITED
+      : DeliveryErrorCode.PROCESSING_ERROR
+  await publishAlertEvent(redis, {
+    endpointId,
+    userId,
+    deliveryStatus: isSuccess ? DeliveryStatus.SUCCESS : DeliveryStatus.FAILED,
+    errorCode,
+    eventStatus: isSuccess ? EventStatus.DELIVERED : EventStatus.FAILED,
+  })
 
   if (!isSuccess) {
     // Throw AFTER persisting — BullMQ retries, DB has the audit trail

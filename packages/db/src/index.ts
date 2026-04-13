@@ -12,4 +12,6 @@ export {
   SubscriptionStatus,
   VerificationMode,
   OAuthProvider,
+  AlertType,
+  AlertSeverity,
 } from "../generated/client/client.js"
