@@ -1,4 +1,5 @@
 import { prisma } from "@workspace/db/client"
+import { DeliveryStatus, EventStatus, DeliveryErrorCode, LogType } from "@workspace/db"
 import type {
   WebhookEventListQuery,
   DeliveryListQuery,
@@ -256,5 +257,84 @@ export class WebhookRepository {
     })
 
     return delivery
+  }
+
+  getEventForReplay(eventId: string, userId: string) {
+    return prisma.webhookEvent.findFirst({
+      where: {
+        id: eventId,
+        deletedAt: null,
+        endpoint: { deletedAt: null, project: { userId, deletedAt: null } },
+      },
+      select: {
+        id: true,
+        eventId: true,
+        eventType: true,
+        source: true,
+        payloadUrl: true,
+      },
+    })
+  }
+
+  findDeliveryById(id: string) {
+    return prisma.delivery.findUnique({
+      where: { id },
+      select: {
+        id: true,
+        webhookEventId: true,
+        destinationUrl: true,
+        status: true,
+        responseCode: true,
+        responseBody: true,
+        latencyMs: true,
+        retryCount: true,
+        isReplay: true,
+        errorCode: true,
+        nextRetryAt: true,
+        createdAt: true,
+      },
+    })
+  }
+
+  async updateDeliveryOutcome(
+    deliveryId: string,
+    webhookEventId: string,
+    opts: {
+      deliveryStatus: DeliveryStatus
+      eventStatus: EventStatus
+      responseCode?: number
+      responseBody?: string
+      latencyMs?: number
+      errorCode?: DeliveryErrorCode | null
+      logStatus: "INFO" | "WARNING" | "ERROR" | "SUCCESS"
+      logMessage: string
+    }
+  ): Promise<void> {
+    await prisma.$transaction([
+      prisma.delivery.update({
+        where: { id: deliveryId },
+        data: {
+          status: opts.deliveryStatus,
+          responseCode: opts.responseCode ?? null,
+          responseBody: opts.responseBody ?? null,
+          latencyMs: opts.latencyMs ?? null,
+          errorCode: opts.errorCode ?? null,
+          version: { increment: 1 },
+        },
+      }),
+      prisma.webhookEvent.update({
+        where: { id: webhookEventId },
+        data: { status: opts.eventStatus, version: { increment: 1 } },
+      }),
+      prisma.eventLog.create({
+        data: {
+          webhookEventId,
+          deliveryId,
+          status: opts.logStatus,
+          type: opts.deliveryStatus === DeliveryStatus.SUCCESS ? LogType.DELIVERY_SUCCESS : LogType.DELIVERY_FAILED,
+          message: opts.logMessage,
+        },
+      }),
+    ])
   }
 }

@@ -104,11 +104,55 @@ export function createStripeWorker(connection: ConnectionOptions, deps: WorkerDe
     }
   )
 
-  worker.on("failed", (job, err) => {
+  worker.on("failed", async (job, err) => {
+    const maxAttempts = job?.opts.attempts ?? 5
+    const isFinal = job != null && job.attemptsMade >= maxAttempts
+
     deps.log.error(
-      { jobId: job?.id, eventId: job?.data.event.id, attempts: job?.attemptsMade, err },
-      "Stripe event job exhausted all retries"
+      { jobId: job?.id, eventId: job?.data.event.id, attempts: job?.attemptsMade, isFinal, err },
+      isFinal ? "Stripe event job exhausted all retries" : "Stripe event job failed (will retry)"
     )
+
+    if (!isFinal || !job) return
+
+    // Transition event to DEAD_LETTER after all retries are exhausted
+    try {
+      const { endpointId, event } = job.data
+      const we = await deps.prisma.webhookEvent.findFirst({
+        where: { endpointId, eventId: event.id },
+        select: { id: true },
+      })
+      if (!we) return
+
+      await deps.prisma.$transaction([
+        deps.prisma.webhookEvent.update({
+          where: { id: we.id },
+          data: { status: EventStatus.DEAD_LETTER, version: { increment: 1 } },
+        }),
+        deps.prisma.eventLog.create({
+          data: {
+            webhookEventId: we.id,
+            status: "ERROR",
+            type: LogType.DELIVERY_FAILED,
+            message: `All ${maxAttempts} delivery attempts exhausted — event moved to dead letter queue`,
+          },
+        }),
+      ])
+
+      const endpointRow = await deps.prisma.endpoint.findUnique({
+        where: { id: endpointId },
+        select: { project: { select: { userId: true } } },
+      })
+      await publishAlertEvent(deps.redis, {
+        endpointId,
+        userId: endpointRow?.project.userId ?? null,
+        deliveryStatus: DeliveryStatus.FAILED,
+        errorCode: null,
+        eventStatus: EventStatus.DEAD_LETTER,
+      })
+    } catch (deadLetterErr) {
+      deps.log.error({ err: deadLetterErr }, "Failed to transition event to DEAD_LETTER")
+    }
   })
 
   worker.on("completed", (job) => {
