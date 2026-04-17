@@ -126,7 +126,7 @@ export default function EndpointAlertsPage() {
           <div className="flex items-center justify-between gap-3">
             <TabsList>
               <TabsTrigger value="rules">Rules</TabsTrigger>
-              <TabsTrigger value="history">History</TabsTrigger>
+              <TabsTrigger value="history">Logs</TabsTrigger>
             </TabsList>
 
             {tab === "rules" ? <AlertCreateDialog /> : null}
