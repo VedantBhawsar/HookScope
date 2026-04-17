@@ -52,6 +52,7 @@ export function NotificationBell() {
     []
   )
   const historyQuery = useAlertHistoryQuery({ page: 1, limit: 20 })
+  const match = pathname.match(/^\/dashboard\/([^/]+)\/([^/]+)(?:\/|$)/)
 
   const onAlert = React.useCallback((event: AlertTriggeredEvent) => {
     setRecentAlerts((prev) => [event, ...prev].slice(0, 5))
@@ -76,20 +77,18 @@ export function NotificationBell() {
   useAlertStream(onAlert)
 
   const historyBaseHref = React.useMemo(() => {
-    const match = pathname.match(/^\/dashboard\/([^/]+)\/([^/]+)(?:\/|$)/)
     if (match) {
       return `/dashboard/${match[1]}/${match[2]}/alerts?tab=history`
     }
     return "/dashboard"
-  }, [pathname])
+  }, [match])
 
   const managedBaseHref = React.useMemo(() => {
-    const match = pathname.match(/^\/dashboard\/([^/]+)\/([^/]+)(?:\/|$)/)
     if (match) {
       return `/dashboard/${match[1]}/${match[2]}/alerts?tab=managed`
     }
     return "/dashboard"
-  }, [pathname])
+  }, [match])
 
   const getTriggerHref = React.useCallback(
     (triggerId: string) =>
@@ -161,20 +160,25 @@ export function NotificationBell() {
           )}
         </div>
 
-        <div className="flex justify-between border-t px-4 py-2">
-          <Link
-            href={historyBaseHref}
-            className="text-xs font-medium text-primary hover:underline"
-          >
-            All notifications
-          </Link>
-          <Link
-            href={managedBaseHref}
-            className="text-xs font-medium text-primary hover:underline"
-          >
-            Manage alerts
-          </Link>
-        </div>
+        {match
+          ? match[1] &&
+            match[2] && (
+              <div className="flex justify-between border-t px-4 py-2">
+                <Link
+                  href={historyBaseHref}
+                  className="text-xs font-medium text-primary hover:underline"
+                >
+                  All notifications
+                </Link>
+                <Link
+                  href={managedBaseHref}
+                  className="text-xs font-medium text-primary hover:underline"
+                >
+                  Manage alerts
+                </Link>
+              </div>
+            )
+          : <div className="border-t"></div>}
       </PopoverContent>
     </Popover>
   )

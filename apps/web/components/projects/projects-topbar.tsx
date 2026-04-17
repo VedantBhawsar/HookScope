@@ -2,10 +2,11 @@
 
 import * as React from "react"
 import { useRouter } from "next/navigation"
-import { ChevronDown, LoaderCircle, LogOut, Settings, Webhook } from "lucide-react"
+import { ChevronDown, LoaderCircle, LogOut, Settings, Webhook, Zap } from "lucide-react"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { NotificationBell } from "@/components/alerts/notification-bell"
 import { useMeQuery, useLogoutMutation } from "@/hooks/use-auth"
+import { usePricing } from "@/components/providers/pricing-provider"
 import { Button } from "@workspace/ui/components/button"
 import {
   DropdownMenu,
@@ -15,6 +16,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@workspace/ui/components/dropdown-menu"
+import Link from "next/link"
 
 function UserAvatar({ name }: { name: string }) {
   const initials = name
@@ -36,6 +38,8 @@ export function ProjectsTopbar() {
   const meQuery = useMeQuery()
   const logoutMutation = useLogoutMutation()
   const user = meQuery.data?.user ?? null
+  const { isNearEventLimit, isAtEndpointLimit, openUpgradeDialog } = usePricing()
+  const showUpgradeNudge = isNearEventLimit || isAtEndpointLimit
 
   const handleLogout = async () => {
     try {
@@ -52,11 +56,22 @@ export function ProjectsTopbar() {
         <div className="flex size-7 items-center justify-center rounded-lg bg-primary">
           <Webhook className="size-4 text-primary-foreground" />
         </div>
-        <span className="hidden text-sm font-semibold tracking-tight sm:block">HookBase</span>
+        <Link href={'/projects'} className="hidden text-sm font-semibold tracking-tight sm:block">HookBase</Link>
       </div>
 
       <div className="flex-1" />
 
+      {showUpgradeNudge && user && (
+        <Button
+          size="sm"
+          variant="outline"
+          className="h-8 gap-1.5 text-xs border-amber-500/50 text-amber-700 hover:bg-amber-500/10 dark:text-amber-400"
+          onClick={() => openUpgradeDialog("You're approaching your plan limits. Upgrade to keep ingesting webhooks.")}
+        >
+          <Zap className="size-3.5" />
+          Upgrade
+        </Button>
+      )}
       <NotificationBell />
       <ThemeToggle />
 

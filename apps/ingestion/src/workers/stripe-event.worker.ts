@@ -66,6 +66,13 @@ export function createStripeWorker(connection: ConnectionOptions, deps: WorkerDe
         sourceIp,
       })
 
+      // ── Resolve userId (needed for usage tracking + alert evaluation) ───────
+      const endpointWithUser = await deps.prisma.endpoint.findUnique({
+        where: { id: endpointId },
+        select: { project: { select: { userId: true } } },
+      })
+      const userId = endpointWithUser?.project.userId ?? null
+
       // ── Step 3: Cache in Redis (idempotent SET) ───────────────────────────
       if (!result.isDuplicate) {
         await deps.redis.set(
@@ -76,12 +83,15 @@ export function createStripeWorker(connection: ConnectionOptions, deps: WorkerDe
         )
       }
 
-      // ── Resolve userId for alert evaluation (via endpoint → project) ───────
-      const endpointWithUser = await deps.prisma.endpoint.findUnique({
-        where: { id: endpointId },
-        select: { project: { select: { userId: true } } },
-      })
-      const userId = endpointWithUser?.project.userId ?? null
+      // ── Step 3b: Increment monthly usage counter (skip duplicates) ─────────
+      if (!result.isDuplicate && userId) {
+        const month = new Date().toISOString().slice(0, 7) // "2026-04"
+        await deps.prisma.usage.upsert({
+          where: { userId_month: { userId, month } },
+          update: { eventCount: { increment: 1 } },
+          create: { userId, month, eventCount: 1 },
+        })
+      }
 
       // ── Step 4: Forward to destination (throws on failure → BullMQ retries)
       await forwardAndPersist(deps.prisma, deps.log, deps.redis, {

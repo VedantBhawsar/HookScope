@@ -41,6 +41,7 @@ import {
   type EndpointVerificationMode,
 } from "@/hooks/use-endpoints"
 import { setActiveEndpointForProject } from "@/lib/endpoint-selection"
+import { usePricing } from "@/components/providers/pricing-provider"
 
 const SOURCE_OPTIONS = [
   { label: "Stripe", value: "STRIPE" },
@@ -174,6 +175,7 @@ export function CreateEndpointDialog({
   onCreated,
 }: CreateEndpointDialogProps) {
   const createEndpointMutation = useCreateEndpointMutation()
+  const { isAtEndpointLimit, openUpgradeDialog } = usePricing()
   const [createdEndpoint, setCreatedEndpoint] = React.useState<EndpointCreatedRecord | null>(null)
   const form = useForm<CreateEndpointFormValues>({
     defaultValues,
@@ -299,6 +301,28 @@ export function CreateEndpointDialog({
     } catch (error) {
       toast.error(getRequestErrorMessage(error))
     }
+  }
+
+  // When the user is at their endpoint limit, show an upgrade prompt instead of the form.
+  // TODO: Implement what to display here (5–10 lines).
+  // Hint: use `openUpgradeDialog(reason)` to open the pricing modal, then close this dialog.
+  // Consider: a short message ("You've reached your X-endpoint limit"), an Upgrade button,
+  // and a Cancel/close button. Access `usage.endpoints` for exact counts.
+  if (isAtEndpointLimit) {
+    return (
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Endpoint Limit Reached</DialogTitle>
+          </DialogHeader>
+          {/* ── YOUR CODE GOES HERE ────────────────────────────────── */}
+          {/* Implement the limit-reached state. You have access to:    */}
+          {/*   openUpgradeDialog(reason?: string)                      */}
+          {/*   onOpenChange(false) to close this dialog                */}
+          {/* ────────────────────────────────────────────────────────── */}
+        </DialogContent>
+      </Dialog>
+    )
   }
 
   return (

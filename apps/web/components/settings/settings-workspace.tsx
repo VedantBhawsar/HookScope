@@ -8,6 +8,8 @@ import { ProjectsTopbar } from "@/components/projects/projects-topbar"
 import { ProfileSection } from "@/components/settings/profile-section"
 import { WorkspaceSection } from "@/components/settings/workspace-section"
 import { AppearanceSection } from "@/components/settings/appearance-section"
+import { UsageSection } from "@/components/settings/usage-section"
+import { UsageLimitBanner } from "@/components/pricing/usage-limit-banner"
 
 export function SettingsWorkspace() {
   const router = useRouter()
@@ -30,6 +32,7 @@ export function SettingsWorkspace() {
   return (
     <div className="flex min-h-screen flex-col bg-background">
       <ProjectsTopbar />
+      <UsageLimitBanner />
 
       <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-10 sm:px-6">
         <div className="mb-8">
@@ -42,6 +45,7 @@ export function SettingsWorkspace() {
         <div className="space-y-6">
           <ProfileSection user={user} />
           <WorkspaceSection user={user} />
+          <UsageSection />
           <AppearanceSection />
         </div>
       </main>

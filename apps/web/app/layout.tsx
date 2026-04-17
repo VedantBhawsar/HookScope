@@ -5,6 +5,7 @@ import "@workspace/ui/globals.css"
 import "./landing.css"
 import { ThemeProvider } from "@/components/theme-provider"
 import { QueryProvider } from "@/components/providers/query-provider"
+import { PricingProvider } from "@/components/providers/pricing-provider"
 import { Toaster } from "@workspace/ui/components/sonner"
 import { cn } from "@workspace/ui/lib/utils"
 import { APP_DESCRIPTION, APP_NAME, getMetadataBase } from "./metadata"
@@ -62,7 +63,9 @@ export default function RootLayout({
     >
       <body>
         <ThemeProvider defaultTheme="system">
-          <QueryProvider>{children}</QueryProvider>
+          <QueryProvider>
+            <PricingProvider>{children}</PricingProvider>
+          </QueryProvider>
           <Toaster />
         </ThemeProvider>
       </body>

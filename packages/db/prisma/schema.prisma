@@ -62,7 +62,7 @@ enum LogType {
 }
 
 enum PlanTier {
-  FREE
+  DEVELOPER
   PRO
   ENTERPRISE
 }
