@@ -21,17 +21,25 @@ function formatRelative(iso: string): string {
   return `${Math.floor(diff / 3600)}h ago`
 }
 
-function EventRow({ event, projectId }: { event: WebhookEventRecord; projectId: string }) {
+function EventRow({
+  event,
+  projectId,
+}: {
+  event: WebhookEventRecord
+  projectId: string
+}) {
   return (
-    <Link
-      href={`/dashboard/${projectId}/${event.endpointId}/events`}
+    <div
+      key={projectId}
       className="flex items-center justify-between gap-4 rounded-lg px-3 py-2.5 transition-colors hover:bg-muted/50"
     >
       <div className="flex min-w-0 items-center gap-3">
         <EventStatusBadge status={event.status} />
         <div className="min-w-0">
           <p className="truncate font-mono text-xs text-foreground">
-            {event.eventId.length > 28 ? `${event.eventId.slice(0, 28)}…` : event.eventId}
+            {event.eventId.length > 28
+              ? `${event.eventId.slice(0, 28)}…`
+              : event.eventId}
           </p>
           <p className="text-[11px] text-muted-foreground">
             {event.source}
@@ -42,7 +50,7 @@ function EventRow({ event, projectId }: { event: WebhookEventRecord; projectId: 
       <span className="shrink-0 text-[11px] text-muted-foreground tabular-nums">
         {formatRelative(event.createdAt)}
       </span>
-    </Link>
+    </div>
   )
 }
 
@@ -97,7 +105,9 @@ export function LiveEventFeed({ endpointId, projectId }: LiveEventFeedProps) {
           className="flex items-center gap-1 text-xs text-muted-foreground transition-colors hover:text-foreground"
         >
           {total > 0 && (
-            <span className="mr-1 text-foreground font-medium">{total.toLocaleString()}</span>
+            <span className="mr-1 font-medium text-foreground">
+              {total.toLocaleString()}
+            </span>
           )}
           View all
           <ArrowRight className="size-3" />
@@ -108,7 +118,10 @@ export function LiveEventFeed({ endpointId, projectId }: LiveEventFeedProps) {
       {query.isLoading ? (
         <div className="flex flex-1 flex-col gap-2 px-1">
           {Array.from({ length: 5 }).map((_, i) => (
-            <div key={i} className="flex items-center gap-3 rounded-lg px-3 py-2.5">
+            <div
+              key={i}
+              className="flex items-center gap-3 rounded-lg px-3 py-2.5"
+            >
               <div className="h-5 w-16 animate-pulse rounded bg-muted" />
               <div className="flex-1 space-y-1.5">
                 <div className="h-3 w-40 animate-pulse rounded bg-muted" />
