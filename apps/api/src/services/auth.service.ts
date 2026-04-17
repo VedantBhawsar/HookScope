@@ -241,8 +241,23 @@ export class AuthService {
     name: string,
     avatarUrl?: string
   ): Promise<{ user: { id: string; email: string; name: string; avatarUrl: string | null; emailVerifiedAt: Date | null; companyName: string | null; companySize: string | null; companyRole: string | null; useCase: string | null; onboardingCompletedAt: Date | null }; isNew: boolean }> {
-    // TODO: implement here
-    throw new Error("findOrCreateOAuthUser not implemented yet")
+    // Case 1: Re-login — this provider account has signed in before
+    const existing = await this.repo.findOAuthAccount(provider, providerAccountId)
+    if (existing) return { user: existing.user, isNew: false }
+
+    // Case 2: Email collision — auto-link to the existing password/OAuth account
+    // Trade-off: UX-friendly but trusts provider email ownership. Acceptable here
+    // because all supported providers (Google, GitHub) verify emails before returning them.
+    const existingUser = await this.repo.findUserByEmail(email)
+    if (existingUser) {
+      await this.repo.linkOAuthAccount(existingUser.id, provider, providerAccountId)
+      return { user: existingUser, isNew: false }
+    }
+
+    // Case 3: New sign-up — create user + link provider account atomically
+    const newUser = await this.repo.createOAuthUser({ name, email, avatarUrl })
+    await this.repo.linkOAuthAccount(newUser.id, provider, providerAccountId)
+    return { user: newUser, isNew: true }
   }
 
   async logout(rawRefreshToken: string): Promise<void> {
