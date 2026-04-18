@@ -1,13 +1,40 @@
 "use client"
 
 import { useState } from "react"
+import { useRouter } from "next/navigation"
+import { toast } from "sonner"
 import { PricingCard } from "./pricing-card"
 import { PLANS, PRICING_FAQ, type BillingInterval } from "./pricing-data"
 import { cn } from "@workspace/ui/lib/utils"
 import { Separator } from "@workspace/ui/components/separator"
+import { useMeQuery } from "@/hooks/use-auth"
+import { useCheckoutMutation } from "@/hooks/use-billing"
 
 export function PricingSection() {
   const [interval, setInterval] = useState<BillingInterval>("monthly")
+  const [loadingPlanId, setLoadingPlanId] = useState<string | null>(null)
+  const router = useRouter()
+  const meQuery = useMeQuery()
+  const checkoutMutation = useCheckoutMutation()
+
+  const isAuthenticated = !!meQuery.data?.user
+
+  function handleSelectPlan(planId: string, billingInterval: BillingInterval) {
+    if (!isAuthenticated) {
+      router.push(`/auth/register?plan=${planId}&interval=${billingInterval}`)
+      return
+    }
+    setLoadingPlanId(planId)
+    checkoutMutation.mutate(
+      { planId, interval: billingInterval, returnTo: "settings" },
+      {
+        onError: () => {
+          toast.error("Failed to start checkout. Please try again.")
+          setLoadingPlanId(null)
+        },
+      }
+    )
+  }
 
   return (
     <div className="space-y-20">
@@ -56,7 +83,13 @@ export function PricingSection() {
       {/* Plan cards — 3 cols, wider cards */}
       <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-3">
         {PLANS.map((plan) => (
-          <PricingCard key={plan.id} plan={plan} interval={interval} />
+          <PricingCard
+            key={plan.id}
+            plan={plan}
+            interval={interval}
+            onSelect={handleSelectPlan}
+            isLoading={loadingPlanId === plan.id && checkoutMutation.isPending}
+          />
         ))}
       </div>
 

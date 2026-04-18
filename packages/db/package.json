@@ -13,6 +13,7 @@
     "prisma:studio": "prisma studio --schema ./prisma/schema.prisma",
     "db:push": "prisma db push --schema ./prisma/schema.prisma",
     "db:pull": "prisma db pull --schema ./prisma/schema.prisma",
+    "db:seed": "bun run prisma/seed.ts",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {

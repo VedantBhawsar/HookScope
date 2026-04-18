@@ -7,6 +7,7 @@ import { projectRouter } from "./routes/project.router"
 import { webhookRouter } from "./routes/webhook.router"
 import { alertRouter } from "./routes/alert.router"
 import { usageRouter } from "./routes/usage.router"
+import { billingRouter, billingController } from "./billing/billing.router"
 import { initAlertEvaluator } from "./lib/alert-evaluator"
 import { json } from "./lib/response"
 
@@ -21,6 +22,10 @@ const startServer = () => {
       credentials: true,
     })
   )
+
+  // Stripe webhook must receive the raw body — mount BEFORE express.json()
+  app.post("/api/billing/webhook", express.raw({ type: "application/json" }), billingController.handleWebhook)
+
   app.use(express.json())
   app.use(cookieParser())
 
@@ -31,6 +36,7 @@ const startServer = () => {
   app.use("/api/webhooks", webhookRouter)
   app.use("/api/alerts", alertRouter)
   app.use("/api/usage", usageRouter)
+  app.use("/api/billing", billingRouter)
 
   const PORT = 5000
   app.listen(PORT, () => {

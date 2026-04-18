@@ -1,6 +1,7 @@
 "use client"
 
 import * as React from "react"
+import { toast } from "sonner"
 import {
   Dialog,
   DialogContent,
@@ -11,6 +12,7 @@ import {
 import { PricingCard } from "./pricing-card"
 import { PLANS, type BillingInterval } from "./pricing-data"
 import { cn } from "@workspace/ui/lib/utils"
+import { useCheckoutMutation } from "@/hooks/use-billing"
 
 interface UpgradeDialogProps {
   open: boolean
@@ -20,10 +22,25 @@ interface UpgradeDialogProps {
 
 export function UpgradeDialog({ open, onOpenChange, reason }: UpgradeDialogProps) {
   const [interval, setInterval] = React.useState<BillingInterval>("monthly")
+  const [loadingPlanId, setLoadingPlanId] = React.useState<string | null>(null)
+  const checkoutMutation = useCheckoutMutation()
+
+  function handleSelectPlan(planId: string, billingInterval: BillingInterval) {
+    setLoadingPlanId(planId)
+    checkoutMutation.mutate(
+      { planId, interval: billingInterval, returnTo: "settings" },
+      {
+        onError: () => {
+          toast.error("Failed to start checkout. Please try again.")
+          setLoadingPlanId(null)
+        },
+      }
+    )
+  }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="min-w-6xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-xl font-bold">Upgrade your plan</DialogTitle>
           {reason && (
@@ -64,7 +81,13 @@ export function UpgradeDialog({ open, onOpenChange, reason }: UpgradeDialogProps
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-3 mt-2">
           {PLANS.map((plan) => (
-            <PricingCard key={plan.id} plan={plan} interval={interval} />
+            <PricingCard
+              key={plan.id}
+              plan={plan}
+              interval={interval}
+              onSelect={handleSelectPlan}
+              isLoading={loadingPlanId === plan.id && checkoutMutation.isPending}
+            />
           ))}
         </div>
 

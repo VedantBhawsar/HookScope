@@ -1,5 +1,5 @@
 import Link from "next/link"
-import { Check, X, Minus } from "lucide-react"
+import { Check, X, Minus, Loader2 } from "lucide-react"
 import { Card, CardContent, CardHeader } from "@workspace/ui/components/card"
 import { Badge } from "@workspace/ui/components/badge"
 import { Button } from "@workspace/ui/components/button"
@@ -37,9 +37,11 @@ function FeatureRow({ label, included }: { label: string; included: boolean | st
 interface PricingCardProps {
   plan: Plan
   interval: BillingInterval
+  onSelect?: (planId: string, interval: BillingInterval) => void
+  isLoading?: boolean
 }
 
-export function PricingCard({ plan, interval }: PricingCardProps) {
+export function PricingCard({ plan, interval, onSelect, isLoading }: PricingCardProps) {
   const isAnnual = interval === "annual"
   const price = isAnnual ? plan.annualPrice : plan.monthlyPrice
   const monthlyEquivalent =
@@ -102,14 +104,26 @@ export function PricingCard({ plan, interval }: PricingCardProps) {
 
       <CardContent className="flex flex-1 flex-col gap-6 px-7 pt-6 pb-8">
         {/* CTA */}
-        <Button
-          asChild
-          size="lg"
-          variant={plan.highlight ? "default" : "outline"}
-          className="w-full"
-        >
-          <Link href={plan.ctaHref}>{plan.cta}</Link>
-        </Button>
+        {onSelect ? (
+          <Button
+            size="lg"
+            variant={plan.highlight ? "default" : "outline"}
+            className="w-full"
+            onClick={() => onSelect(plan.id, interval)}
+            disabled={isLoading}
+          >
+            {isLoading ? <Loader2 className="size-4 animate-spin" /> : plan.cta}
+          </Button>
+        ) : (
+          <Button
+            asChild
+            size="lg"
+            variant={plan.highlight ? "default" : "outline"}
+            className="w-full"
+          >
+            <Link href={plan.ctaHref}>{plan.cta}</Link>
+          </Button>
+        )}
 
         {/* Limits grid */}
         <div className="grid grid-cols-2 gap-2">

@@ -1,8 +1,9 @@
 "use client"
 
 import * as React from "react"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import { ArrowRight, Clock, LoaderCircle } from "lucide-react"
+import { toast } from "sonner"
 import { Button } from "@workspace/ui/components/button"
 import { useMeQuery } from "@/hooks/use-auth"
 import { type ProjectRecord } from "@/hooks/use-projects"
@@ -18,6 +19,7 @@ import {
 
 export function ProjectsWorkspace() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const meQuery = useMeQuery()
 
   const [createOpen, setCreateOpen] = React.useState(false)
@@ -26,6 +28,17 @@ export function ProjectsWorkspace() {
   React.useEffect(() => {
     setLastOpened(getLastOpenedProject())
   }, [])
+
+  React.useEffect(() => {
+    if (searchParams.get("billing") === "success") {
+      toast.success("Your trial has started! Welcome to Hookify.", { duration: 5000 })
+      // Remove the query param without a full navigation
+      const params = new URLSearchParams(searchParams.toString())
+      params.delete("billing")
+      const clean = params.size ? `?${params}` : window.location.pathname
+      window.history.replaceState(null, "", clean)
+    }
+  }, [searchParams])
 
   const user = meQuery.data?.user
 

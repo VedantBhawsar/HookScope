@@ -9,6 +9,7 @@ import { ProfileSection } from "@/components/settings/profile-section"
 import { WorkspaceSection } from "@/components/settings/workspace-section"
 import { AppearanceSection } from "@/components/settings/appearance-section"
 import { UsageSection } from "@/components/settings/usage-section"
+import { BillingSection } from "@/components/settings/billing-section"
 import { UsageLimitBanner } from "@/components/pricing/usage-limit-banner"
 
 export function SettingsWorkspace() {
@@ -45,6 +46,7 @@ export function SettingsWorkspace() {
         <div className="space-y-6">
           <ProfileSection user={user} />
           <WorkspaceSection user={user} />
+          <BillingSection />
           <UsageSection />
           <AppearanceSection />
         </div>
