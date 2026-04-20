@@ -12,4 +12,5 @@ export const billingController = controller
 
 billingRouter.post("/checkout", controller.createCheckout)
 billingRouter.post("/portal", controller.createPortal)
+billingRouter.post("/change-plan", controller.changePlan)
 billingRouter.get("/subscription", controller.getSubscription)

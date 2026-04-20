@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { ExternalLink, Loader2, CreditCard, Zap } from "lucide-react"
+import { ExternalLink, Loader2, CreditCard, Zap, ArrowLeftRight } from "lucide-react"
 import { toast } from "sonner"
 import { Button } from "@workspace/ui/components/button"
 import { Badge } from "@workspace/ui/components/badge"
@@ -25,6 +25,7 @@ function formatDate(iso: string) {
 
 export function BillingSection() {
   const [upgradeOpen, setUpgradeOpen] = React.useState(false)
+  const [changePlanOpen, setChangePlanOpen] = React.useState(false)
   const subQuery = useSubscriptionQuery()
   const portalMutation = usePortalMutation()
 
@@ -50,19 +51,29 @@ export function BillingSection() {
           </div>
 
           {sub && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleManageBilling}
-              disabled={portalMutation.isPending}
-            >
-              {portalMutation.isPending ? (
-                <Loader2 className="size-3.5 animate-spin" />
-              ) : (
-                <ExternalLink className="size-3.5" />
-              )}
-              Manage Billing
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setChangePlanOpen(true)}
+              >
+                <ArrowLeftRight className="size-3.5" />
+                Change Plan
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleManageBilling}
+                disabled={portalMutation.isPending}
+              >
+                {portalMutation.isPending ? (
+                  <Loader2 className="size-3.5 animate-spin" />
+                ) : (
+                  <ExternalLink className="size-3.5" />
+                )}
+                Manage Billing
+              </Button>
+            </div>
           )}
         </div>
 
@@ -122,6 +133,11 @@ export function BillingSection() {
       </section>
 
       <UpgradeDialog open={upgradeOpen} onOpenChange={setUpgradeOpen} />
+      <UpgradeDialog
+        open={changePlanOpen}
+        onOpenChange={setChangePlanOpen}
+        currentTier={sub?.tier}
+      />
     </>
   )
 }

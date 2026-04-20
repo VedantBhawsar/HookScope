@@ -67,10 +67,13 @@ function mapStripeStatusToInternal(stripeStatus: string): SubscriptionStatus {
 }
 
 export class BillingService {
-  private stripe: Stripe
+  constructor(private readonly repo: BillingRepository) {}
 
-  constructor(private readonly repo: BillingRepository) {
-    this.stripe = new Stripe(process.env["STRIPE_SECRET_KEY"] ?? "")
+  private get stripe(): Stripe {
+    const key = process.env["STRIPE_SECRET_KEY"]
+    if (!key) throw new Error("STRIPE_SECRET_KEY is not set in environment")
+    console.log("[billing] stripe key at request time:", key.slice(0, 12) + "...")
+    return new Stripe(key)
   }
 
   async createCheckoutSession(userId: string, email: string, dto: CreateCheckoutDto) {
@@ -136,7 +139,7 @@ export class BillingService {
 
   async handleWebhookEvent(rawBody: Buffer, signature: string): Promise<void> {
     const webhookSecret = process.env["STRIPE_WEBHOOK_SECRET"] ?? ""
-    const event = this.stripe.webhooks.constructEvent(rawBody, signature, webhookSecret)
+    const event = await this.stripe.webhooks.constructEventAsync(rawBody, signature, webhookSecret)
 
     switch (event.type) {
       case "checkout.session.completed": {
@@ -184,6 +187,33 @@ export class BillingService {
       ...periodDates,
       cancelAtPeriodEnd: stripeSub.cancel_at_period_end,
     })
+  }
+
+  async changePlan(userId: string, planId: string, interval: "monthly" | "annual") {
+    const priceId = PRICE_IDS[planId]?.[interval]
+    if (!priceId) throw new Error(`No Stripe price configured for ${planId}/${interval}`)
+
+    const planTier = PLAN_TIER_MAP[planId]
+    if (!planTier) throw new Error(`Unknown plan: ${planId}`)
+
+    const sub = await this.repo.findSubscriptionByUserId(userId)
+    if (!sub?.stripeSubscriptionId) throw new Error("No active subscription found.")
+
+    const stripeSub = await this.stripe.subscriptions.retrieve(sub.stripeSubscriptionId)
+    const itemId = stripeSub.items.data[0]?.id
+    if (!itemId) throw new Error("Could not find subscription item to update.")
+
+    await this.stripe.subscriptions.update(sub.stripeSubscriptionId, {
+      items: [{ id: itemId, price: priceId }],
+      proration_behavior: "always_invoice",
+    })
+
+    const plan = await this.repo.findPlanByTier(planTier)
+    if (plan) {
+      await this.repo.updateSubscriptionPlanByUserId(userId, plan.id)
+    }
+
+    return { message: `Plan updated to ${planId} (${interval})` }
   }
 
   private async syncSubscription(stripeSub: Stripe.Subscription): Promise<void> {

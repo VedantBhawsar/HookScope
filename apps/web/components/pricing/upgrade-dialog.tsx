@@ -12,37 +12,66 @@ import {
 import { PricingCard } from "./pricing-card"
 import { PLANS, type BillingInterval } from "./pricing-data"
 import { cn } from "@workspace/ui/lib/utils"
-import { useCheckoutMutation } from "@/hooks/use-billing"
+import { useCheckoutMutation, useChangePlanMutation } from "@/hooks/use-billing"
+import { useQueryClient } from "@tanstack/react-query"
 
 interface UpgradeDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   reason?: string
+  currentTier?: string
 }
 
-export function UpgradeDialog({ open, onOpenChange, reason }: UpgradeDialogProps) {
+export function UpgradeDialog({ open, onOpenChange, reason, currentTier }: UpgradeDialogProps) {
   const [interval, setInterval] = React.useState<BillingInterval>("monthly")
   const [loadingPlanId, setLoadingPlanId] = React.useState<string | null>(null)
+  const queryClient = useQueryClient()
   const checkoutMutation = useCheckoutMutation()
+  const changePlanMutation = useChangePlanMutation()
+
+  const isChangingPlan = Boolean(currentTier)
 
   function handleSelectPlan(planId: string, billingInterval: BillingInterval) {
     setLoadingPlanId(planId)
-    checkoutMutation.mutate(
-      { planId, interval: billingInterval, returnTo: "settings" },
-      {
-        onError: () => {
-          toast.error("Failed to start checkout. Please try again.")
-          setLoadingPlanId(null)
-        },
-      }
-    )
+
+    if (isChangingPlan) {
+      changePlanMutation.mutate(
+        { planId, interval: billingInterval },
+        {
+          onSuccess: (result) => {
+            toast.success(result.message)
+            queryClient.invalidateQueries({ queryKey: ["subscription"] })
+            onOpenChange(false)
+            setLoadingPlanId(null)
+          },
+          onError: (err) => {
+            toast.error(err instanceof Error ? err.message : "Failed to change plan. Please try again.")
+            setLoadingPlanId(null)
+          },
+        }
+      )
+    } else {
+      checkoutMutation.mutate(
+        { planId, interval: billingInterval, returnTo: "settings" },
+        {
+          onError: () => {
+            toast.error("Failed to start checkout. Please try again.")
+            setLoadingPlanId(null)
+          },
+        }
+      )
+    }
   }
+
+  const isPending = checkoutMutation.isPending || changePlanMutation.isPending
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="min-w-6xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="text-xl font-bold">Upgrade your plan</DialogTitle>
+          <DialogTitle className="text-xl font-bold">
+            {isChangingPlan ? "Change your plan" : "Upgrade your plan"}
+          </DialogTitle>
           {reason && (
             <DialogDescription className="text-sm">{reason}</DialogDescription>
           )}
@@ -86,15 +115,22 @@ export function UpgradeDialog({ open, onOpenChange, reason }: UpgradeDialogProps
               plan={plan}
               interval={interval}
               onSelect={handleSelectPlan}
-              isLoading={loadingPlanId === plan.id && checkoutMutation.isPending}
+              isLoading={loadingPlanId === plan.id && isPending}
+              isCurrent={currentTier?.toLowerCase() === plan.id}
             />
           ))}
         </div>
 
-        <p className="text-center text-xs text-muted-foreground pb-2">
-          All plans include a{" "}
-          <span className="text-foreground font-medium">7-day free trial</span> — no credit card required.
-        </p>
+        {isChangingPlan ? (
+          <p className="text-center text-xs text-muted-foreground pb-2">
+            Upgrades take effect immediately. Downgrades apply at the start of your next billing cycle.
+          </p>
+        ) : (
+          <p className="text-center text-xs text-muted-foreground pb-2">
+            All plans include a{" "}
+            <span className="text-foreground font-medium">7-day free trial</span> — no credit card required.
+          </p>
+        )}
       </DialogContent>
     </Dialog>
   )

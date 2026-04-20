@@ -2,14 +2,15 @@
 
 import * as React from "react"
 import { useRouter, useSearchParams } from "next/navigation"
-import { ArrowRight, Clock, LoaderCircle } from "lucide-react"
+import { ArrowRight, Clock } from "lucide-react"
 import { toast } from "sonner"
 import { Button } from "@workspace/ui/components/button"
 import { useMeQuery } from "@/hooks/use-auth"
 import { type ProjectRecord } from "@/hooks/use-projects"
+import { AppShell } from "@/components/layout/app-shell"
 import { CreateProjectDialog } from "@/components/projects/create-project-dialog"
-import { ProjectsTopbar } from "@/components/projects/projects-topbar"
 import { ProjectsTableCard } from "@/components/projects/projects-table-card"
+import { UsageLimitBanner } from "@/components/pricing/usage-limit-banner"
 import {
   getGreeting,
   getLastOpenedProject,
@@ -32,7 +33,6 @@ export function ProjectsWorkspace() {
   React.useEffect(() => {
     if (searchParams.get("billing") === "success") {
       toast.success("Your trial has started! Welcome to Hookify.", { duration: 5000 })
-      // Remove the query param without a full navigation
       const params = new URLSearchParams(searchParams.toString())
       params.delete("billing")
       const clean = params.size ? `?${params}` : window.location.pathname
@@ -41,17 +41,8 @@ export function ProjectsWorkspace() {
   }, [searchParams])
 
   const user = meQuery.data?.user
-
-  React.useEffect(() => {
-    if (meQuery.isLoading) return
-    if (!user) {
-      router.replace("/auth/login")
-      return
-    }
-    if (!user.onboarding.onboardingCompleted) {
-      router.replace("/onboarding?step=verify")
-    }
-  }, [meQuery.isLoading, router, user])
+  const companyName = user?.onboarding?.companyName
+  const firstName = user?.name?.split(" ")[0] ?? ""
 
   const openProjectDashboard = (project: { id: string; name: string }) => {
     setLastOpenedProject(project)
@@ -65,70 +56,58 @@ export function ProjectsWorkspace() {
     router.push(getProjectDashboardHref(project.id))
   }
 
-  if (meQuery.isLoading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center">
-        <LoaderCircle className="size-5 animate-spin text-muted-foreground" />
-      </div>
-    )
-  }
-
-  const firstName = user?.name.split(" ")[0] ?? ""
-  const companyName = user?.onboarding.companyName
-
   return (
-    <div className="flex min-h-screen flex-col bg-background">
-      <ProjectsTopbar />
+    <AppShell
+      pageTitle={companyName ?? user?.name ?? "Projects"}
+      pageLabel="Workspace"
+    >
+      <UsageLimitBanner />
 
-      <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-10 sm:px-6">
-        {/* Greeting */}
-        <div className="mb-8">
-          <h1 className="text-2xl font-semibold tracking-tight">
-            {getGreeting()}{firstName ? `, ${firstName}` : ""}.
-          </h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            {companyName
-              ? `${companyName} · Webhook observability workspace`
-              : "Select a project to open its dashboard, or create a new one."}
-          </p>
-        </div>
+      <div>
+        <h1 className="text-2xl font-semibold tracking-tight">
+          {getGreeting()}{firstName ? `, ${firstName}` : ""}.
+        </h1>
+        <p className="mt-1 text-sm text-muted-foreground">
+          {companyName
+            ? `${companyName} · Webhook observability workspace`
+            : "Select a project to open its dashboard, or create a new one."}
+        </p>
+      </div>
 
-        {/* Last opened hero */}
-        {lastOpened ? (
-          <div className="mb-6 flex items-center justify-between rounded-xl border border-border bg-card px-5 py-4 shadow-sm">
-            <div className="flex items-center gap-3">
-              <div className="flex size-9 items-center justify-center rounded-lg border border-border bg-muted">
-                <Clock className="size-4 text-muted-foreground" />
-              </div>
-              <div>
-                <p className="text-xs text-muted-foreground">Continue where you left off</p>
-                <p className="text-sm font-semibold">{lastOpened.name}</p>
-              </div>
+      {lastOpened ? (
+        <div className="flex items-center justify-between rounded-xl border border-border bg-card px-5 py-4 shadow-sm">
+          <div className="flex items-center gap-3">
+            <div className="flex size-9 items-center justify-center rounded-lg border border-border bg-muted">
+              <Clock className="size-4 text-muted-foreground" />
             </div>
-            <Button size="sm" onClick={() => openProjectDashboard(lastOpened)}>
-              Open Dashboard
-              <ArrowRight className="size-3.5" />
-            </Button>
+            <div>
+              <p className="text-xs text-muted-foreground">Continue where you left off</p>
+              <p className="text-sm font-semibold">{lastOpened.name}</p>
+            </div>
           </div>
-        ) : null}
+          <Button size="sm" onClick={() => openProjectDashboard(lastOpened)}>
+            Open Dashboard
+            <ArrowRight className="size-3.5" />
+          </Button>
+        </div>
+      ) : null}
 
-        <ProjectsTableCard
-          onCreateProject={() => setCreateOpen(true)}
-          onOpenProject={openProjectDashboard}
-          onProjectUpdated={(project) => {
-            if (lastOpened?.id === project.id) {
-              setLastOpenedProject({ id: project.id, name: project.name })
-              setLastOpened({ id: project.id, name: project.name })
-            }
-          }}
-        />
-      </main>
+      <ProjectsTableCard
+        onCreateProject={() => setCreateOpen(true)}
+        onOpenProject={openProjectDashboard}
+        onProjectUpdated={(project) => {
+          if (lastOpened?.id === project.id) {
+            setLastOpenedProject({ id: project.id, name: project.name })
+            setLastOpened({ id: project.id, name: project.name })
+          }
+        }}
+      />
 
       <CreateProjectDialog
         open={createOpen}
         onOpenChange={setCreateOpen}
         onCreated={handleProjectCreated}
       />
-    </div>
+    </AppShell>
   )
 }

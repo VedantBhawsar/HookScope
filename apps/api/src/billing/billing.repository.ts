@@ -41,6 +41,13 @@ export class BillingRepository {
     })
   }
 
+  async updateSubscriptionPlanByUserId(userId: string, planId: string) {
+    return prisma.subscription.update({
+      where: { userId },
+      data: { planId, lastSyncedAt: new Date() },
+    })
+  }
+
   async updateSubscriptionByStripeId(
     stripeSubscriptionId: string,
     data: {

@@ -203,6 +203,107 @@ flowchart LR
     W -. alert triggered .- A
 ```
 
+---
+
+### Frontend — `apps/web` (Next.js · :3000)
+
+```mermaid
+flowchart TB
+    Browser([Browser]) -->|cookie JWT| NX[Next.js App Router]
+
+    subgraph NX [Next.js · apps/web]
+        direction TB
+        Auth["/auth/login · /auth/register\nOAuth callback"] --> Guard{Session\ncookie?}
+        Guard -->|no| Auth
+        Guard -->|yes + no onboarding| OB["/onboarding\nCompany → Project steps"]
+        Guard -->|yes + no subscription| PR["/pricing\nPlan selection"]
+        Guard -->|fully onboarded| PW["/projects\nProject workspace"]
+
+        PW --> DB["/dashboard/:projectId/:endpointId\nOverview · Events · Deliveries\nAlerts · Settings"]
+
+        DB --> HK["TanStack Query hooks\naxios + withCredentials"]
+        DB --> SSE["SSE listener\n/api/alerts/stream\nNotificationBell + Sonner toasts"]
+    end
+
+    HK -->|REST| API[API · :5000]
+    SSE -->|EventSource| API
+    HK -->|reads| PG[(PostgreSQL)]
+```
+
+---
+
+### Management API — `apps/api` (Express 5 · :5000)
+
+```mermaid
+flowchart TB
+    Client([Web / OAuth provider]) -->|HTTP + httpOnly cookie| EX
+
+    subgraph EX [Express 5 · apps/api]
+        direction TB
+        MW["JWT middleware\nauthenticate()"] --> R
+
+        subgraph R [Routers]
+            direction LR
+            AuthR["/api/auth\nlogin · register · refresh\nOAuth · profile · verify-email"]
+            ProjR["/api/projects\nCRUD + soft-delete"]
+            EndR["/api/endpoints\nCRUD · token gen · custom headers"]
+            AlertR["/api/alerts\nrules · triggers · SSE stream"]
+            UsageR["/api/usage\nevent counts · plan limits"]
+            BillR["/api/billing\nStripe checkout · portal\nwebhook events"]
+        end
+
+        R --> SVC["Service layer\nbusiness logic + Argon2id / jose"]
+        SVC --> REPO["Repository layer\nPrisma queries"]
+    end
+
+    REPO --> PG[(PostgreSQL\nUser · Project · Endpoint\nAlert · Subscription)]
+    BillR -->|Stripe SDK| ST[(Stripe API)]
+```
+
+---
+
+### Ingestion Layer — `apps/ingestion` (Fastify 5 · :3001)
+
+```mermaid
+flowchart TB
+    Provider([External provider\nStripe · GitHub · Shopify · …]) -->|POST /api/v1/webhooks/:provider/:token| FY
+
+    subgraph FY [Fastify 5 · apps/ingestion]
+        direction TB
+        RBP["rawBodyPlugin\ncaptures raw Buffer before JSON parse"] --> RT
+
+        subgraph RT [Request pipeline]
+            direction LR
+            Hash["SHA-256 hash token\n→ Endpoint lookup"] --> Verify["HMAC verify\nper Endpoint.signingSecret\nNONE · OPTIONAL · STRICT"]
+            Verify --> Enq["Enqueue BullMQ job\n{ eventId, endpointId, payload }"]
+        end
+
+        Enq --> Q[(BullMQ · Redis · :6379)]
+
+        subgraph WK [Background worker]
+            direction TB
+            W1["Write full payload\nto S3\nevents/:provider/:date/:id.json"] 
+            W2["Upsert WebhookEvent\n@@unique endpointId+eventId\nstore S3 URL, not raw body"]
+            W3["Create Delivery row\nPOST to Endpoint.destinationUrl\nmerge custom headers"]
+            W4["Append EventLog\nSUCCESS · FAILED · DEAD_LETTER"]
+            W5["Increment Usage\nupsert by userId+month"]
+            W6["Evaluate Alert rules\ntrigger SSE push"]
+            W1 --> W2 --> W3 --> W4 --> W5 --> W6
+        end
+
+        Q --> WK
+        W3 -->|linear backoff\n15s · 30s · 45s · 60s · 75s\n5 attempts| Q
+    end
+
+    W1 --> S3[(S3 / LocalStack\n:4566)]
+    W2 --> PG[(PostgreSQL)]
+    W4 --> PG
+    W5 --> PG
+    W6 -->|SSE| API[API · :5000]
+```
+
+---
+
 **Key flow details**
 
 1. `rawBodyPlugin` captures the raw `Buffer` before Fastify parses JSON — required for HMAC verification.

@@ -30,6 +30,18 @@ async function createCheckoutSession(payload: {
   return unwrapResponse(res.data)
 }
 
+async function changePlan(payload: {
+  planId: string
+  interval: "monthly" | "annual"
+}): Promise<{ message: string }> {
+  const res = await http.post<{ success: boolean; message: string; data: { message: string } }>(
+    "/api/billing/change-plan",
+    payload
+  )
+  const data = unwrapResponse(res.data)
+  return { ...data, message: res.data.message }
+}
+
 async function createPortalSession(): Promise<{ url: string }> {
   const res = await http.post<{ success: boolean; message: string; data: { url: string } }>(
     "/api/billing/portal",
@@ -53,6 +65,10 @@ export function useCheckoutMutation() {
       window.location.href = url
     },
   })
+}
+
+export function useChangePlanMutation() {
+  return useMutation({ mutationFn: changePlan })
 }
 
 export function usePortalMutation() {

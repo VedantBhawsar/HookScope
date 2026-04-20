@@ -39,9 +39,10 @@ interface PricingCardProps {
   interval: BillingInterval
   onSelect?: (planId: string, interval: BillingInterval) => void
   isLoading?: boolean
+  isCurrent?: boolean
 }
 
-export function PricingCard({ plan, interval, onSelect, isLoading }: PricingCardProps) {
+export function PricingCard({ plan, interval, onSelect, isLoading, isCurrent }: PricingCardProps) {
   const isAnnual = interval === "annual"
   const price = isAnnual ? plan.annualPrice : plan.monthlyPrice
   const monthlyEquivalent =
@@ -107,12 +108,18 @@ export function PricingCard({ plan, interval, onSelect, isLoading }: PricingCard
         {onSelect ? (
           <Button
             size="lg"
-            variant={plan.highlight ? "default" : "outline"}
+            variant={isCurrent ? "secondary" : plan.highlight ? "default" : "outline"}
             className="w-full"
-            onClick={() => onSelect(plan.id, interval)}
-            disabled={isLoading}
+            onClick={() => !isCurrent && onSelect(plan.id, interval)}
+            disabled={isLoading || isCurrent}
           >
-            {isLoading ? <Loader2 className="size-4 animate-spin" /> : plan.cta}
+            {isLoading ? (
+              <Loader2 className="size-4 animate-spin" />
+            ) : isCurrent ? (
+              "Current plan"
+            ) : (
+              plan.cta
+            )}
           </Button>
         ) : (
           <Button
