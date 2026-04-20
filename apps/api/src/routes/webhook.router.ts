@@ -13,6 +13,8 @@ export const webhookRouter = Router()
 webhookRouter.use(requireAuth)
 
 webhookRouter.get("/", controller.list)
+webhookRouter.post("/batch/replay", controller.batchReplay)
+webhookRouter.post("/batch/delete", controller.batchDelete)
 webhookRouter.get("/:id", controller.getById)
 webhookRouter.get("/:id/deliveries", controller.listDeliveries)
 webhookRouter.get("/:id/logs", controller.listLogs)

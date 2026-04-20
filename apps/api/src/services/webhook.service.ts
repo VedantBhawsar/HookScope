@@ -82,6 +82,40 @@ export class WebhookService {
     return delivery
   }
 
+  async batchReplay(eventIds: string[], userId: string) {
+    const events = await this.repository.findEventsByIdsAndUserId(eventIds, userId)
+    let successCount = 0
+
+    // Fire all replays async (don't wait for completion)
+    for (const event of events) {
+      const delivery = await this.repository.createRetryDelivery(event.id, userId)
+      if (delivery && event) {
+        successCount++
+        this.executeReplayDelivery(delivery.id, delivery.webhookEventId, delivery.destinationUrl, event).catch(
+          async (err) => {
+            console.error("[WebhookService.batchReplay] Replay error:", err)
+            await this.repository
+              .updateDeliveryOutcome(delivery.id, delivery.webhookEventId, {
+                deliveryStatus: DeliveryStatus.FAILED,
+                eventStatus: EventStatus.FAILED,
+                errorCode: DeliveryErrorCode.PROCESSING_ERROR,
+                logStatus: "ERROR",
+                logMessage: `Batch replay failed: ${err instanceof Error ? err.message.slice(0, 200) : "Unknown error"}`,
+              })
+              .catch(() => {})
+          }
+        )
+      }
+    }
+
+    return { successCount, totalRequested: eventIds.length, skippedCount: eventIds.length - successCount }
+  }
+
+  async batchDelete(eventIds: string[], userId: string) {
+    const deletedCount = await this.repository.batchSoftDeleteEvents(eventIds, userId)
+    return { deletedCount, totalRequested: eventIds.length }
+  }
+
   private async executeReplayDelivery(
     deliveryId: string,
     webhookEventId: string,

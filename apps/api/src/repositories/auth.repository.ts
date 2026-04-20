@@ -172,10 +172,27 @@ export class AuthRepository {
     })
   }
 
-  /** Attach an OAuth provider account to an existing user. */
-  linkOAuthAccount(userId: string, provider: OAuthProvider, providerAccountId: string) {
+  /** Attach an OAuth provider account to an existing user and mark email verified. */
+  async linkOAuthAccount(userId: string, provider: OAuthProvider, providerAccountId: string) {
+    await prisma.user.update({
+      where: { id: userId },
+      data: { emailVerifiedAt: new Date() }, // provider verified the email
+    })
     return prisma.oAuthAccount.create({
       data: { userId, provider, providerAccountId },
+    })
+  }
+
+  /** Fetch active subscription for a user. */
+  getUserSubscription(userId: string) {
+    return prisma.subscription.findUnique({
+      where: { userId },
+      select: {
+        status: true,
+        currentPeriodStart: true,
+        currentPeriodEnd: true,
+        plan: { select: { tier: true } },
+      },
     })
   }
 }

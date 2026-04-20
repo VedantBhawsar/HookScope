@@ -133,4 +133,50 @@ export class WebhookController {
       error(res, "Failed to retry webhook event")
     }
   }
+
+  batchReplay = async (
+    req: Request<never, never, { eventIds: string[] }>,
+    res: Response
+  ): Promise<void> => {
+    try {
+      const { userId } = ((req as unknown) as AuthenticatedRequest).user
+      const { eventIds } = req.body
+
+      if (!Array.isArray(eventIds) || eventIds.length === 0) {
+        return badRequest(res, "'eventIds' must be a non-empty array of strings")
+      }
+      if (eventIds.length > 100) {
+        return badRequest(res, "'eventIds' cannot exceed 100 items per request")
+      }
+
+      const result = await this.service.batchReplay(eventIds, userId)
+      json(res, result, 200, "Batch replay initiated for " + result.successCount + " event(s)")
+    } catch (err) {
+      console.error("[WebhookController.batchReplay]", err)
+      error(res, "Failed to batch replay webhook events")
+    }
+  }
+
+  batchDelete = async (
+    req: Request<never, never, { eventIds: string[] }>,
+    res: Response
+  ): Promise<void> => {
+    try {
+      const { userId } = ((req as unknown) as AuthenticatedRequest).user
+      const { eventIds } = req.body
+
+      if (!Array.isArray(eventIds) || eventIds.length === 0) {
+        return badRequest(res, "'eventIds' must be a non-empty array of strings")
+      }
+      if (eventIds.length > 100) {
+        return badRequest(res, "'eventIds' cannot exceed 100 items per request")
+      }
+
+      const result = await this.service.batchDelete(eventIds, userId)
+      json(res, result, 200, "Soft-deleted " + result.deletedCount + " event(s)")
+    } catch (err) {
+      console.error("[WebhookController.batchDelete]", err)
+      error(res, "Failed to delete webhook events")
+    }
+  }
 }

@@ -5,10 +5,10 @@ import type { S3Client } from "@aws-sdk/client-s3"
 import { putObject } from "@workspace/s3"
 import { DeliveryErrorCode, DeliveryStatus, EventStatus, LogType, prisma } from "@workspace/db"
 import type { Redis } from "@workspace/redis"
-import { createWebhookEvent } from "../services/stripe-ingest.service.js"
-import { STRIPE_EVENT_QUEUE } from "../queues/stripe-event.queue.js"
-import type { StripeEventJob } from "../queues/stripe-event.queue.js"
-import type Stripe from "stripe"
+import { createWebhookEvent } from "../services/github-ingest.service.js"
+import { GITHUB_EVENT_QUEUE } from "../queues/github-event.queue.js"
+import type { GitHubEventJob } from "../queues/github-event.queue.js"
+import type { GitHubWebhookEvent } from "../types/github.js"
 
 const ALERT_CHANNEL = "wh:alert:events"
 
@@ -23,35 +23,46 @@ export interface WorkerDeps {
   log: FastifyBaseLogger
 }
 
-export function createStripeWorker(connection: ConnectionOptions, deps: WorkerDeps) {
-  const worker = new Worker<StripeEventJob>(
-    STRIPE_EVENT_QUEUE,
+export function createGitHubWorker(connection: ConnectionOptions, deps: WorkerDeps) {
+  const worker = new Worker<GitHubEventJob>(
+    GITHUB_EVENT_QUEUE,
     async (job) => {
-      const { endpointId, destinationUrl, event, signature, sourceIp, paymentValidation, receivedAt, bucket } =
-        job.data
+      const {
+        endpointId,
+        destinationUrl,
+        deliveryId,
+        event,
+        eventType,
+        signature,
+        sourceIp,
+        hookId,
+        receivedAt,
+        bucket,
+      } = job.data
 
       // ── Step 1: Store in S3 (idempotent — same key on retry) ──────────────
-      const key = `events/stripe/${receivedAt.slice(0, 10)}/${event.id}.json`
+      const date = receivedAt.slice(0, 10)
+      const key = `events/github/${date}/${deliveryId}.json`
 
       await putObject(
         {
           bucket,
           key,
           body: JSON.stringify({
-            eventId: event.id,
-            eventType: event.type,
-            livemode: event.livemode,
-            apiVersion: event.api_version,
+            deliveryId,
+            eventType,
+            action: (event as Record<string, unknown>).action,
+            repository: (event as Record<string, unknown>).repository?.full_name,
             receivedAt,
-            headers: { "stripe-signature": signature },
-            data: event.data,
-            paymentValidation,
+            headers: { "x-github-delivery": deliveryId, "x-github-event": eventType },
+            hookId,
+            data: event,
           }),
           contentType: "application/json",
           metadata: {
-            source: "stripe",
-            "event-type": event.type,
-            "event-id": event.id,
+            source: "github",
+            "event-type": eventType,
+            "delivery-id": deliveryId,
           },
         },
         deps.s3
@@ -60,7 +71,9 @@ export function createStripeWorker(connection: ConnectionOptions, deps: WorkerDe
       // ── Step 2: Persist to DB (deduplication-safe on retry) ───────────────
       const result = await createWebhookEvent(deps.prisma, {
         endpointId,
+        deliveryId,
         event,
+        eventType,
         payloadUrl: `s3://${bucket}/${key}`,
         signature,
         sourceIp,
@@ -77,7 +90,7 @@ export function createStripeWorker(connection: ConnectionOptions, deps: WorkerDe
       if (!result.isDuplicate) {
         await deps.redis.set(
           `event:${result.webhookEventId}`,
-          JSON.stringify({ source: "STRIPE", eventType: event.type, endpointId, status: "RECEIVED" }),
+          JSON.stringify({ source: "GITHUB", eventType, endpointId, status: "RECEIVED" }),
           "EX",
           86400
         )
@@ -104,9 +117,10 @@ export function createStripeWorker(connection: ConnectionOptions, deps: WorkerDe
         endpointId,
         userId,
         event,
+        eventType,
+        deliveryId,
         destinationUrl,
         signature,
-        paymentValidation,
         customHeaders: endpoint?.customHeaders as Record<string, string> | null,
       })
     },
@@ -125,17 +139,17 @@ export function createStripeWorker(connection: ConnectionOptions, deps: WorkerDe
     const isFinal = job != null && job.attemptsMade >= maxAttempts
 
     deps.log.error(
-      { jobId: job?.id, eventId: job?.data.event.id, attempts: job?.attemptsMade, isFinal, err },
-      isFinal ? "Stripe event job exhausted all retries" : "Stripe event job failed (will retry)"
+      { jobId: job?.id, deliveryId: job?.data.deliveryId, attempts: job?.attemptsMade, isFinal, err },
+      isFinal ? "GitHub event job exhausted all retries" : "GitHub event job failed (will retry)"
     )
 
     if (!isFinal || !job) return
 
     // Transition event to DEAD_LETTER after all retries are exhausted
     try {
-      const { endpointId, event } = job.data
+      const { endpointId, deliveryId } = job.data
       const we = await deps.prisma.webhookEvent.findFirst({
-        where: { endpointId, eventId: event.id },
+        where: { endpointId, eventId: deliveryId },
         select: { id: true },
       })
       if (!we) return
@@ -167,14 +181,14 @@ export function createStripeWorker(connection: ConnectionOptions, deps: WorkerDe
         eventStatus: EventStatus.DEAD_LETTER,
       })
     } catch (deadLetterErr) {
-      deps.log.error({ err: deadLetterErr }, "Failed to transition event to DEAD_LETTER")
+      deps.log.error({ err: deadLetterErr }, "Failed to transition GitHub event to DEAD_LETTER")
     }
   })
 
   worker.on("completed", (job) => {
     deps.log.info(
-      { jobId: job.id, eventId: job.data.event.id },
-      "Stripe event job completed"
+      { jobId: job.id, deliveryId: job.data.deliveryId, eventType: job.data.eventType },
+      "GitHub event job completed"
     )
   })
 
@@ -199,7 +213,7 @@ async function publishAlertEvent(
     )
   } catch (err) {
     // Non-fatal — alert publish failure must never break delivery
-    console.error("[StripeWorker] Failed to publish alert event:", err)
+    console.error("[GitHubWorker] Failed to publish alert event:", err)
   }
 }
 
@@ -211,14 +225,15 @@ async function forwardAndPersist(
     webhookEventId: string
     endpointId: string
     userId: string | null
-    event: Stripe.Event
+    event: GitHubWebhookEvent
+    eventType: string
+    deliveryId: string
     destinationUrl: string
     signature: string | null
-    paymentValidation: StripeEventJob["paymentValidation"]
     customHeaders?: Record<string, string> | null
   }
 ): Promise<void> {
-  const { webhookEventId, endpointId, userId, event, destinationUrl, signature, paymentValidation, customHeaders } = params
+  const { webhookEventId, endpointId, userId, event, eventType, deliveryId, destinationUrl, signature, customHeaders } = params
 
   const delivery = await db.delivery.create({
     data: { webhookEventId, destinationUrl, status: DeliveryStatus.PENDING },
@@ -236,7 +251,7 @@ async function forwardAndPersist(
         deliveryId: delivery.id,
         status: "INFO",
         type: LogType.DELIVERY_ATTEMPT,
-        message: `Forwarding Stripe event ${event.type} (${event.id}) to ${destinationUrl}`,
+        message: `Forwarding GitHub event ${eventType} (${deliveryId}) to ${destinationUrl}`,
       },
     }),
   ])
@@ -248,14 +263,12 @@ async function forwardAndPersist(
   try {
     const defaultHeaders = {
       "content-type": "application/json",
-      "x-webhook-source": "stripe",
-      "x-webhook-event-id": event.id,
-      "x-webhook-event-type": event.type,
-      "x-webhook-payment-event": String(paymentValidation.isPaymentEvent),
-      "x-webhook-payment-valid":
-        paymentValidation.paymentValid === null ? "unknown" : String(paymentValidation.paymentValid),
-      "x-webhook-payment-validation-reason": paymentValidation.reason.slice(0, ERROR_PREVIEW_LIMIT),
-      ...(signature ? { "x-original-stripe-signature": signature } : {}),
+      "x-webhook-source": "github",
+      "x-webhook-delivery-id": deliveryId,
+      "x-webhook-event-type": eventType,
+      "x-webhook-action": ((event as Record<string, unknown>).action as string) || "unknown",
+      "x-webhook-repository": ((event as Record<string, unknown>).repository?.name as string) || "unknown",
+      ...(signature ? { "x-original-github-signature-256": signature } : {}),
     }
 
     // Merge custom headers (custom headers can override defaults except content-type)
@@ -299,7 +312,7 @@ async function forwardAndPersist(
       }),
     ])
 
-    log.warn({ webhookEventId, endpointId, destinationUrl, err: networkErr }, "Delivery network error")
+    log.warn({ webhookEventId, endpointId, destinationUrl, err: networkErr }, "GitHub delivery network error")
     await publishAlertEvent(redis, {
       endpointId,
       userId,

@@ -337,4 +337,60 @@ export class WebhookRepository {
       }),
     ])
   }
+
+  /**
+   * Find multiple webhook events by IDs, scoped to user's projects.
+   * Used for batch operations.
+   */
+  async findEventsByIdsAndUserId(eventIds: string[], userId: string) {
+    return prisma.webhookEvent.findMany({
+      where: {
+        id: { in: eventIds },
+        deletedAt: null,
+        endpoint: {
+          deletedAt: null,
+          project: { userId, deletedAt: null },
+        },
+      },
+      select: {
+        id: true,
+        eventType: true,
+        source: true,
+        payloadUrl: true,
+        endpoint: { select: { destinationUrl: true } },
+      },
+    })
+  }
+
+  /**
+   * Soft-delete multiple webhook events (scoped to user's projects).
+   * Only deletes events that belong to the user's projects.
+   * Returns count of deleted events.
+   */
+  async batchSoftDeleteEvents(eventIds: string[], userId: string) {
+    // First, verify all events belong to the user
+    const validEvents = await prisma.webhookEvent.findMany({
+      where: {
+        id: { in: eventIds },
+        deletedAt: null,
+        endpoint: {
+          deletedAt: null,
+          project: { userId, deletedAt: null },
+        },
+      },
+      select: { id: true },
+    })
+
+    if (validEvents.length === 0) return 0
+
+    const validIds = validEvents.map((e) => e.id)
+
+    // Soft delete: update deletedAt timestamp
+    const result = await prisma.webhookEvent.updateMany({
+      where: { id: { in: validIds } },
+      data: { deletedAt: new Date() },
+    })
+
+    return result.count
+  }
 }

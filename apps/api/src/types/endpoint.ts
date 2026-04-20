@@ -13,6 +13,7 @@ export interface CreateEndpointDto {
   timestampHeader?: string
   toleranceSec?: number
   eventFilters?: unknown
+  customHeaders?: Record<string, string> | null
   status?: string
 }
 
@@ -26,6 +27,7 @@ export interface UpdateEndpointDto {
   timestampHeader?: string
   toleranceSec?: number
   eventFilters?: unknown
+  customHeaders?: Record<string, string> | null
   status?: string
 }
 
@@ -53,6 +55,7 @@ export interface EndpointDto {
   timestampHeader: string | null
   toleranceSec: number | null
   eventFilters: unknown
+  customHeaders: Record<string, string> | null
   status: string
   createdAt: Date
 }

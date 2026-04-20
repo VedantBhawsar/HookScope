@@ -4,7 +4,7 @@ import * as React from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
-import { LoaderCircle } from "lucide-react"
+import { LoaderCircle, X } from "lucide-react"
 import { Button } from "@workspace/ui/components/button"
 import {
   Form,
@@ -33,20 +33,37 @@ import { getRequestErrorMessage } from "@/lib/http"
 
 const verificationModes = ["NONE", "OPTIONAL", "STRICT"] as const
 
+const customHeaderSchema = z.object({
+  key: z.string().min(1, "Header name is required"),
+  value: z.string().min(1, "Header value is required"),
+})
+
 const endpointSettingsSchema = z.object({
   name: z.string().min(1, "Name is required"),
   destinationUrl: z.string().url("Destination URL must be a valid URL"),
   verificationMode: z.enum(verificationModes),
-  signingSecret: z.string().optional(),
-  signatureHeader: z.string().optional(),
-  signatureType: z.string().optional(),
-  timestampHeader: z.string().optional(),
+  signingSecret: z.string().default(""),
+  signatureHeader: z.string().default(""),
+  signatureType: z.string().default(""),
+  timestampHeader: z.string().default(""),
   toleranceSec: z
     .string()
+    .default("")
     .refine((value) => value === "" || /^\d+$/.test(value), "Tolerance must be a non-negative integer"),
+  customHeaders: z.array(customHeaderSchema).default([]),
 })
 
-type EndpointSettingsFormValues = z.infer<typeof endpointSettingsSchema>
+type EndpointSettingsFormValues = {
+  name: string
+  destinationUrl: string
+  verificationMode: (typeof verificationModes)[number]
+  signingSecret: string
+  signatureHeader: string
+  signatureType: string
+  timestampHeader: string
+  toleranceSec: string
+  customHeaders: Array<{ key: string; value: string }>
+}
 
 interface EndpointSettingsFormProps {
   projectId: string
@@ -54,6 +71,10 @@ interface EndpointSettingsFormProps {
 }
 
 function toDefaultValues(endpoint: EndpointDetailRecord): EndpointSettingsFormValues {
+  const customHeaders = endpoint.customHeaders
+    ? Object.entries(endpoint.customHeaders).map(([key, value]) => ({ key, value: String(value) }))
+    : []
+
   return {
     name: endpoint.name,
     destinationUrl: endpoint.destinationUrl,
@@ -63,6 +84,7 @@ function toDefaultValues(endpoint: EndpointDetailRecord): EndpointSettingsFormVa
     signatureType: endpoint.signatureType ?? "",
     timestampHeader: endpoint.timestampHeader ?? "",
     toleranceSec: endpoint.toleranceSec != null ? String(endpoint.toleranceSec) : "",
+    customHeaders,
   }
 }
 
@@ -70,7 +92,7 @@ export function EndpointSettingsForm({ projectId, endpoint }: EndpointSettingsFo
   const updateEndpointMutation = useUpdateEndpointMutation()
 
   const form = useForm<EndpointSettingsFormValues>({
-    resolver: zodResolver(endpointSettingsSchema),
+    resolver: zodResolver(endpointSettingsSchema) as any,
     defaultValues: toDefaultValues(endpoint),
   })
 
@@ -82,6 +104,10 @@ export function EndpointSettingsForm({ projectId, endpoint }: EndpointSettingsFo
 
   const onSubmit = async (values: EndpointSettingsFormValues) => {
     try {
+      const customHeaders = values.customHeaders?.length
+        ? Object.fromEntries(values.customHeaders.map((h) => [h.key.trim(), h.value.trim()]))
+        : undefined
+
       const result = await updateEndpointMutation.mutateAsync({
         projectId,
         endpointId: endpoint.id,
@@ -93,6 +119,7 @@ export function EndpointSettingsForm({ projectId, endpoint }: EndpointSettingsFo
         signatureType: values.signatureType?.trim() || undefined,
         timestampHeader: values.timestampHeader?.trim() || undefined,
         toleranceSec: values.toleranceSec === "" ? undefined : Number(values.toleranceSec),
+        customHeaders,
       })
 
       toast.success(result.message)
@@ -236,7 +263,75 @@ export function EndpointSettingsForm({ projectId, endpoint }: EndpointSettingsFo
             ) : null}
           </div>
 
-          <div className="flex justify-end">
+          {/* Custom Headers Section */}
+          <div className="mt-6 space-y-4 border-t border-border pt-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium">Custom Headers</p>
+                <p className="text-xs text-muted-foreground">Add custom HTTP headers to be sent with webhook deliveries</p>
+              </div>
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                onClick={() => {
+                  const current = form.getValues("customHeaders") || []
+                  form.setValue("customHeaders", [...current, { key: "", value: "" }], { shouldDirty: true })
+                }}
+              >
+                Add header
+              </Button>
+            </div>
+
+            <div className="space-y-2">
+              {(form.watch("customHeaders") || []).map((_, index) => (
+                <div key={index} className="flex gap-2">
+                  <FormField
+                    control={form.control}
+                    name={`customHeaders.${index}.key`}
+                    render={({ field }) => (
+                      <FormItem className="flex-1">
+                        <FormControl>
+                          <Input placeholder="Header name (e.g., X-Custom-Header)" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name={`customHeaders.${index}.value`}
+                    render={({ field }) => (
+                      <FormItem className="flex-1">
+                        <FormControl>
+                          <Input placeholder="Header value" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => {
+                      const current = form.getValues("customHeaders") || []
+                      form.setValue(
+                        "customHeaders",
+                        current.filter((_, i) => i !== index),
+                        { shouldDirty: true }
+                      )
+                    }}
+                    className="h-9 px-2"
+                  >
+                    <X className="size-4" />
+                  </Button>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="mt-6 flex justify-end border-t border-border pt-6">
             <Button type="submit" size="sm" disabled={updateEndpointMutation.isPending || !form.formState.isDirty}>
               {updateEndpointMutation.isPending ? <LoaderCircle className="size-3.5 animate-spin" /> : null}
               Save changes

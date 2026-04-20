@@ -201,7 +201,12 @@ export class AuthController {
       const result = await this.service.oauthSignin("GOOGLE", profile.providerAccountId, profile.email, profile.name, profile.avatarUrl)
 
       setAuthCookies(res, result.tokens.accessToken, result.refreshToken)
-      const dest = result.user.onboarding?.onboardingCompleted ? "/projects" : "/onboarding?step=verify"
+
+      // Route based on onboarding + payment status
+      let dest = "/onboarding?step=verify"
+      if (result.user.onboarding?.onboardingCompleted) {
+        dest = result.subscription?.status === "active" ? "/projects" : "/pricing?returnTo=/projects"
+      }
       res.redirect(`${FRONTEND_URL}${dest}`)
     } catch (err) {
       console.error("[AuthController.googleOAuthCallback]", err)
@@ -232,7 +237,12 @@ export class AuthController {
       const result = await this.service.oauthSignin("GITHUB", profile.providerAccountId, profile.email, profile.name, profile.avatarUrl)
 
       setAuthCookies(res, result.tokens.accessToken, result.refreshToken)
-      const dest = result.user.onboarding?.onboardingCompleted ? "/projects" : "/onboarding?step=verify"
+
+      // Route based on onboarding + payment status
+      let dest = "/onboarding?step=verify"
+      if (result.user.onboarding?.onboardingCompleted) {
+        dest = result.subscription?.status === "active" ? "/projects" : "/pricing?returnTo=/projects"
+      }
       res.redirect(`${FRONTEND_URL}${dest}`)
     } catch (err) {
       console.error("[AuthController.gitHubOAuthCallback]", err)

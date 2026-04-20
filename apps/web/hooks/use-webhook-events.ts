@@ -223,3 +223,47 @@ export function useRetryWebhookMutation() {
     },
   })
 }
+
+/**
+ * Batch replay multiple webhook events.
+ */
+export function useBatchReplayMutation() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async (eventIds: string[]) => {
+      const response = await http.post<ApiResponse<{ successCount: number }>>(
+        "/api/webhooks/batch/replay",
+        { eventIds }
+      )
+      const { message } = response.data
+      const data = unwrapResponse(response.data)
+      return { data, message }
+    },
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: webhookQueryKeys.lists() })
+    },
+  })
+}
+
+/**
+ * Batch delete multiple webhook events.
+ */
+export function useBatchDeleteMutation() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async (eventIds: string[]) => {
+      const response = await http.post<ApiResponse<{ deletedCount: number }>>(
+        "/api/webhooks/batch/delete",
+        { eventIds }
+      )
+      const { message } = response.data
+      const data = unwrapResponse(response.data)
+      return { data, message }
+    },
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: webhookQueryKeys.lists() })
+    },
+  })
+}

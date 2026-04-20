@@ -25,7 +25,11 @@ export class EndpointService {
   }
 
   async listByProject(projectId: string, query: EndpointListQuery): Promise<PaginatedEndpointList> {
-    const { total, data } = await this.repository.findAllByProjectId(projectId, query)
+    const { total, data: rawData } = await this.repository.findAllByProjectId(projectId, query)
+    const data = rawData.map((endpoint) => ({
+      ...endpoint,
+      customHeaders: (endpoint.customHeaders as Record<string, string> | null) || null,
+    }))
     return {
       data,
       pagination: {
@@ -45,10 +49,15 @@ export class EndpointService {
     const token = randomBytes(32).toString("hex")
     const tokenHash = createHash("sha256").update(token).digest("hex")
 
-    const endpoint = await this.repository.create(projectId, tokenHash, data)
+    const rawEndpoint = await this.repository.create(projectId, tokenHash, data)
 
     const baseUrl = (process.env["INGESTION_BASE_URL"] ?? "http://localhost:5001").replace(/\/$/, "")
     const webhookUrl = `${baseUrl}/api/v1/webhooks/${data.source.toLowerCase()}/${token}`
+
+    const endpoint = {
+      ...rawEndpoint,
+      customHeaders: (rawEndpoint.customHeaders as Record<string, string> | null) || null,
+    }
 
     return { ...endpoint, token, webhookUrl }
   }

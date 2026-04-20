@@ -33,9 +33,17 @@ export interface AuthUser {
   onboarding: AuthOnboardingState
 }
 
+export interface SubscriptionInfo {
+  status: string
+  plan: { tier: string }
+  currentPeriodStart: Date
+  currentPeriodEnd: Date
+}
+
 export interface AuthResponse {
   user: AuthUser
   tokens: AuthTokens
+  subscription?: SubscriptionInfo | null
 }
 
 export interface AccessTokenPayload {

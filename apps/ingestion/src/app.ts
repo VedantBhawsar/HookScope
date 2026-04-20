@@ -12,6 +12,7 @@ import queuePlugin from "./plugins/queue.js"
 import healthRoute from "./routes/health.js"
 import ingestRoute from "./routes/ingest.js"
 import stripeRoute from "./routes/stripe.js"
+import githubRoute from "./routes/github.js"
 
 export async function buildApp(env: Env): Promise<FastifyInstance> {
   const fastify = Fastify({
@@ -55,6 +56,7 @@ export async function buildApp(env: Env): Promise<FastifyInstance> {
   await fastify.register(healthRoute, { prefix: "/api/v1" })
   await fastify.register(ingestRoute, { prefix: "/api/v1" })
   await fastify.register(stripeRoute, { prefix: "/api/v1" })
+  await fastify.register(githubRoute, { prefix: "/api/v1" })
 
   return fastify
 }

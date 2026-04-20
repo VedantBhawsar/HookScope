@@ -31,10 +31,12 @@ export class AuthService {
     const user = await this.repo.createUser({ name: dto.name, email: dto.email, passwordHash })
 
     const { accessToken, refreshToken } = await this.issueTokenPair(user.id, user.email)
+    // New users have no subscription yet
     return {
       user: this.toAuthUser(user, 0),
       tokens: { accessToken, expiresIn: ACCESS_TOKEN_EXPIRES_IN },
       refreshToken,
+      subscription: null,
     }
   }
 
@@ -47,10 +49,13 @@ export class AuthService {
 
     const projectCount = await this.repo.getActiveProjectCount(user.id)
     const { accessToken, refreshToken } = await this.issueTokenPair(user.id, user.email)
+    const subscription = await this.repo.getUserSubscription(user.id)
+
     return {
       user: this.toAuthUser(user, projectCount),
       tokens: { accessToken, expiresIn: ACCESS_TOKEN_EXPIRES_IN },
       refreshToken,
+      subscription,
     }
   }
 
@@ -98,10 +103,13 @@ export class AuthService {
       stored.user.email,
       stored.family
     )
+    const subscription = await this.repo.getUserSubscription(stored.user.id)
+
     return {
       user: this.toAuthUser(stored.user, projectCount),
       tokens: { accessToken, expiresIn: ACCESS_TOKEN_EXPIRES_IN },
       refreshToken,
+      subscription,
     }
   }
 
@@ -206,10 +214,14 @@ export class AuthService {
     const projectCount = isNew ? 0 : await this.repo.getActiveProjectCount(user.id)
     const { accessToken, refreshToken } = await this.issueTokenPair(user.id, user.email)
 
+    // Fetch active subscription for auth context (frontend payment enforcement)
+    const subscription = await this.repo.getUserSubscription(user.id)
+
     return {
       user: this.toAuthUser(user, projectCount),
       tokens: { accessToken, expiresIn: ACCESS_TOKEN_EXPIRES_IN },
       refreshToken,
+      subscription, // Include for payment validation on frontend
     }
   }
 

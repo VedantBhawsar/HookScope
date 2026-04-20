@@ -23,6 +23,7 @@ export interface EndpointRecord {
   timestampHeader: string | null
   toleranceSec: number | null
   eventFilters: unknown
+  customHeaders: Record<string, string> | null
 }
 
 export interface EndpointListResult {
@@ -78,6 +79,7 @@ export interface UpdateEndpointPayload {
   toleranceSec?: number
   eventFilters?: unknown
   status?: EndpointStatus
+  customHeaders?: Record<string, string> | null
 }
 
 export const endpointsQueryKeys = {

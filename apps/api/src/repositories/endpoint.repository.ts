@@ -14,6 +14,7 @@ const ENDPOINT_SELECT = {
   timestampHeader: true,
   toleranceSec: true,
   eventFilters: true,
+  customHeaders: true,
   status: true,
   createdAt: true,
 } as const
@@ -88,6 +89,7 @@ export class EndpointRepository {
         timestampHeader: data.timestampHeader,
         toleranceSec: data.toleranceSec,
         eventFilters: data.eventFilters ?? undefined,
+        customHeaders: data.customHeaders ?? undefined,
         status: data.status,
       },
       select: ENDPOINT_SELECT,
@@ -107,6 +109,7 @@ export class EndpointRepository {
         ...(data.timestampHeader !== undefined ? { timestampHeader: data.timestampHeader } : {}),
         ...(data.toleranceSec !== undefined ? { toleranceSec: data.toleranceSec } : {}),
         ...(data.eventFilters !== undefined ? { eventFilters: data.eventFilters ?? undefined } : {}),
+        ...(data.customHeaders !== undefined ? { customHeaders: data.customHeaders ?? undefined } : {}),
         ...(data.status !== undefined ? { status: data.status } : {}),
       },
     })

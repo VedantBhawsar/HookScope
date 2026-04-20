@@ -1,9 +1,12 @@
 "use client"
 
 import * as React from "react"
-import { ChevronLeft, ChevronRight, LoaderCircle, Webhook } from "lucide-react"
+import { ChevronLeft, ChevronRight, LoaderCircle, Webhook, Trash2, RotateCcw } from "lucide-react"
 import { Button } from "@workspace/ui/components/button"
 import { Input } from "@workspace/ui/components/input"
+import { Checkbox } from "@workspace/ui/components/checkbox"
+import { ConfirmDeleteDialog } from "@workspace/ui/components/confirm-delete-dialog"
+import { toast } from "@workspace/ui/components/sonner"
 import {
   Select,
   SelectContent,
@@ -23,6 +26,8 @@ import { EventStatusBadge } from "./event-status-badge"
 import { EventDetailSheet } from "./event-detail-sheet"
 import {
   useWebhookEventsQuery,
+  useBatchReplayMutation,
+  useBatchDeleteMutation,
   type WebhookEventsQueryInput,
 } from "@/hooks/use-webhook-events"
 import type { EventStatus } from "@workspace/db"
@@ -65,9 +70,14 @@ export function EventsTable({ endpointId }: EventsTableProps) {
   const [selectedEventId, setSelectedEventId] = React.useState<string | null>(
     null
   )
+  const [selectedEventIds, setSelectedEventIds] = React.useState<Set<string>>(new Set())
+  const [showDeleteConfirm, setShowDeleteConfirm] = React.useState(false)
 
   const debouncedSearch = useDebounced(search, 300)
   const debouncedEventType = useDebounced(eventType, 300)
+
+  const batchReplayMutation = useBatchReplayMutation()
+  const batchDeleteMutation = useBatchDeleteMutation()
 
   // Reset to page 1 whenever filters change
   React.useEffect(() => {
@@ -95,8 +105,90 @@ export function EventsTable({ endpointId }: EventsTableProps) {
     setPage(1)
   }, [])
 
+  const toggleSelectEvent = (eventId: string) => {
+    setSelectedEventIds((prev) => {
+      const next = new Set(prev)
+      if (next.has(eventId)) {
+        next.delete(eventId)
+      } else {
+        next.add(eventId)
+      }
+      return next
+    })
+  }
+
+  const toggleSelectAll = () => {
+    if (selectedEventIds.size === events.length && events.length > 0) {
+      setSelectedEventIds(new Set())
+    } else {
+      setSelectedEventIds(new Set(events.map((e) => e.id)))
+    }
+  }
+
+  const handleBatchReplay = async () => {
+    const ids = Array.from(selectedEventIds)
+    try {
+      const result = await batchReplayMutation.mutateAsync(ids)
+      toast.success(result.message)
+      setSelectedEventIds(new Set())
+    } catch (error) {
+      toast.error("Failed to replay events")
+    }
+  }
+
+  const handleBatchDelete = async () => {
+    const ids = Array.from(selectedEventIds)
+    try {
+      const result = await batchDeleteMutation.mutateAsync(ids)
+      toast.success(result.message)
+      setSelectedEventIds(new Set())
+      setShowDeleteConfirm(false)
+    } catch (error) {
+      toast.error("Failed to delete events")
+    }
+  }
+
   return (
     <>
+      {/* Bulk action toolbar */}
+      {selectedEventIds.size > 0 && (
+        <div className="mb-4 flex items-center justify-between rounded-lg border border-border bg-muted/30 p-3">
+          <span className="text-sm text-muted-foreground">
+            {selectedEventIds.size} event{selectedEventIds.size !== 1 ? "s" : ""} selected
+          </span>
+          <div className="flex gap-2">
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={handleBatchReplay}
+              disabled={batchReplayMutation.isPending}
+              className="gap-1.5"
+            >
+              {batchReplayMutation.isPending ? (
+                <LoaderCircle className="size-3.5 animate-spin" />
+              ) : (
+                <RotateCcw className="size-3.5" />
+              )}
+              Replay
+            </Button>
+            <Button
+              size="sm"
+              variant="destructive"
+              onClick={() => setShowDeleteConfirm(true)}
+              disabled={batchDeleteMutation.isPending}
+              className="gap-1.5"
+            >
+              {batchDeleteMutation.isPending ? (
+                <LoaderCircle className="size-3.5 animate-spin" />
+              ) : (
+                <Trash2 className="size-3.5" />
+              )}
+              Delete
+            </Button>
+          </div>
+        </div>
+      )}
+
       {/* Filter bar */}
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <Input
@@ -151,6 +243,14 @@ export function EventsTable({ endpointId }: EventsTableProps) {
         <Table>
           <TableHeader>
             <TableRow>
+              <TableHead className="w-[40px]">
+                <Checkbox
+                  checked={selectedEventIds.size === events.length && events.length > 0}
+                  onCheckedChange={toggleSelectAll}
+                  disabled={events.length === 0}
+                  aria-label="Select all events"
+                />
+              </TableHead>
               <TableHead className="w-[120px]">Status</TableHead>
               <TableHead>Event ID</TableHead>
               <TableHead className="hidden sm:table-cell">Source</TableHead>
@@ -164,13 +264,13 @@ export function EventsTable({ endpointId }: EventsTableProps) {
           <TableBody>
             {query.isLoading ? (
               <TableRow>
-                <TableCell colSpan={6} className="py-16 text-center">
+                <TableCell colSpan={7} className="py-16 text-center">
                   <LoaderCircle className="mx-auto size-5 animate-spin text-muted-foreground" />
                 </TableCell>
               </TableRow>
             ) : events.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={6} className="py-16 text-center">
+                <TableCell colSpan={7} className="py-16 text-center">
                   <div className="flex flex-col items-center gap-2">
                     <Webhook className="size-8 text-muted-foreground/40" />
                     <p className="text-sm text-muted-foreground">
@@ -188,27 +288,33 @@ export function EventsTable({ endpointId }: EventsTableProps) {
               events.map((event) => (
                 <TableRow
                   key={event.id}
-                  className="cursor-pointer"
-                  onClick={() => setSelectedEventId(event.id)}
+                  className={selectedEventIds.has(event.id) ? "bg-muted/50" : ""}
                 >
-                  <TableCell>
+                  <TableCell onClick={(e) => e.stopPropagation()}>
+                    <Checkbox
+                      checked={selectedEventIds.has(event.id)}
+                      onCheckedChange={() => toggleSelectEvent(event.id)}
+                      aria-label={`Select event ${event.eventId}`}
+                    />
+                  </TableCell>
+                  <TableCell className="cursor-pointer" onClick={() => setSelectedEventId(event.id)}>
                     <EventStatusBadge status={event.status} />
                   </TableCell>
-                  <TableCell className="font-mono text-xs">
+                  <TableCell className="cursor-pointer font-mono text-xs" onClick={() => setSelectedEventId(event.id)}>
                     {event.eventId.length > 24
                       ? `${event.eventId.slice(0, 24)}…`
                       : event.eventId}
                   </TableCell>
-                  <TableCell className="hidden text-sm sm:table-cell">
+                  <TableCell className="hidden cursor-pointer text-sm sm:table-cell" onClick={() => setSelectedEventId(event.id)}>
                     {event.source}
                   </TableCell>
-                  <TableCell className="hidden text-sm text-muted-foreground md:table-cell">
+                  <TableCell className="hidden cursor-pointer text-sm text-muted-foreground md:table-cell" onClick={() => setSelectedEventId(event.id)}>
                     {event.eventType ?? "—"}
                   </TableCell>
-                  <TableCell className="hidden text-right text-xs text-muted-foreground lg:table-cell">
+                  <TableCell className="hidden cursor-pointer text-right text-xs text-muted-foreground lg:table-cell" onClick={() => setSelectedEventId(event.id)}>
                     {formatDate(event.createdAt)}
                   </TableCell>
-                  <TableCell>
+                  <TableCell onClick={() => setSelectedEventId(event.id)}>
                     <Button variant="ghost" size="sm" className="h-7 text-xs">
                       View
                     </Button>
@@ -249,6 +355,15 @@ export function EventsTable({ endpointId }: EventsTableProps) {
           </div>
         </div>
       )}
+
+      <ConfirmDeleteDialog
+        open={showDeleteConfirm}
+        onOpenChange={setShowDeleteConfirm}
+        entityName="webhook events"
+        entityLabel={`${selectedEventIds.size} event${selectedEventIds.size !== 1 ? "s" : ""}`}
+        onConfirm={handleBatchDelete}
+        isPending={batchDeleteMutation.isPending}
+      />
 
       <EventDetailSheet
         eventId={selectedEventId}

@@ -103,7 +103,6 @@ export class AlertService {
       message,
       endpointId: alert.endpointId,
       triggeredAt: trigger.createdAt.toISOString(),
-      type: alert.type,
     }
 
     return { trigger, event }

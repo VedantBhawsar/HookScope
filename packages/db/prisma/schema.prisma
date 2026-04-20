@@ -239,6 +239,9 @@ model Endpoint {
 
   eventFilters Json? @map("event_filters")
 
+  /// Custom headers to include in forwarded webhooks — e.g. { "X-Custom-Header": "value" }
+  customHeaders Json? @map("custom_headers")
+
   status String @default("active")
 
   deletedAt DateTime? @map("deleted_at")
