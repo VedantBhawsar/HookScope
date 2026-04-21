@@ -2,6 +2,7 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { http, unwrapResponse, type ApiResponse } from "@/lib/http"
+import { clearAllWorkspaceLocalStorage } from "@/lib/project-navigation"
 
 export interface AuthTokens {
   accessToken: string
@@ -19,12 +20,19 @@ export interface AuthOnboardingState {
   isNewUser: boolean
 }
 
+export interface SubscriptionInfo {
+  status: string
+  tier: string
+  currentPeriodEnd: string
+}
+
 export interface AuthUser {
   id: string
   name: string
   email: string
   avatarUrl: string | null
   onboarding: AuthOnboardingState
+  subscription: SubscriptionInfo | null
 }
 
 export interface AuthResult {
@@ -65,12 +73,18 @@ const DEFAULT_ONBOARDING: AuthOnboardingState = {
   isNewUser: true,
 }
 
-type RawAuthUser = Omit<AuthUser, "onboarding"> & {
+type RawSubscription = {
+  status: string
+  plan: { tier: string }
+  currentPeriodEnd: string
+} | null
+
+type RawAuthUser = Omit<AuthUser, "onboarding" | "subscription"> & {
   avatarUrl?: string | null
   onboarding?: Partial<AuthOnboardingState> | null
 }
 
-function normalizeAuthUser(user: RawAuthUser): AuthUser {
+function normalizeAuthUser(user: RawAuthUser, subscription?: RawSubscription): AuthUser {
   const rawOnboarding = user.onboarding ?? {}
   const companyName = rawOnboarding.companyName ?? null
   const hasCreatedProject = Boolean(rawOnboarding.hasCreatedProject)
@@ -98,6 +112,9 @@ function normalizeAuthUser(user: RawAuthUser): AuthUser {
           ? rawOnboarding.isNewUser
           : !companyName && !hasCreatedProject,
     },
+    subscription: subscription
+      ? { status: subscription.status, tier: subscription.plan.tier, currentPeriodEnd: subscription.currentPeriodEnd }
+      : null,
   }
 }
 
@@ -105,9 +122,9 @@ export function useMeQuery() {
   return useQuery({
     queryKey: authQueryKeys.me,
     queryFn: async () => {
-      const response = await http.get<ApiResponse<{ user: RawAuthUser }>>("/api/auth/me")
+      const response = await http.get<ApiResponse<{ user: RawAuthUser; subscription: RawSubscription }>>("/api/auth/me")
       const data = unwrapResponse(response.data)
-      return { user: normalizeAuthUser(data.user) }
+      return { user: normalizeAuthUser(data.user, data.subscription) }
     },
   })
 }
@@ -155,6 +172,7 @@ export function useLogoutMutation() {
       return { message }
     },
     onSuccess: async () => {
+      clearAllWorkspaceLocalStorage()
       queryClient.setQueryData(authQueryKeys.me, null)
       await queryClient.invalidateQueries({ queryKey: authQueryKeys.me })
     },

@@ -115,9 +115,9 @@ export class AuthController {
   me = async (req: Request, res: Response): Promise<void> => {
     try {
       const { userId } = (req as AuthenticatedRequest).user
-      const user = await this.service.getSessionUser(userId)
-      if (!user) return unauthorized(res)
-      json(res, { user })
+      const result = await this.service.getSessionUser(userId)
+      if (!result) return unauthorized(res)
+      json(res, { user: result.user, subscription: result.subscription })
     } catch (err) {
       console.error("[AuthController.me]", err)
       error(res, "Failed to fetch session")

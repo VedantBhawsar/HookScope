@@ -22,6 +22,14 @@ import { getRequestErrorMessage } from "@/lib/http"
 
 const COMPANY_SIZES = ["1-10", "11-50", "51-200", "201-500", "500+"] as const
 const COMPANY_ROLES = ["Engineering", "Product", "DevOps", "Founder", "Other"] as const
+const USE_CASES = [
+  "Payment & billing",
+  "CI/CD & deployment",
+  "E-commerce",
+  "Customer notifications",
+  "Internal tooling",
+  "Other",
+] as const
 
 const workspaceSchema = z.object({
   companyName: z.string().min(1, "Company name is required"),
@@ -135,9 +143,20 @@ export function WorkspaceSection({ user }: WorkspaceSectionProps) {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Primary use case</FormLabel>
-                    <FormControl>
-                      <Input placeholder="e.g. Payment notifications" {...field} />
-                    </FormControl>
+                    <Select onValueChange={field.onChange} value={field.value ?? ""}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select use case" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {USE_CASES.map((uc) => (
+                          <SelectItem key={uc} value={uc}>
+                            {uc}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                     <FormMessage />
                   </FormItem>
                 )}

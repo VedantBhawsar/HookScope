@@ -117,8 +117,11 @@ export class AuthService {
     const user = await this.repo.findUserById(userId)
     if (!user) return null
 
-    const projectCount = await this.repo.getActiveProjectCount(user.id)
-    return this.toAuthUser(user, projectCount)
+    const [projectCount, subscription] = await Promise.all([
+      this.repo.getActiveProjectCount(user.id),
+      this.repo.getUserSubscription(user.id),
+    ])
+    return { user: this.toAuthUser(user, projectCount), subscription: subscription ?? null }
   }
 
   async completeOnboarding(userId: string, dto: CompleteOnboardingDto) {

@@ -12,6 +12,24 @@ import {
   FormLabel,
   FormMessage,
 } from "@workspace/ui/components/form"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@workspace/ui/components/select"
+
+const COMPANY_SIZES = ["1-10", "11-50", "51-200", "201-500", "500+"] as const
+const COMPANY_ROLES = ["Engineering", "Product", "DevOps", "Founder", "Other"] as const
+const USE_CASES = [
+  "Payment & billing",
+  "CI/CD & deployment",
+  "E-commerce",
+  "Customer notifications",
+  "Internal tooling",
+  "Other",
+] as const
 
 export const companySchema = z.object({
   companyName: z.string().trim().min(1, "Company name is required"),
@@ -88,9 +106,20 @@ export function CompanyStepForm({ defaultValues, isPending, onBack, onSubmit }: 
                 Your role
                 <span className="ml-1 text-xs font-normal text-muted-foreground">(optional)</span>
               </FormLabel>
-              <FormControl>
-                <Input placeholder="Founder, Engineering Manager, Developer" {...field} value={field.value ?? ""} />
-              </FormControl>
+              <Select onValueChange={field.onChange} value={field.value ?? ""}>
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select your role" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  {COMPANY_ROLES.map((role) => (
+                    <SelectItem key={role} value={role}>
+                      {role}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
               <FormMessage />
             </FormItem>
           )}
@@ -105,9 +134,20 @@ export function CompanyStepForm({ defaultValues, isPending, onBack, onSubmit }: 
                 Team size
                 <span className="ml-1 text-xs font-normal text-muted-foreground">(optional)</span>
               </FormLabel>
-              <FormControl>
-                <Input placeholder="1-10, 11-50, 51-200" {...field} value={field.value ?? ""} />
-              </FormControl>
+              <Select onValueChange={field.onChange} value={field.value ?? ""}>
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select team size" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  {COMPANY_SIZES.map((size) => (
+                    <SelectItem key={size} value={size}>
+                      {size}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
               <FormMessage />
             </FormItem>
           )}
@@ -122,9 +162,20 @@ export function CompanyStepForm({ defaultValues, isPending, onBack, onSubmit }: 
                 Primary use case
                 <span className="ml-1 text-xs font-normal text-muted-foreground">(optional)</span>
               </FormLabel>
-              <FormControl>
-                <Input placeholder="Observe Stripe and GitHub webhooks" {...field} value={field.value ?? ""} />
-              </FormControl>
+              <Select onValueChange={field.onChange} value={field.value ?? ""}>
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select primary use case" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  {USE_CASES.map((uc) => (
+                    <SelectItem key={uc} value={uc}>
+                      {uc}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
               <FormMessage />
             </FormItem>
           )}

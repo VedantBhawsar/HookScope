@@ -3,7 +3,7 @@ export interface EndpointSelectionSnapshot {
   name: string
 }
 
-const ACTIVE_ENDPOINT_KEY_PREFIX = "active_endpoint"
+export const ACTIVE_ENDPOINT_KEY_PREFIX = "active_endpoint"
 
 function getStorageKey(projectId: string): string {
   return `${ACTIVE_ENDPOINT_KEY_PREFIX}:${projectId}`

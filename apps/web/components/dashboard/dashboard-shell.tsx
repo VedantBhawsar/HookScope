@@ -93,6 +93,12 @@ export function DashboardShell({ children }: DashboardShellProps) {
 
     if (!user.onboarding?.onboardingCompleted) {
       router.replace("/onboarding?step=verify")
+      return
+    }
+    const sub = user.subscription
+    const isActive = sub?.status === "ACTIVE" || sub?.status === "TRIALING"
+    if (!isActive) {
+      router.replace("/pricing")
     }
   }, [meQuery.data?.user, meQuery.isLoading, router])
 
@@ -180,8 +186,10 @@ export function DashboardShell({ children }: DashboardShellProps) {
   }
 
   const user = meQuery.data?.user
+  const sub = user?.subscription
+  const isSubActive = sub?.status === "ACTIVE" || sub?.status === "TRIALING"
 
-  if (!user || !user.onboarding?.onboardingCompleted) {
+  if (!user || !user.onboarding?.onboardingCompleted || !isSubActive) {
     return (
       <section className="flex min-h-screen items-center justify-center">
         <div className="inline-flex items-center gap-2 text-sm text-muted-foreground">

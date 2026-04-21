@@ -30,6 +30,12 @@ export function AppShell({ children, pageTitle, pageLabel = "Workspace" }: AppSh
     }
     if (!user.onboarding?.onboardingCompleted) {
       router.replace("/onboarding?step=verify")
+      return
+    }
+    const sub = user.subscription
+    const isActive = sub?.status === "ACTIVE" || sub?.status === "TRIALING"
+    if (!isActive) {
+      router.replace("/pricing")
     }
   }, [meQuery.data?.user, meQuery.isLoading, router])
 
@@ -45,7 +51,10 @@ export function AppShell({ children, pageTitle, pageLabel = "Workspace" }: AppSh
   }
 
   const user = meQuery.data?.user
-  if (!user || !user.onboarding?.onboardingCompleted) {
+  const sub = user?.subscription
+  const isActive = sub?.status === "ACTIVE" || sub?.status === "TRIALING"
+
+  if (!user || !user.onboarding?.onboardingCompleted || !isActive) {
     return (
       <section className="flex min-h-screen items-center justify-center">
         <div className="inline-flex items-center gap-2 text-sm text-muted-foreground">
