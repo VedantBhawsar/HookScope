@@ -2,7 +2,7 @@ import { Queue } from "bullmq"
 import type { ConnectionOptions } from "bullmq"
 import type { GitHubWebhookEvent } from "../types/github.js"
 
-export const GITHUB_EVENT_QUEUE = "github:events"
+export const GITHUB_EVENT_QUEUE = "github-events"
 
 export interface GitHubEventJob {
   endpointId: string

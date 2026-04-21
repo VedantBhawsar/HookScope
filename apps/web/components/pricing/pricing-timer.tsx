@@ -7,13 +7,13 @@ const DURATION_MS = 23 * 60 * 60 * 1000 + 47 * 60 * 1000 // 23h 47m
 
 function getOrInitEndTime(): number {
   try {
-    const stored = sessionStorage.getItem("hookify_offer_end")
+    const stored = sessionStorage.getItem("hookscope_offer_end")
     if (stored) {
       const end = parseInt(stored, 10)
       if (end > Date.now()) return end
     }
     const end = Date.now() + DURATION_MS
-    sessionStorage.setItem("hookify_offer_end", String(end))
+    sessionStorage.setItem("hookscope_offer_end", String(end))
     return end
   } catch {
     return Date.now() + DURATION_MS

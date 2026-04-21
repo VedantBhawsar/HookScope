@@ -4,7 +4,7 @@ import { createPageMetadata } from "@/app/metadata"
 
 export const metadata = createPageMetadata({
   title: "Forgot Password",
-  description: "Request a password reset link for your webhook observability workspace.",
+  description: "Request a password reset link for your HookScope workspace.",
   path: "/auth/forgot-password",
   noIndex: true,
 })

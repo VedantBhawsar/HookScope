@@ -196,6 +196,9 @@ export class BillingService {
     const planTier = PLAN_TIER_MAP[planId]
     if (!planTier) throw new Error(`Unknown plan: ${planId}`)
 
+    const plan = await this.repo.findPlanByTier(planTier)
+    if (!plan) throw new Error(`Plan row not found for tier ${planTier}. Run the seed script.`)
+
     const sub = await this.repo.findSubscriptionByUserId(userId)
     if (!sub?.stripeSubscriptionId) throw new Error("No active subscription found.")
 
@@ -203,25 +206,41 @@ export class BillingService {
     const itemId = stripeSub.items.data[0]?.id
     if (!itemId) throw new Error("Could not find subscription item to update.")
 
-    await this.stripe.subscriptions.update(sub.stripeSubscriptionId, {
+    // Update Stripe subscription and store planTier in metadata for webhook syncs
+    const updatedStripeSub = await this.stripe.subscriptions.update(sub.stripeSubscriptionId, {
       items: [{ id: itemId, price: priceId }],
       proration_behavior: "always_invoice",
+      metadata: { userId, planTier },
     })
 
-    const plan = await this.repo.findPlanByTier(planTier)
-    if (plan) {
-      await this.repo.updateSubscriptionPlanByUserId(userId, plan.id)
-    }
+    // Sync all fields immediately so UI reflects the change without waiting for webhook
+    const periodDates = getSubscriptionPeriod(updatedStripeSub)
+    await this.repo.updateSubscriptionByStripeId(sub.stripeSubscriptionId, {
+      status: mapStripeStatusToInternal(updatedStripeSub.status),
+      ...periodDates,
+      cancelAtPeriodEnd: updatedStripeSub.cancel_at_period_end,
+      planId: plan.id,
+    })
 
     return { message: `Plan updated to ${planId} (${interval})` }
   }
 
   private async syncSubscription(stripeSub: Stripe.Subscription): Promise<void> {
     const periodDates = getSubscriptionPeriod(stripeSub)
+
+    // Sync plan from metadata if present (set on checkout + plan changes)
+    let planId: string | undefined
+    const metadataTier = stripeSub.metadata?.planTier as PlanTier | undefined
+    if (metadataTier) {
+      const plan = await this.repo.findPlanByTier(metadataTier)
+      if (plan) planId = plan.id
+    }
+
     await this.repo.updateSubscriptionByStripeId(stripeSub.id, {
       status: mapStripeStatusToInternal(stripeSub.status),
       ...periodDates,
       cancelAtPeriodEnd: stripeSub.cancel_at_period_end,
+      ...(planId ? { planId } : {}),
     })
   }
 }

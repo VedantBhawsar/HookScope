@@ -114,7 +114,7 @@ export const PRICING_FAQ = [
   },
   {
     q: "What counts as an event?",
-    a: "Every inbound webhook POST to your Hookify endpoint URL counts as one event — regardless of payload size or provider.",
+    a: "Every inbound webhook POST to your HookScope endpoint URL counts as one event — regardless of payload size or provider.",
   },
   {
     q: "What happens when I hit my monthly event limit?",

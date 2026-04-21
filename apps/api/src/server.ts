@@ -10,6 +10,7 @@ import { usageRouter } from "./routes/usage.router"
 import { maintenanceRouter } from "./routes/maintenance.router"
 import { billingRouter, billingController } from "./billing/billing.router"
 import { initAlertEvaluator } from "./lib/alert-evaluator"
+import { startEventExpirationCron } from "./services/event-cron.service"
 import { json } from "./lib/response"
 
 const FRONTEND_URL = process.env["FRONTEND_URL"] ?? "http://localhost:3000"
@@ -52,6 +53,7 @@ const startServer = () => {
   app.listen(PORT, () => {
     console.log(`Server running on http://localhost:${PORT}`)
     initAlertEvaluator()
+    startEventExpirationCron()
   })
 }
 

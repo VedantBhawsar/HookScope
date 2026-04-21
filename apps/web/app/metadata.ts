@@ -1,7 +1,7 @@
 import type { Metadata } from "next"
 import { cookies } from "next/headers"
 
-export const APP_NAME = "Hookify"
+export const APP_NAME = "HookScope"
 
 export const APP_DESCRIPTION =
   "Monitor webhook traffic, inspect deliveries, and manage endpoint alerts from one observability workspace."

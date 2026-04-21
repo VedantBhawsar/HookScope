@@ -3,7 +3,7 @@ import { createPageMetadata } from "../metadata"
 
 export const metadata = createPageMetadata({
   title: "Pricing",
-  description: "Simple pricing for webhook observability. Start free, scale as you grow.",
+  description: "Simple pricing for HookScope. Start free, scale as you grow.",
   path: "/pricing",
 })
 

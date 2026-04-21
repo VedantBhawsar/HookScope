@@ -3,7 +3,7 @@ import type { ConnectionOptions } from "bullmq"
 import type Stripe from "stripe"
 import type { StripePaymentValidation } from "../lib/stripe-payment-validation.js"
 
-export const STRIPE_EVENT_QUEUE = "stripe:events"
+export const STRIPE_EVENT_QUEUE = "stripe-events"
 
 export interface StripeEventJob {
   endpointId: string

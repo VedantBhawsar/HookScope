@@ -55,6 +55,7 @@ export class BillingRepository {
       currentPeriodStart: Date
       currentPeriodEnd: Date
       cancelAtPeriodEnd: boolean
+      planId?: string
     }
   ) {
     return prisma.subscription.update({

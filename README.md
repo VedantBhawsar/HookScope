@@ -1,6 +1,6 @@
 <div align="center">
 
-# Hookify
+# HookScope
 
 **A multi-tenant webhook observability platform — ingest, verify, replay, and forward webhooks with full audit trails.**
 
@@ -17,7 +17,7 @@
 
 ## Overview
 
-Hookify is a self-hostable webhook observability layer for teams that depend on third-party webhooks (Stripe, GitHub, Shopify, Slack, Twilio, …). Every webhook is **verified**, **archived to S3**, **persisted with a full audit trail**, **forwarded to your destination with retries**, and **surfaced on a live dashboard** with alerts and replay. It solves the problem of webhooks being a black box — dropped deliveries, unverified signatures, and no way to trace failures after the fact.
+HookScope is a self-hostable webhook observability layer for teams that depend on third-party webhooks (Stripe, GitHub, Shopify, Slack, Twilio, …). Every webhook is **verified**, **archived to S3**, **persisted with a full audit trail**, **forwarded to your destination with retries**, and **surfaced on a live dashboard** with alerts and replay. It solves the problem of webhooks being a black box — dropped deliveries, unverified signatures, and no way to trace failures after the fact.
 
 The platform is organised as a Turborepo with three deployable apps — a split ingestion path (Fastify) to keep webhook intake fast, an authenticated management API (Express), and a Next.js dashboard.
 
@@ -318,7 +318,7 @@ flowchart TB
 
 <!-- TODO (user contribution): replace this section with your real deployment setup. -->
 
-Hookify is designed to be self-hosted. Each deployable is independent:
+HookScope is designed to be self-hosted. Each deployable is independent:
 
 - **`apps/web`** — deploy as a standard Next.js app (Vercel, Fly.io, self-hosted Node).
 - **`apps/api`** — long-running Bun / Node process behind a reverse proxy. Needs access to Postgres.

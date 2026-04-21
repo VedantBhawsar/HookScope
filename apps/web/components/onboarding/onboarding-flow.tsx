@@ -1,6 +1,7 @@
 "use client"
 
 import * as React from "react"
+import Image from "next/image"
 import Link from "next/link"
 import { useRouter, useSearchParams } from "next/navigation"
 import {
@@ -233,10 +234,10 @@ export function OnboardingFlow() {
       <aside className="hidden flex-col border-r bg-muted/20 px-8 py-10 lg:flex">
         {/* Logo */}
         <div className="mb-12">
-          <p className="text-xl font-bold tracking-tight">Hookify</p>
-          <p className="mt-0.5 text-xs text-muted-foreground">
-            Webhook Observability Platform
-          </p>
+          <div className="relative h-10 w-40 overflow-hidden">
+            <Image src="/logo-light.png" alt="HookScope" fill className="object-cover object-center dark:hidden" />
+            <Image src="/logo-dark.png" alt="HookScope" fill className="object-cover object-center hidden dark:block" />
+          </div>
         </div>
 
         {/* Step list */}

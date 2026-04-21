@@ -32,7 +32,7 @@ export function ProjectsWorkspace() {
 
   React.useEffect(() => {
     if (searchParams.get("billing") === "success") {
-      toast.success("Your trial has started! Welcome to Hookify.", { duration: 5000 })
+      toast.success("Your trial has started! Welcome to HookScope.", { duration: 5000 })
       const params = new URLSearchParams(searchParams.toString())
       params.delete("billing")
       const clean = params.size ? `?${params}` : window.location.pathname
@@ -69,7 +69,7 @@ export function ProjectsWorkspace() {
         </h1>
         <p className="mt-1 text-sm text-muted-foreground">
           {companyName
-            ? `${companyName} · Webhook observability workspace`
+            ? `${companyName} · HookScope`
             : "Select a project to open its dashboard, or create a new one."}
         </p>
       </div>

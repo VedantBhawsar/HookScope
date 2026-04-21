@@ -4,7 +4,7 @@ import { createPageMetadata } from "./metadata"
 
 export const metadata = createPageMetadata({
   title: "Workspace Redirect",
-  description: "Redirecting you into the correct webhook observability workspace.",
+  description: "Redirecting you into the correct HookScope workspace.",
   path: "/",
   noIndex: true,
 })

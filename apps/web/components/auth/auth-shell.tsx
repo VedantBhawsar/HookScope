@@ -1,6 +1,7 @@
 import type { ReactNode } from "react"
+import Image from "next/image"
 import Link from "next/link"
-import { ShieldCheck, Sparkles } from "lucide-react"
+import { Sparkles } from "lucide-react"
 import { ThemeToggle } from "@/components/theme-toggle"
 
 interface AuthShellProps {
@@ -20,12 +21,11 @@ function AuthShell({ title, subtitle, children }: AuthShellProps) {
 
       <div className="relative mx-auto flex min-h-screen w-full max-w-6xl flex-col px-4 py-6 sm:px-6 lg:px-8">
         <header className="flex items-center justify-between">
-          <Link
-            className="inline-flex items-center gap-2 font-heading text-sm tracking-[0.22em] uppercase"
-            href="/"
-          >
-            <ShieldCheck className="size-4 text-primary" />
-            Webhook Observatory
+          <Link href="/" className="inline-flex items-center">
+            <div className="relative h-8 w-32 overflow-hidden">
+              <Image src="/logo-light.png" alt="HookScope" fill className="object-cover object-center dark:hidden" />
+              <Image src="/logo-dark.png" alt="HookScope" fill className="object-cover object-center hidden dark:block" />
+            </div>
           </Link>
           <ThemeToggle />
         </header>

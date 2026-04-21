@@ -1,5 +1,6 @@
 "use client"
 
+import Image from "next/image"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import * as React from "react"
@@ -9,6 +10,7 @@ import {
   Bell,
   Check,
   ChevronsUpDown,
+  CreditCard,
   FolderKanban,
   LayoutDashboard,
   LoaderCircle,
@@ -80,6 +82,7 @@ const DASHBOARD_NAV_ITEMS: readonly DashboardNavItem[] = [
 
 const PROJECTS_NAV_ITEMS: readonly ProjectsNavItem[] = [
   { label: "Projects", href: "/projects", icon: FolderKanban },
+  { label: "Billing", href: "/billing", icon: CreditCard },
   { label: "Settings", href: "/settings", icon: Settings },
 ]
 
@@ -89,8 +92,10 @@ const SIDEBAR_CLASSES =
 function SidebarBranding() {
   return (
     <div className="mb-6 rounded-xl border border-border bg-card px-4 py-3">
-      <p className="text-xs tracking-[0.2em] text-muted-foreground uppercase">Webhook</p>
-      <h1 className="mt-1 font-heading text-lg font-semibold">Observability</h1>
+      <div className="relative h-9 w-36 overflow-hidden">
+        <Image src="/logo-light.png" alt="HookScope" fill className="object-cover object-center dark:hidden" />
+        <Image src="/logo-dark.png" alt="HookScope" fill className="object-cover object-center hidden dark:block" />
+      </div>
     </div>
   )
 }
