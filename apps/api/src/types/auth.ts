@@ -74,3 +74,12 @@ export interface ResetPasswordDto {
   token: string
   password: string
 }
+
+export interface ConfirmEmailOtpDto {
+  otp: string
+}
+
+export interface LinkedAccountDto {
+  provider: string
+  linkedAt: string
+}

@@ -23,6 +23,22 @@ export const forgotPasswordRateLimit = rateLimit({
 })
 
 /**
+ * Rate limiter for OTP send endpoint.
+ * 3 sends per 10-minute window per IP — prevents OTP flooding while allowing retries.
+ */
+export const otpSendRateLimit = rateLimit({
+  windowMs: 10 * 60 * 1000, // 10 minutes
+  limit: 3,
+  standardHeaders: "draft-7",
+  legacyHeaders: false,
+  message: {
+    success: false,
+    message: "Too many verification code requests. Please wait 10 minutes and try again.",
+    data: null,
+  },
+})
+
+/**
  * Tighter rate limit for OAuth callback endpoints.
  * Prevents code-stuffing attacks (replaying intercepted auth codes).
  */

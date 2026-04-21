@@ -41,10 +41,8 @@ services:
     ports:
       - "4566:4566"
     environment:
-      # Restrict to only the services we need (community edition)
       SERVICES: s3
       AWS_DEFAULT_REGION: us-east-1
-      # Hostname used to construct S3 URLs inside docker network
       LOCALSTACK_HOST: localstack:4566
       DEBUG: 0
     volumes:
@@ -58,38 +56,121 @@ services:
       retries: 10
       start_period: 15s
 
+  # ─── Migration (one-shot, runs before api starts) ─────────────────────────────
+
+  migrate:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    command: bunx prisma migrate deploy --schema /app/packages/db/prisma/schema.prisma
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/webhook_db
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: "no"
+
   # ─── Applications ─────────────────────────────────────────────────────────────
 
-  # ingestion:
-  #   build:
-  #     context: .
-  #     dockerfile: apps/ingestion/Dockerfile
-  #   restart: unless-stopped
-  #   ports:
-  #     - "3001:3001"
-  #   environment:
-  #     NODE_ENV: production
-  #     PORT: 3001
-  #     HOST: 0.0.0.0
-  #     LOG_LEVEL: info
-  #     REDIS_URL: redis://redis:6379
-  #     S3_ENDPOINT: http://localstack:4566
-  #     S3_BUCKET: webhooks
-  #     AWS_REGION: us-east-1
-  #     # LocalStack accepts any non-empty credentials
-  #     AWS_ACCESS_KEY_ID: test
-  #     AWS_SECRET_ACCESS_KEY: test
-  #   depends_on:
-  #     redis:
-  #       condition: service_healthy
-  #     localstack:
-  #       condition: service_healthy
-  #   healthcheck:
-  #     test: ["CMD", "curl", "-f", "http://localhost:3001/health"]
-  #     interval: 10s
-  #     timeout: 5s
-  #     retries: 5
-  #     start_period: 15s
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    restart: unless-stopped
+    ports:
+      - "5000:5000"
+    environment:
+      NODE_ENV: production
+      PORT: 5000
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/webhook_db
+      REDIS_URL: redis://redis:6379
+      S3_ENDPOINT: http://localstack:4566
+      S3_BUCKET: webhooks
+      AWS_REGION: us-east-1
+      AWS_ACCESS_KEY_ID: test
+      AWS_SECRET_ACCESS_KEY: test
+      INGESTION_BASE_URL: http://ingestion:5001
+      FRONTEND_URL: http://localhost:3000
+      JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET:-super-secret-access-key-change-in-production}
+      STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY}
+      STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET}
+      STRIPE_DEVELOPER_MONTHLY_PRICE_ID: ${STRIPE_DEVELOPER_MONTHLY_PRICE_ID}
+      STRIPE_DEVELOPER_ANNUAL_PRICE_ID: ${STRIPE_DEVELOPER_ANNUAL_PRICE_ID}
+      STRIPE_PRO_MONTHLY_PRICE_ID: ${STRIPE_PRO_MONTHLY_PRICE_ID}
+      STRIPE_PRO_ANNUAL_PRICE_ID: ${STRIPE_PRO_ANNUAL_PRICE_ID}
+      STRIPE_ENTERPRISE_MONTHLY_PRICE_ID: ${STRIPE_ENTERPRISE_MONTHLY_PRICE_ID}
+      STRIPE_ENTERPRISE_ANNUAL_PRICE_ID: ${STRIPE_ENTERPRISE_ANNUAL_PRICE_ID}
+      API_BASE_URL: ${API_BASE_URL:-http://localhost:5000}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      redis:
+        condition: service_healthy
+      localstack:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+
+  ingestion:
+    build:
+      context: .
+      dockerfile: apps/ingestion/Dockerfile
+    restart: unless-stopped
+    ports:
+      - "5001:5001"
+    environment:
+      NODE_ENV: production
+      PORT: 5001
+      HOST: 0.0.0.0
+      LOG_LEVEL: info
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/webhook_db
+      REDIS_URL: redis://redis:6379
+      S3_ENDPOINT: http://localstack:4566
+      S3_BUCKET: webhooks
+      AWS_REGION: us-east-1
+      AWS_ACCESS_KEY_ID: test
+      AWS_SECRET_ACCESS_KEY: test
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      redis:
+        condition: service_healthy
+      localstack:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5001/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+      args:
+        # Baked at build time — browser calls go directly to the exposed API port
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:5000}
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      NODE_ENV: production
+    depends_on:
+      api:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
 
 volumes:
   postgres_data:

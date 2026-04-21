@@ -7,7 +7,7 @@ import {
 } from "../lib/tokens"
 import { hashPassword, verifyPassword } from "../lib/password"
 import { putObject, deleteObject, getS3Client } from "@workspace/s3"
-import { sendPasswordResetEmail } from "../lib/email"
+import { sendPasswordResetEmail, sendEmailVerificationOtp } from "../lib/email"
 import type { OAuthProvider } from "@workspace/db"
 import type {
   AuthOnboardingState,
@@ -155,6 +155,38 @@ export class AuthService {
     return this.toAuthUser(user, projectCount)
   }
 
+  // ── Email verification (OTP) ─────────────────────────────────────────────────
+
+  async sendVerificationOtp(userId: string): Promise<void> {
+    const user = await this.repo.findUserById(userId)
+    if (!user) throw new Error("USER_NOT_FOUND")
+    if (user.emailVerifiedAt) throw new Error("EMAIL_ALREADY_VERIFIED")
+
+    // Race condition protection: delete ALL existing OTPs before creating a new one.
+    // This ensures any previously issued code is instantly invalid even if two send
+    // requests arrive in quick succession.
+    await this.repo.deleteAllOtpsForUser(userId)
+
+    const otp = String(Math.floor(100_000 + Math.random() * 900_000)) // 6-digit
+    const expiresAt = new Date(Date.now() + 5 * 60 * 1000) // 5 minutes
+
+    await this.repo.createEmailVerificationOtp({ userId, otp, expiresAt })
+    await sendEmailVerificationOtp(user.email, otp, user.name)
+  }
+
+  async verifyEmailOtp(userId: string, otp: string): Promise<void> {
+    const record = await this.repo.findLatestUnusedOtp(userId)
+
+    if (!record) throw new Error("OTP_NOT_FOUND")
+    if (record.expiresAt < new Date()) throw new Error("OTP_EXPIRED")
+    if (record.otp !== otp.trim()) throw new Error("OTP_INVALID")
+
+    await Promise.all([
+      this.repo.markOtpUsed(record.id),
+      this.repo.markEmailVerified(userId),
+    ])
+  }
+
   // ── Forgot / reset password ──────────────────────────────────────────────────
 
   /**
@@ -273,6 +305,44 @@ export class AuthService {
     const newUser = await this.repo.createOAuthUser({ name, email, avatarUrl })
     await this.repo.linkOAuthAccount(newUser.id, provider, providerAccountId)
     return { user: newUser, isNew: true }
+  }
+
+  // ── Social account management ────────────────────────────────────────────────
+
+  async getLinkedAccounts(userId: string) {
+    const accounts = await this.repo.getLinkedOAuthAccounts(userId)
+    return accounts.map((a) => ({ provider: a.provider, linkedAt: a.createdAt.toISOString() }))
+  }
+
+  async unlinkSocialAccount(userId: string, provider: OAuthProvider): Promise<void> {
+    const user = await this.repo.findUserById(userId)
+    if (!user) throw new Error("USER_NOT_FOUND")
+
+    const allAccounts = await this.repo.getLinkedOAuthAccounts(userId)
+    const hasPassword = Boolean(user.passwordHash)
+    const remainingAfterUnlink = allAccounts.filter((a) => a.provider !== provider)
+
+    // Prevent locking the user out: they must have either a password or another OAuth provider.
+    if (!hasPassword && remainingAfterUnlink.length === 0) {
+      throw new Error("CANNOT_UNLINK_LAST_AUTH")
+    }
+
+    await this.repo.unlinkOAuthAccount(userId, provider)
+  }
+
+  async linkSocialAccountToUser(
+    userId: string,
+    provider: OAuthProvider,
+    providerAccountId: string
+  ): Promise<void> {
+    // Check this provider account is not already linked to a different user.
+    const existing = await this.repo.findOAuthAccountByProvider(provider, providerAccountId)
+    if (existing) {
+      if (existing.userId === userId) throw new Error("ALREADY_LINKED")
+      throw new Error("PROVIDER_CLAIMED_BY_ANOTHER_USER")
+    }
+
+    await this.repo.linkOAuthAccount(userId, provider, providerAccountId)
   }
 
   async logout(rawRefreshToken: string): Promise<void> {

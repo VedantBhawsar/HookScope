@@ -122,12 +122,13 @@ model User {
 
   createdAt DateTime @default(now()) @map("created_at")
 
-  projects            Project[]
-  subscription        Subscription?
-  refreshTokens       RefreshToken[]
-  passwordResetTokens PasswordResetToken[]
-  oauthAccounts       OAuthAccount[]
-  alerts              Alert[]
+  projects                  Project[]
+  subscription              Subscription?
+  refreshTokens             RefreshToken[]
+  passwordResetTokens       PasswordResetToken[]
+  emailVerificationTokens   EmailVerificationToken[]
+  oauthAccounts             OAuthAccount[]
+  alerts                    Alert[]
 
   @@map("users")
 }
@@ -157,6 +158,24 @@ model RefreshToken {
   @@index([userId])
   @@index([family])
   @@map("refresh_tokens")
+}
+
+/// Single-use, time-limited 6-digit OTP for email address verification.
+/// Race condition protection: all existing OTPs are deleted before issuing a new one.
+model EmailVerificationToken {
+  id        String    @id @default(uuid())
+  userId    String    @map("user_id")
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  /// Plain-text 6-digit numeric code — short-lived (5 min) and rate-limited at the API layer.
+  otp       String
+
+  expiresAt DateTime  @map("expires_at")
+  usedAt    DateTime? @map("used_at")
+  createdAt DateTime  @default(now()) @map("created_at")
+
+  @@index([userId])
+  @@map("email_verification_tokens")
 }
 
 /// Single-use, time-limited token for password reset flows.

@@ -183,6 +183,58 @@ export class AuthRepository {
     })
   }
 
+  // ── Email verification OTPs ───────────────────────────────────────────────────
+
+  createEmailVerificationOtp(data: { userId: string; otp: string; expiresAt: Date }) {
+    return prisma.emailVerificationToken.create({ data })
+  }
+
+  findLatestUnusedOtp(userId: string) {
+    return prisma.emailVerificationToken.findFirst({
+      where: { userId, usedAt: null },
+      orderBy: { createdAt: "desc" },
+    })
+  }
+
+  deleteAllOtpsForUser(userId: string) {
+    return prisma.emailVerificationToken.deleteMany({ where: { userId } })
+  }
+
+  markOtpUsed(id: string) {
+    return prisma.emailVerificationToken.update({
+      where: { id },
+      data: { usedAt: new Date() },
+    })
+  }
+
+  markEmailVerified(userId: string) {
+    return prisma.user.update({
+      where: { id: userId },
+      data: { emailVerifiedAt: new Date() },
+    })
+  }
+
+  // ── Linked OAuth accounts ─────────────────────────────────────────────────────
+
+  getLinkedOAuthAccounts(userId: string) {
+    return prisma.oAuthAccount.findMany({
+      where: { userId },
+      select: { provider: true, createdAt: true },
+      orderBy: { createdAt: "asc" },
+    })
+  }
+
+  unlinkOAuthAccount(userId: string, provider: OAuthProvider) {
+    return prisma.oAuthAccount.deleteMany({ where: { userId, provider } })
+  }
+
+  /** Find an existing OAuthAccount to detect if a provider is already claimed by another user. */
+  findOAuthAccountByProvider(provider: OAuthProvider, providerAccountId: string) {
+    return prisma.oAuthAccount.findUnique({
+      where: { provider_providerAccountId: { provider, providerAccountId } },
+    })
+  }
+
   /** Fetch active subscription for a user. */
   getUserSubscription(userId: string) {
     return prisma.subscription.findUnique({

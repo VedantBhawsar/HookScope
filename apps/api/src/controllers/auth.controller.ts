@@ -5,7 +5,7 @@ import { exchangeGitHubCode, exchangeGoogleCode, getGitHubAuthUrl, getGoogleAuth
 import { generateRefreshToken } from "../lib/tokens"
 import type { AuthService } from "../services/auth.service"
 import type { AuthenticatedRequest } from "../middleware/require-auth"
-import type { CompleteOnboardingDto, ForgotPasswordDto, LoginDto, RegisterDto, ResetPasswordDto, UpdateProfileDto } from "../types/auth"
+import type { CompleteOnboardingDto, ConfirmEmailOtpDto, ForgotPasswordDto, LoginDto, RegisterDto, ResetPasswordDto, UpdateProfileDto } from "../types/auth"
 
 const FRONTEND_URL = (process.env["FRONTEND_URL"] ?? "http://localhost:3000").replace(/\/$/, "")
 const OAUTH_STATE_COOKIE = "oauth_state"
@@ -141,6 +141,41 @@ export class AuthController {
     }
   }
 
+  // ── Email verification OTP ───────────────────────────────────────────────────
+
+  sendEmailOtp = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const { userId } = (req as AuthenticatedRequest).user
+      await this.service.sendVerificationOtp(userId)
+      json(res, null, 200, "Verification code sent to your email")
+    } catch (err) {
+      if (err instanceof Error && err.message === "EMAIL_ALREADY_VERIFIED") {
+        return json(res, null, 200, "Email is already verified")
+      }
+      console.error("[AuthController.sendEmailOtp]", err)
+      error(res, "Failed to send verification code")
+    }
+  }
+
+  confirmEmailOtp = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const { userId } = (req as AuthenticatedRequest).user
+      const body = req.body as Partial<ConfirmEmailOtpDto>
+      if (!body.otp?.trim()) return badRequest(res, "otp is required")
+
+      await this.service.verifyEmailOtp(userId, body.otp)
+      json(res, null, 200, "Email verified successfully")
+    } catch (err) {
+      if (err instanceof Error) {
+        if (err.message === "OTP_NOT_FOUND") return badRequest(res, "No active verification code found. Please request a new one.")
+        if (err.message === "OTP_EXPIRED") return badRequest(res, "This code has expired. Please request a new one.")
+        if (err.message === "OTP_INVALID") return badRequest(res, "Incorrect verification code. Please try again.")
+      }
+      console.error("[AuthController.confirmEmailOtp]", err)
+      error(res, "Verification failed")
+    }
+  }
+
   // ── Forgot / reset password ──────────────────────────────────────────────────
 
   forgotPassword = async (req: Request, res: Response): Promise<void> => {
@@ -247,6 +282,118 @@ export class AuthController {
     } catch (err) {
       console.error("[AuthController.gitHubOAuthCallback]", err)
       res.redirect(`${FRONTEND_URL}/auth/login?error=oauth_failed`)
+    }
+  }
+
+  // ── Social account management ────────────────────────────────────────────────
+
+  getLinkedAccounts = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const { userId } = (req as AuthenticatedRequest).user
+      const accounts = await this.service.getLinkedAccounts(userId)
+      json(res, { accounts })
+    } catch (err) {
+      console.error("[AuthController.getLinkedAccounts]", err)
+      error(res, "Failed to fetch linked accounts")
+    }
+  }
+
+  unlinkSocialAccount = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const { userId } = (req as AuthenticatedRequest).user
+      const { provider } = req.params as { provider: string }
+      const upperProvider = provider.toUpperCase() as "GOOGLE" | "GITHUB"
+
+      await this.service.unlinkSocialAccount(userId, upperProvider)
+      json(res, null, 200, `${provider} account disconnected`)
+    } catch (err) {
+      if (err instanceof Error && err.message === "CANNOT_UNLINK_LAST_AUTH") {
+        return badRequest(res, "Cannot disconnect your only sign-in method. Set a password first or link another account.")
+      }
+      console.error("[AuthController.unlinkSocialAccount]", err)
+      error(res, "Failed to disconnect account")
+    }
+  }
+
+  // OAuth link initiation — requires the user to already be authenticated.
+  // userId is embedded in the link-state cookie so the callback can retrieve it
+  // without requiring an access-token on the redirect (which Google doesn't send back).
+
+  private readonly OAUTH_LINK_COOKIE = "oauth_link_state"
+
+  googleOAuthLink = (req: Request, res: Response): void => {
+    const { userId } = (req as AuthenticatedRequest).user
+    const state = generateRefreshToken().slice(0, 32)
+    const payload = JSON.stringify({ state, userId })
+    res.cookie(this.OAUTH_LINK_COOKIE, payload, { httpOnly: true, sameSite: "lax", maxAge: 5 * 60 * 1000 })
+    res.redirect(getGoogleAuthUrl(state))
+  }
+
+  googleOAuthLinkCallback = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const { code, state, error: oauthError } = req.query as Record<string, string>
+      const raw = req.cookies[this.OAUTH_LINK_COOKIE] as string | undefined
+      res.clearCookie(this.OAUTH_LINK_COOKIE)
+
+      if (oauthError || !code || !state || !raw) {
+        return res.redirect(`${FRONTEND_URL}/settings?link_error=oauth_failed`) as unknown as void
+      }
+
+      const stored = JSON.parse(raw) as { state: string; userId: string }
+      if (stored.state !== state) {
+        return res.redirect(`${FRONTEND_URL}/settings?link_error=state_mismatch`) as unknown as void
+      }
+
+      const profile = await exchangeGoogleCode(code)
+      await this.service.linkSocialAccountToUser(stored.userId, "GOOGLE", profile.providerAccountId)
+      res.redirect(`${FRONTEND_URL}/settings?linked=google`)
+    } catch (err) {
+      if (err instanceof Error && err.message === "ALREADY_LINKED") {
+        return res.redirect(`${FRONTEND_URL}/settings?link_error=already_linked`) as unknown as void
+      }
+      if (err instanceof Error && err.message === "PROVIDER_CLAIMED_BY_ANOTHER_USER") {
+        return res.redirect(`${FRONTEND_URL}/settings?link_error=provider_taken`) as unknown as void
+      }
+      console.error("[AuthController.googleOAuthLinkCallback]", err)
+      res.redirect(`${FRONTEND_URL}/settings?link_error=oauth_failed`)
+    }
+  }
+
+  gitHubOAuthLink = (req: Request, res: Response): void => {
+    const { userId } = (req as AuthenticatedRequest).user
+    const state = generateRefreshToken().slice(0, 32)
+    const payload = JSON.stringify({ state, userId })
+    res.cookie(this.OAUTH_LINK_COOKIE, payload, { httpOnly: true, sameSite: "lax", maxAge: 5 * 60 * 1000 })
+    res.redirect(getGitHubAuthUrl(state))
+  }
+
+  gitHubOAuthLinkCallback = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const { code, state, error: oauthError } = req.query as Record<string, string>
+      const raw = req.cookies[this.OAUTH_LINK_COOKIE] as string | undefined
+      res.clearCookie(this.OAUTH_LINK_COOKIE)
+
+      if (oauthError || !code || !state || !raw) {
+        return res.redirect(`${FRONTEND_URL}/settings?link_error=oauth_failed`) as unknown as void
+      }
+
+      const stored = JSON.parse(raw) as { state: string; userId: string }
+      if (stored.state !== state) {
+        return res.redirect(`${FRONTEND_URL}/settings?link_error=state_mismatch`) as unknown as void
+      }
+
+      const profile = await exchangeGitHubCode(code)
+      await this.service.linkSocialAccountToUser(stored.userId, "GITHUB", profile.providerAccountId)
+      res.redirect(`${FRONTEND_URL}/settings?linked=github`)
+    } catch (err) {
+      if (err instanceof Error && err.message === "ALREADY_LINKED") {
+        return res.redirect(`${FRONTEND_URL}/settings?link_error=already_linked`) as unknown as void
+      }
+      if (err instanceof Error && err.message === "PROVIDER_CLAIMED_BY_ANOTHER_USER") {
+        return res.redirect(`${FRONTEND_URL}/settings?link_error=provider_taken`) as unknown as void
+      }
+      console.error("[AuthController.gitHubOAuthLinkCallback]", err)
+      res.redirect(`${FRONTEND_URL}/settings?link_error=oauth_failed`)
     }
   }
 

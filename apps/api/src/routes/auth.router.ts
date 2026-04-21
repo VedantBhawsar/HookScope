@@ -4,7 +4,7 @@ import { AuthController } from "../controllers/auth.controller"
 import { AuthRepository } from "../repositories/auth.repository"
 import { AuthService } from "../services/auth.service"
 import { requireAuth } from "../middleware/require-auth"
-import { forgotPasswordRateLimit, oauthCallbackRateLimit } from "../lib/rate-limit"
+import { forgotPasswordRateLimit, oauthCallbackRateLimit, otpSendRateLimit } from "../lib/rate-limit"
 
 const repository = new AuthRepository()
 const service = new AuthService(repository)
@@ -34,8 +34,20 @@ authRouter.patch("/profile", requireAuth, controller.updateProfile)
 authRouter.get("/me", requireAuth, controller.me)
 authRouter.post("/avatar", requireAuth, upload.single("avatar"), controller.uploadAvatar)
 
-// ── Social OAuth ──────────────────────────────────────────────────────────────
+// ── Email verification ────────────────────────────────────────────────────────
+authRouter.post("/verify-email/send", requireAuth, otpSendRateLimit, controller.sendEmailOtp)
+authRouter.post("/verify-email/confirm", requireAuth, controller.confirmEmailOtp)
+
+// ── Social OAuth (sign-in) ────────────────────────────────────────────────────
 authRouter.get("/oauth/google", controller.googleOAuth)
 authRouter.get("/oauth/google/callback", oauthCallbackRateLimit, controller.googleOAuthCallback)
 authRouter.get("/oauth/github", controller.gitHubOAuth)
 authRouter.get("/oauth/github/callback", oauthCallbackRateLimit, controller.gitHubOAuthCallback)
+
+// ── Social OAuth (account linking — requires existing session) ────────────────
+authRouter.get("/oauth/accounts", requireAuth, controller.getLinkedAccounts)
+authRouter.delete("/oauth/:provider", requireAuth, controller.unlinkSocialAccount)
+authRouter.get("/oauth/google/link", requireAuth, controller.googleOAuthLink)
+authRouter.get("/oauth/google/link/callback", oauthCallbackRateLimit, controller.googleOAuthLinkCallback)
+authRouter.get("/oauth/github/link", requireAuth, controller.gitHubOAuthLink)
+authRouter.get("/oauth/github/link/callback", oauthCallbackRateLimit, controller.gitHubOAuthLinkCallback)

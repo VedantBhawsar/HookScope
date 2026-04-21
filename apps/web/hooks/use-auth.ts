@@ -219,6 +219,62 @@ export function useUpdateProfileMutation() {
   })
 }
 
+// ── Email verification ────────────────────────────────────────────────────────
+
+export function useSendVerificationOtpMutation() {
+  return useMutation({
+    mutationFn: async () => {
+      const response = await http.post<ApiResponse<null>>("/api/auth/verify-email/send")
+      return { message: response.data.message }
+    },
+  })
+}
+
+export function useVerifyEmailMutation() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async (otp: string) => {
+      const response = await http.post<ApiResponse<null>>("/api/auth/verify-email/confirm", { otp })
+      return { message: response.data.message }
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: authQueryKeys.me })
+    },
+  })
+}
+
+// ── Linked social accounts ────────────────────────────────────────────────────
+
+export interface LinkedAccount {
+  provider: "GOOGLE" | "GITHUB"
+  linkedAt: string
+}
+
+const linkedAccountsQueryKey = ["auth", "linked-accounts"]
+
+export function useLinkedAccountsQuery() {
+  return useQuery({
+    queryKey: linkedAccountsQueryKey,
+    queryFn: async () => {
+      const response = await http.get<ApiResponse<{ accounts: LinkedAccount[] }>>("/api/auth/oauth/accounts")
+      return unwrapResponse(response.data)
+    },
+  })
+}
+
+export function useUnlinkAccountMutation() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async (provider: string) => {
+      const response = await http.delete<ApiResponse<null>>(`/api/auth/oauth/${provider.toLowerCase()}`)
+      return { message: response.data.message }
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: linkedAccountsQueryKey })
+    },
+  })
+}
+
 export function useForgotPasswordMutation() {
   return useMutation({
     mutationFn: async (email: string) => {

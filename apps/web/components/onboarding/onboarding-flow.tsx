@@ -316,6 +316,7 @@ export function OnboardingFlow() {
           {/* Step content */}
           {currentStep === "verify" && (
             <VerifyStep
+              email={user.email}
               emailVerified={user.onboarding.emailVerified}
               onContinue={() => goTo("company")}
             />
