@@ -35,10 +35,10 @@ export const alertFormSchema = z
   .object({
     name: z.string().min(1, "Name is required").max(100),
     type: alertTypeSchema,
-    severity: z.enum(["INFO", "WARNING", "CRITICAL"]).default("WARNING"),
+    severity: z.enum(["INFO", "WARNING", "CRITICAL"]),
     endpointId: z.string().trim().min(1).nullable().optional(),
-    config: z.record(z.string(), z.unknown()).default({}),
-    isActive: z.boolean().default(true),
+    config: z.record(z.string(), z.unknown()),
+    isActive: z.boolean(),
   })
   .superRefine((values, ctx) => {
     const config = values.config

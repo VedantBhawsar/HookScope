@@ -8,7 +8,7 @@ import { UpgradeDialog } from "@/components/pricing/upgrade-dialog"
 interface PricingContextValue {
   usage: UsageRecord | undefined
   isLoading: boolean
-  openUpgradeDialog: (reason?: string) => void
+  openUpgradeDialog: (reason?: string, currentTier?: string) => void
   isAtEndpointLimit: boolean
   isNearEventLimit: boolean
   isAtEventLimit: boolean
@@ -26,9 +26,11 @@ export function PricingProvider({ children }: { children: React.ReactNode }) {
   const { data: usage, isLoading } = useUsageQuery()
   const [dialogOpen, setDialogOpen] = React.useState(false)
   const [upgradeReason, setUpgradeReason] = React.useState<string | undefined>()
+  const [upgradeTier, setUpgradeTier] = React.useState<string | undefined>()
 
-  const openUpgradeDialog = React.useCallback((reason?: string) => {
+  const openUpgradeDialog = React.useCallback((reason?: string, currentTier?: string) => {
     setUpgradeReason(reason)
+    setUpgradeTier(currentTier)
     setDialogOpen(true)
   }, [])
 
@@ -47,7 +49,7 @@ export function PricingProvider({ children }: { children: React.ReactNode }) {
       }}
     >
       {children}
-      <UpgradeDialog open={dialogOpen} onOpenChange={setDialogOpen} reason={upgradeReason} />
+      <UpgradeDialog open={dialogOpen} onOpenChange={setDialogOpen} reason={upgradeReason} currentTier={upgradeTier} />
     </PricingContext.Provider>
   )
 }

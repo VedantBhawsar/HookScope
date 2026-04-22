@@ -3,15 +3,18 @@
 import * as React from "react"
 import { useForm } from "react-hook-form"
 import { z } from "zod"
-import { LoaderCircle } from "lucide-react"
+import { LoaderCircle, Zap, CheckCircle2 } from "lucide-react"
 import { Button } from "@workspace/ui/components/button"
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@workspace/ui/components/dialog"
+import { Progress } from "@workspace/ui/components/progress"
+import { Separator } from "@workspace/ui/components/separator"
 import {
   Form,
   FormControl,
@@ -175,7 +178,7 @@ export function CreateEndpointDialog({
   onCreated,
 }: CreateEndpointDialogProps) {
   const createEndpointMutation = useCreateEndpointMutation()
-  const { isAtEndpointLimit, openUpgradeDialog } = usePricing()
+  const { usage, isAtEndpointLimit, openUpgradeDialog } = usePricing()
   const [createdEndpoint, setCreatedEndpoint] = React.useState<EndpointCreatedRecord | null>(null)
   const form = useForm<CreateEndpointFormValues>({
     defaultValues,
@@ -303,23 +306,74 @@ export function CreateEndpointDialog({
     }
   }
 
-  // When the user is at their endpoint limit, show an upgrade prompt instead of the form.
-  // TODO: Implement what to display here (5–10 lines).
-  // Hint: use `openUpgradeDialog(reason)` to open the pricing modal, then close this dialog.
-  // Consider: a short message ("You've reached your X-endpoint limit"), an Upgrade button,
-  // and a Cancel/close button. Access `usage.endpoints` for exact counts.
   if (isAtEndpointLimit) {
+    const used = usage?.endpoints.used ?? 0
+    const limit = usage?.endpoints.limit ?? 0
+
     return (
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Endpoint Limit Reached</DialogTitle>
+        <DialogContent className="max-w-sm">
+          <DialogHeader className="items-center text-center gap-3 pb-2">
+            <div className="flex size-14 items-center justify-center rounded-full bg-destructive/10 ring-1 ring-destructive/20">
+              <Zap className="size-6 text-destructive" />
+            </div>
+            <div className="space-y-1">
+              <DialogTitle className="text-lg">Endpoint limit reached</DialogTitle>
+              <DialogDescription>
+                You&apos;ve used all {limit} endpoint{limit !== 1 ? "s" : ""} on your current plan.
+              </DialogDescription>
+            </div>
           </DialogHeader>
-          {/* ── YOUR CODE GOES HERE ────────────────────────────────── */}
-          {/* Implement the limit-reached state. You have access to:    */}
-          {/*   openUpgradeDialog(reason?: string)                      */}
-          {/*   onOpenChange(false) to close this dialog                */}
-          {/* ────────────────────────────────────────────────────────── */}
+
+          <div className="space-y-4 py-2 ">
+            <div className="space-y-2">
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-muted-foreground">Endpoints used</span>
+                <span className="font-semibold tabular-nums text-destructive">
+                  {used} / {limit}
+                </span>
+              </div>
+              <Progress value={100} className="h-2 [&>div]:bg-destructive" />
+            </div>
+
+            <Separator />
+
+            <div className="space-y-2.5">
+              <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                Unlock more with an upgrade
+              </p>
+              {[
+                { plan: "Developer", endpoints: "10 endpoints" },
+                { plan: "Pro", endpoints: "50 endpoints" },
+                { plan: "Enterprise", endpoints: "Unlimited endpoints" },
+              ].map(({ plan, endpoints }) => (
+                <div key={plan} className="flex items-center gap-2.5 text-sm">
+                  <CheckCircle2 className="size-4 shrink-0 text-primary" />
+                  <span className="font-medium">{plan}</span>
+                  <span className="text-muted-foreground">— {endpoints}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <Button
+              className="gap-2 w-1/2"
+              onClick={() => {
+                onOpenChange(false)
+                openUpgradeDialog(
+                  `You've reached your ${limit}-endpoint limit. Upgrade to add more endpoints.`,
+                  usage?.plan.tier,
+                )
+              }}
+            >
+              <Zap className="size-4" />
+              Upgrade plan
+            </Button>
+            <Button variant="outline" className="w-1/2" onClick={() => onOpenChange(false)}>
+              Maybe later
+            </Button>
+          </div>
         </DialogContent>
       </Dialog>
     )

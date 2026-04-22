@@ -1,7 +1,9 @@
 # ─── Build context ────────────────────────────────────────────────────────────
-# These are excluded from the Docker build context to keep it small and fast.
-# Only the files explicitly COPY'd in the Dockerfile are needed.
+# All three Dockerfiles (api, ingestion, web) use context: . (repo root) and
+# share this file. Do NOT exclude any app or package source directories here —
+# each Dockerfile only COPYs what it needs, so unused files are harmless.
 
+# ─── Version control / tooling ────────────────────────────────────────────────
 .git
 .gitignore
 .turbo
@@ -9,18 +11,14 @@
 .npmrc
 .prettierignore
 .prettierrc
+*.md
+skills-lock.json
 
-# App source we don't need in the ingestion image
-apps/api
-apps/web
+# ─── Wolf / Claude config ─────────────────────────────────────────────────────
+.wolf
+.claude
 
-# Package sources not consumed by ingestion
-packages/db/src
-packages/db/prisma
-packages/db/generated
-packages/ui/src
-
-# Dev artefacts
+# ─── Dev artefacts ────────────────────────────────────────────────────────────
 node_modules
 **/node_modules
 **/.next
@@ -28,6 +26,6 @@ node_modules
 **/coverage
 **/*.log
 
-# Env files (secrets should never enter the build context)
+# ─── Env files (secrets must never enter the build context) ───────────────────
 .env
 .env.*

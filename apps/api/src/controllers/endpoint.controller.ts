@@ -2,6 +2,7 @@ import type { Request, Response } from "express"
 import { badRequest, created, error, json, noContent, notFound } from "../lib/response"
 import type { AuthenticatedRequest } from "../middleware/require-auth"
 import type { EndpointService } from "../services/endpoint.service"
+import type { UsageRepository } from "../usage/usage.repository"
 import type { CreateEndpointDto, UpdateEndpointDto } from "../types/endpoint"
 import { DeliveryErrorCode, SourceProvider, VerificationMode } from "@workspace/db"
 
@@ -9,8 +10,13 @@ const VALID_SOURCES = new Set(Object.values(SourceProvider))
 const VALID_VERIFICATION_MODES = new Set(Object.values(VerificationMode))
 const VALID_STATUSES = new Set(["active", "paused"])
 
+const FREE_TIER_ENDPOINT_LIMIT = 3
+
 export class EndpointController {
-  constructor(private readonly service: EndpointService) {}
+  constructor(
+    private readonly service: EndpointService,
+    private readonly usageRepo: UsageRepository,
+  ) {}
 
   /**
    * Shared ownership guard — returns false and sends 404 if project not owned.
@@ -89,6 +95,19 @@ export class EndpointController {
     try {
       const projectId = await this.ensureOwnership(req, res)
       if (!projectId) return
+
+      const { userId } = (req as unknown as AuthenticatedRequest).user
+      const [subscription, endpointsUsed] = await Promise.all([
+        this.usageRepo.getPlanForUser(userId),
+        this.usageRepo.getActiveEndpointCount(userId),
+      ])
+      const endpointLimit = subscription?.plan?.endpointLimit ?? FREE_TIER_ENDPOINT_LIMIT
+      if (endpointsUsed >= endpointLimit) {
+        return badRequest(
+          res,
+          `Endpoint limit reached (${endpointsUsed}/${endpointLimit}). Upgrade your plan to add more endpoints.`,
+        )
+      }
 
       const body = req.body as CreateEndpointDto
       const normalizedStatus = body.status?.toLowerCase()

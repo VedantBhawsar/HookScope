@@ -3,10 +3,12 @@ import { EndpointController } from "../controllers/endpoint.controller"
 import { requireAuth } from "../middleware/require-auth"
 import { EndpointRepository } from "../repositories/endpoint.repository"
 import { EndpointService } from "../services/endpoint.service"
+import { UsageRepository } from "../usage/usage.repository"
 
 const repository = new EndpointRepository()
 const service = new EndpointService(repository)
-const controller = new EndpointController(service)
+const usageRepository = new UsageRepository()
+const controller = new EndpointController(service, usageRepository)
 
 export const endpointRouter = Router({ mergeParams: true })
 

@@ -40,7 +40,7 @@ COPY packages/db/generated ./packages/db/generated
 COPY apps/ingestion/src     ./apps/ingestion/src
 COPY apps/ingestion/index.ts ./apps/ingestion/index.ts
 
-EXPOSE 3001
+EXPOSE 5001
 
 # Bun runs TypeScript natively — no compile step needed
 CMD ["bun", "run", "/app/apps/ingestion/src/server.ts"]

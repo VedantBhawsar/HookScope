@@ -155,8 +155,11 @@ export function useCreateEndpointMutation() {
       return { endpoint, message }
     },
     onSuccess: async (_, variables) => {
-      await queryClient.invalidateQueries({ queryKey: endpointsQueryKeys.byProject(variables.projectId) })
-      await queryClient.invalidateQueries({ queryKey: endpointsQueryKeys.all })
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: endpointsQueryKeys.byProject(variables.projectId) }),
+        queryClient.invalidateQueries({ queryKey: endpointsQueryKeys.all }),
+        queryClient.invalidateQueries({ queryKey: ["usage"] }),
+      ])
     },
   })
 }

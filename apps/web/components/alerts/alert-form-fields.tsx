@@ -48,7 +48,7 @@ function DeliveryFailureRateFields() {
       <FormField
         control={form.control}
         name="config.threshold"
-        render={({ field }) => (
+        render={({ field: { value, ...fieldProps } }) => (
           <FormItem className="flex-1">
             <FormLabel>Failure Threshold (%)</FormLabel>
             <FormControl>
@@ -57,8 +57,9 @@ function DeliveryFailureRateFields() {
                 min={1}
                 max={100}
                 placeholder="50"
-                {...field}
-                onChange={(e) => field.onChange(Number(e.target.value))}
+                {...fieldProps}
+                value={(value as number | undefined) ?? ""}
+                onChange={(e) => fieldProps.onChange(Number(e.target.value))}
               />
             </FormControl>
             <FormMessage />
@@ -68,7 +69,7 @@ function DeliveryFailureRateFields() {
       <FormField
         control={form.control}
         name="config.windowMinutes"
-        render={({ field }) => (
+        render={({ field: { value, ...fieldProps } }) => (
           <FormItem className="flex-1">
             <FormLabel>Window (minutes)</FormLabel>
             <FormControl>
@@ -76,8 +77,9 @@ function DeliveryFailureRateFields() {
                 type="number"
                 min={1}
                 placeholder="10"
-                {...field}
-                onChange={(e) => field.onChange(Number(e.target.value))}
+                {...fieldProps}
+                value={(value as number | undefined) ?? ""}
+                onChange={(e) => fieldProps.onChange(Number(e.target.value))}
               />
             </FormControl>
             <FormMessage />
@@ -162,7 +164,7 @@ function EndpointSilenceFields() {
     <FormField
       control={form.control}
       name="config.windowMinutes"
-      render={({ field }) => (
+      render={({ field: { value, ...fieldProps } }) => (
         <FormItem>
           <FormLabel>Silence window (minutes)</FormLabel>
           <FormControl>
@@ -170,8 +172,9 @@ function EndpointSilenceFields() {
               type="number"
               min={1}
               placeholder="30"
-              {...field}
-              onChange={(e) => field.onChange(Number(e.target.value))}
+              {...fieldProps}
+              value={(value as number | undefined) ?? ""}
+              onChange={(e) => fieldProps.onChange(Number(e.target.value))}
             />
           </FormControl>
           <FormMessage />
