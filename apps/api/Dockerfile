@@ -6,6 +6,8 @@ WORKDIR /app
 
 COPY package.json bun.lock ./
 
+# All workspace package.json files must be present so bun can reconcile
+# the full workspace graph against the frozen lockfile.
 COPY packages/redis/package.json             ./packages/redis/
 COPY packages/s3/package.json                ./packages/s3/
 COPY packages/db/package.json                ./packages/db/
@@ -13,9 +15,14 @@ COPY packages/ui/package.json                ./packages/ui/
 COPY packages/typescript-config/package.json ./packages/typescript-config/
 COPY packages/eslint-config/package.json     ./packages/eslint-config/
 
-COPY apps/api/package.json ./apps/api/
+COPY apps/api/package.json        ./apps/api/
+COPY apps/ingestion/package.json  ./apps/ingestion/
+COPY apps/web/package.json        ./apps/web/
 
-RUN bun install --frozen-lockfile
+# --ignore-scripts prevents @workspace/db's postinstall (prisma generate) from
+# running here — the schema file isn't present in this stage. The pre-generated
+# client is copied from the host in the runner stage below.
+RUN bun install --frozen-lockfile --ignore-scripts
 
 # ─── Runner stage ─────────────────────────────────────────────────────────────
 FROM base AS runner

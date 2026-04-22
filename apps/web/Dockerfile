@@ -6,13 +6,22 @@ WORKDIR /app
 
 COPY package.json bun.lock ./
 
+# All workspace package.json files must be present so bun can reconcile
+# the full workspace graph against the frozen lockfile.
+COPY packages/db/package.json                ./packages/db/
+COPY packages/redis/package.json             ./packages/redis/
+COPY packages/s3/package.json                ./packages/s3/
 COPY packages/ui/package.json                ./packages/ui/
 COPY packages/typescript-config/package.json ./packages/typescript-config/
 COPY packages/eslint-config/package.json     ./packages/eslint-config/
 
-COPY apps/web/package.json ./apps/web/
+COPY apps/api/package.json        ./apps/api/
+COPY apps/ingestion/package.json  ./apps/ingestion/
+COPY apps/web/package.json        ./apps/web/
 
-RUN bun install --frozen-lockfile
+# --ignore-scripts prevents @workspace/db's postinstall (prisma generate) from
+# running — the schema file isn't present in this stage.
+RUN bun install --frozen-lockfile --ignore-scripts
 
 # ─── Builder stage ────────────────────────────────────────────────────────────
 FROM base AS builder
@@ -46,14 +55,20 @@ WORKDIR /app
 
 ENV NODE_ENV=production
 
-# Re-install production dependencies only (skips devDeps)
+# Re-install production dependencies only (skips devDeps).
+# All workspace package.json files must be present for the frozen lockfile check.
 COPY package.json bun.lock ./
+COPY packages/db/package.json                ./packages/db/
+COPY packages/redis/package.json             ./packages/redis/
+COPY packages/s3/package.json                ./packages/s3/
 COPY packages/ui/package.json                ./packages/ui/
 COPY packages/typescript-config/package.json ./packages/typescript-config/
 COPY packages/eslint-config/package.json     ./packages/eslint-config/
-COPY apps/web/package.json                   ./apps/web/
+COPY apps/api/package.json        ./apps/api/
+COPY apps/ingestion/package.json  ./apps/ingestion/
+COPY apps/web/package.json        ./apps/web/
 
-RUN bun install --frozen-lockfile --production
+RUN bun install --frozen-lockfile --production --ignore-scripts
 
 # UI source must be present so the workspace symlink resolves at runtime
 COPY packages/ui/src ./packages/ui/src
