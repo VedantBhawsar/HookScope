@@ -13,6 +13,7 @@ COPY packages/s3/package.json                ./packages/s3/
 COPY packages/db/package.json                ./packages/db/
 COPY packages/ui/package.json                ./packages/ui/
 COPY packages/typescript-config/package.json ./packages/typescript-config/
+COPY packages/typescript-config/base.json    ./packages/typescript-config/
 COPY packages/eslint-config/package.json     ./packages/eslint-config/
 
 COPY apps/api/package.json        ./apps/api/
@@ -39,6 +40,9 @@ COPY packages/s3/src      ./packages/s3/src
 COPY packages/db/src      ./packages/db/src
 COPY packages/db/generated ./packages/db/generated
 COPY packages/db/prisma   ./packages/db/prisma
+COPY packages/db/tsconfig.json ./packages/db/
+COPY packages/db/prisma.config.ts ./packages/db/
+COPY packages/typescript-config ./packages/typescript-config
 
 # API app source
 COPY apps/api/src     ./apps/api/src

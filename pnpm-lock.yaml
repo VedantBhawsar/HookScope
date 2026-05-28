@@ -36,6 +36,9 @@ importers:
       '@hookscope/db':
         specifier: workspace:*
         version: link:../../packages/db
+      '@hookscope/redis':
+        specifier: workspace:*
+        version: link:../../packages/redis
       '@hookscope/s3':
         specifier: workspace:*
         version: link:../../packages/s3
@@ -60,6 +63,9 @@ importers:
       nodemailer:
         specifier: ^8.0.5
         version: 8.0.9
+      sonner:
+        specifier: ^1.7.4
+        version: 1.7.4(react-dom@19.2.6(react@19.2.6))(react@19.2.6)
       stripe:
         specifier: ^22.0.2
         version: 22.1.1(@types/node@25.9.1)
@@ -185,6 +191,9 @@ importers:
       react-hook-form:
         specifier: ^7.72.1
         version: 7.76.1(react@19.2.6)
+      sonner:
+        specifier: ^1.7.4
+        version: 1.7.4(react-dom@19.2.6(react@19.2.6))(react@19.2.6)
       zod:
         specifier: ^4.1.12
         version: 4.4.3

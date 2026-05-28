@@ -23,7 +23,7 @@ const startServer = () => {
 
   app.use(
     cors({
-      origin: FRONTEND_URL,
+      origin: true,
       credentials: true,
     })
   )
@@ -49,7 +49,7 @@ const startServer = () => {
   app.use("/api/billing", billingRouter)
   app.use("/api/maintenance", maintenanceRouter)
 
-  const PORT = 5000
+  const PORT = 5002
   app.listen(PORT, () => {
     console.log(`Server running on http://localhost:${PORT}`)
     initAlertEvaluator()

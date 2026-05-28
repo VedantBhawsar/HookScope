@@ -22,6 +22,7 @@
       "persistent": true
     },
     "dev": {
+      "dependsOn": ["^prisma:generate"],
       "cache": false,
       "persistent": true
     },

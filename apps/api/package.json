@@ -10,13 +10,14 @@
     "lint": "eslint",
     "format": "prettier --write \"**/*.{ts,js}\"",
     "typecheck": "tsc --noEmit",
-    "prisma:generate": "prisma generate",
-    "prisma:migrate:dev": "prisma migrate dev",
-    "prisma:migrate:deploy": "prisma migrate deploy",
-    "prisma:studio": "prisma studio"
+    "prisma:generate": "pnpm --filter @hookscope/db prisma:generate",
+    "prisma:migrate:dev": "pnpm --filter @hookscope/db prisma:migrate:dev",
+    "prisma:migrate:deploy": "pnpm --filter @hookscope/db prisma:migrate:deploy",
+    "prisma:studio": "pnpm --filter @hookscope/db prisma:studio"
   },
   "dependencies": {
     "@hookscope/db": "workspace:*",
+    "@hookscope/redis": "workspace:*",
     "@hookscope/s3": "workspace:*",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
@@ -25,18 +26,19 @@
     "jose": "^6.2.2",
     "multer": "^2.1.1",
     "nodemailer": "^8.0.5",
+    "sonner": "^1.7.4",
     "stripe": "^22.0.2",
     "zod": "^4.1.12"
   },
   "devDependencies": {
+    "@hookscope/eslint-config": "workspace:*",
+    "@hookscope/typescript-config": "workspace:*",
     "@types/bun": "latest",
     "@types/cookie-parser": "^1.4.10",
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.6",
     "@types/multer": "^2.1.0",
     "@types/nodemailer": "^8.0.0",
-    "@hookscope/eslint-config": "workspace:*",
-    "@hookscope/typescript-config": "workspace:*",
     "eslint": "^9.39.2",
     "prisma": "^7.0.0",
     "typescript": "^5.9.3"
