@@ -35,26 +35,36 @@ services:
       timeout: 3s
       retries: 5
 
-  localstack:
-    image: localstack/localstack:3.8.1
+  minio:
+    image: minio/minio:latest
     restart: unless-stopped
     ports:
-      - "4566:4566"
+      - "4566:9000"
     environment:
-      SERVICES: s3
-      AWS_DEFAULT_REGION: us-east-1
-      LOCALSTACK_HOST: localstack:4566
-      DEBUG: 0
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
     volumes:
-      - localstack_data:/var/lib/localstack
-      - ./infra/localstack/init:/etc/localstack/init/ready.d
-      - /var/run/docker.sock:/var/run/docker.sock
+      - minio_data:/data
+    command: server /data --console-address ":9001"
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:4566/_localstack/health"]
+      test: ["CMD-SHELL", "mc ready local || exit 1"]
       interval: 10s
       timeout: 5s
       retries: 10
       start_period: 15s
+
+  minio-init:
+    image: minio/mc:latest
+    volumes:
+      - ./infra/minio/init:/init
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    entrypoint: ["/bin/sh", "/init/01-create-buckets.sh"]
+    depends_on:
+      minio:
+        condition: service_healthy
+    restart: "no"
 
   # ─── Migration (one-shot, runs before api starts) ─────────────────────────────
 
@@ -84,11 +94,11 @@ services:
       PORT: 5000
       DATABASE_URL: postgresql://postgres:postgres@postgres:5432/webhook_db
       REDIS_URL: redis://redis:6379
-      S3_ENDPOINT: http://localstack:4566
+      AWS_ACCESS_KEY_ID: minioadmin
+      AWS_SECRET_ACCESS_KEY: minioadmin
+      S3_ENDPOINT: http://minio:9000
       S3_BUCKET: webhooks
       AWS_REGION: us-east-1
-      AWS_ACCESS_KEY_ID: test
-      AWS_SECRET_ACCESS_KEY: test
       INGESTION_BASE_URL: http://ingestion:5001
       FRONTEND_URL: http://localhost:3000
       JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET:-super-secret-access-key-change-in-production}
@@ -108,7 +118,7 @@ services:
         condition: service_completed_successfully
       redis:
         condition: service_healthy
-      localstack:
+      minio:
         condition: service_healthy
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:5000/"]
@@ -131,17 +141,13 @@ services:
       LOG_LEVEL: info
       DATABASE_URL: postgresql://postgres:postgres@postgres:5432/webhook_db
       REDIS_URL: redis://redis:6379
-      S3_ENDPOINT: http://localstack:4566
-      S3_BUCKET: webhooks
-      AWS_REGION: us-east-1
-      AWS_ACCESS_KEY_ID: test
-      AWS_SECRET_ACCESS_KEY: test
+      S3_ENDPOINT: http://minio:9000
     depends_on:
       migrate:
         condition: service_completed_successfully
       redis:
         condition: service_healthy
-      localstack:
+      minio:
         condition: service_healthy
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:5001/health"]
@@ -175,4 +181,4 @@ services:
 volumes:
   postgres_data:
   redis_data:
-  localstack_data:
+  minio_data:
