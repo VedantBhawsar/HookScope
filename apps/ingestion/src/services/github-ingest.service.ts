@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto"
-import type { prisma } from "@workspace/db"
+import type { prisma } from "@hookscope/db"
 import type { GitHubWebhookEvent } from "../types/github.js"
 
 type PrismaClient = typeof prisma

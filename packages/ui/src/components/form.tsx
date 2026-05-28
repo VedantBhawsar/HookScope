@@ -10,7 +10,7 @@ import {
   type FieldPath,
   type FieldValues,
 } from "react-hook-form"
-import { cn } from "@workspace/ui/lib/utils"
+import { cn } from "@hookscope/ui/lib/utils"
 
 const Form = FormProvider
 

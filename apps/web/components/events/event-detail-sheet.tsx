@@ -2,16 +2,16 @@
 
 import { LoaderCircle, RefreshCw } from "lucide-react"
 import { toast } from "sonner"
-import { Button } from "@workspace/ui/components/button"
-import { Separator } from "@workspace/ui/components/separator"
+import { Button } from "@hookscope/ui/components/button"
+import { Separator } from "@hookscope/ui/components/separator"
 import {
   Sheet,
   SheetContent,
   SheetDescription,
   SheetHeader,
   SheetTitle,
-} from "@workspace/ui/components/sheet"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@workspace/ui/components/tabs"
+} from "@hookscope/ui/components/sheet"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@hookscope/ui/components/tabs"
 import { EventStatusBadge } from "./event-status-badge"
 import { DeliveriesList } from "./deliveries-list"
 import { EventLogsList } from "./event-logs-list"

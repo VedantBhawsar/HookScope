@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { cn } from "@workspace/ui/lib/utils"
+import { cn } from "@hookscope/ui/lib/utils"
 import { PricingCard } from "@/components/pricing/pricing-card"
 import { PLANS, type BillingInterval } from "@/components/pricing/pricing-data"
 

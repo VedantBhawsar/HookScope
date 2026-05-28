@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import { AlertTriangle, X } from "lucide-react"
-import { cn } from "@workspace/ui/lib/utils"
+import { cn } from "@hookscope/ui/lib/utils"
 import { usePricing } from "@/components/providers/pricing-provider"
 
 export function UsageLimitBanner() {

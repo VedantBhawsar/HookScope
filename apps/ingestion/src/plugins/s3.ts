@@ -1,7 +1,7 @@
 import fp from "fastify-plugin"
 import type { FastifyPluginAsync } from "fastify"
-import { getS3Client, ensureBucketExists } from "@workspace/s3"
-import type { S3Config } from "@workspace/s3"
+import { getS3Client, ensureBucketExists } from "@hookscope/s3"
+import type { S3Config } from "@hookscope/s3"
 import type { S3Client } from "@aws-sdk/client-s3"
 
 declare module "fastify" {

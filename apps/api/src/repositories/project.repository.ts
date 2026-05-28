@@ -1,4 +1,4 @@
-import { prisma } from "@workspace/db/client"
+import { prisma } from "@hookscope/db/client"
 import type { CreateProjectDto, ProjectListQuery, UpdateProjectDto } from "../types/project"
 
 const projectSelect = {

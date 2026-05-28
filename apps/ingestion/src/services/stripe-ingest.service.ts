@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto"
-import type { prisma } from "@workspace/db"
+import type { prisma } from "@hookscope/db"
 import type Stripe from "stripe"
 
 type PrismaClient = typeof prisma

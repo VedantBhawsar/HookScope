@@ -6,9 +6,9 @@ import {
   signAccessToken,
 } from "../lib/tokens"
 import { hashPassword, verifyPassword } from "../lib/password"
-import { putObject, deleteObject, getS3Client } from "@workspace/s3"
+import { putObject, deleteObject, getS3Client } from "@hookscope/s3"
 import { sendPasswordResetEmail, sendEmailVerificationOtp } from "../lib/email"
-import type { OAuthProvider } from "@workspace/db"
+import type { OAuthProvider } from "@hookscope/db"
 import type {
   AuthOnboardingState,
   AuthResponse,

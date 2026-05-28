@@ -2,7 +2,7 @@
 
 import * as React from "react"
 import { ChevronLeft, ChevronRight, LoaderCircle } from "lucide-react"
-import { Button } from "@workspace/ui/components/button"
+import { Button } from "@hookscope/ui/components/button"
 import { DeliveryStatusBadge } from "./delivery-status-badge"
 import {
   useWebhookDeliveriesQuery,

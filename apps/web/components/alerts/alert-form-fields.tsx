@@ -8,10 +8,10 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from "@workspace/ui/components/form"
-import { Input } from "@workspace/ui/components/input"
-import { Button } from "@workspace/ui/components/button"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@workspace/ui/components/select"
+} from "@hookscope/ui/components/form"
+import { Input } from "@hookscope/ui/components/input"
+import { Button } from "@hookscope/ui/components/button"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@hookscope/ui/components/select"
 import { useAlertEndpointOptionsQuery } from "@/hooks/use-alerts"
 import { alertFormConfigDefaults, type AlertFormValues } from "./alert-form-schema"
 

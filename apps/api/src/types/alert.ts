@@ -1,5 +1,5 @@
 import { z } from "zod"
-import { AlertSeverity, AlertType, DeliveryErrorCode, EventStatus } from "@workspace/db"
+import { AlertSeverity, AlertType, DeliveryErrorCode, EventStatus } from "@hookscope/db"
 
 // ─── Config Schemas (per type) ────────────────────────────────────────────────
 

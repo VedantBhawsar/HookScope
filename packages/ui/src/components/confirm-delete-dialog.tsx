@@ -10,8 +10,8 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from "@workspace/ui/components/alert-dialog"
-import { Input } from "@workspace/ui/components/input"
+} from "@hookscope/ui/components/alert-dialog"
+import { Input } from "@hookscope/ui/components/input"
 
 interface ConfirmDeleteDialogProps {
   /** Controls open state from the parent */

@@ -1,4 +1,4 @@
-import { prisma } from "@workspace/db/client"
+import { prisma } from "@hookscope/db/client"
 
 export class UsageRepository {
   getCurrentMonthUsage(userId: string, month: string) {

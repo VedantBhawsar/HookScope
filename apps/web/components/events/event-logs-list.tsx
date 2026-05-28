@@ -2,8 +2,8 @@
 
 import * as React from "react"
 import { ChevronLeft, ChevronRight, LoaderCircle } from "lucide-react"
-import { cn } from "@workspace/ui/lib/utils"
-import { Button } from "@workspace/ui/components/button"
+import { cn } from "@hookscope/ui/lib/utils"
+import { Button } from "@hookscope/ui/components/button"
 import { useWebhookLogsQuery, type EventLogRecord } from "@/hooks/use-webhook-events"
 
 const LOG_STATUS_DOT: Record<string, string> = {

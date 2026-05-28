@@ -10,15 +10,15 @@ import {
   Search,
   X,
 } from "lucide-react"
-import { Button } from "@workspace/ui/components/button"
-import { Input } from "@workspace/ui/components/input"
+import { Button } from "@hookscope/ui/components/button"
+import { Input } from "@hookscope/ui/components/input"
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@workspace/ui/components/select"
+} from "@hookscope/ui/components/select"
 import {
   Table,
   TableBody,
@@ -26,7 +26,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@workspace/ui/components/table"
+} from "@hookscope/ui/components/table"
 import { DeliveryStatusBadge } from "@/components/events/delivery-status-badge"
 import { DeliveryDetailSheet } from "@/components/deliveries/delivery-detail-sheet"
 import {
@@ -36,7 +36,7 @@ import {
 import { useRetryWebhookMutation } from "@/hooks/use-webhook-events"
 import { useQueryClient } from "@tanstack/react-query"
 import { toast } from "sonner"
-import type { DeliveryStatus } from "@workspace/db"
+import type { DeliveryStatus } from "@hookscope/db"
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 

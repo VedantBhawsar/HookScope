@@ -3,7 +3,7 @@
 import * as React from "react"
 import { useParams, useRouter } from "next/navigation"
 import { LoaderCircle, Plus } from "lucide-react"
-import { Button } from "@workspace/ui/components/button"
+import { Button } from "@hookscope/ui/components/button"
 import { useEndpointsQuery } from "@/hooks/use-endpoints"
 import { useProjectsQuery } from "@/hooks/use-projects"
 import { CreateEndpointDialog } from "@/components/endpoints/create-endpoint-dialog"

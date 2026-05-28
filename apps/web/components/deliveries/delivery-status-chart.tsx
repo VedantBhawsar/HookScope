@@ -7,7 +7,7 @@ import {
   ChartTooltip,
   ChartTooltipContent,
   type ChartConfig,
-} from "@workspace/ui/components/chart"
+} from "@hookscope/ui/components/chart"
 
 const STATUS_CONFIG: ChartConfig = {
   SUCCESS: { label: "Success", color: "var(--chart-1)" },

@@ -4,7 +4,7 @@ import type { AuthenticatedRequest } from "../middleware/require-auth"
 import type { EndpointService } from "../services/endpoint.service"
 import type { UsageRepository } from "../usage/usage.repository"
 import type { CreateEndpointDto, UpdateEndpointDto } from "../types/endpoint"
-import { DeliveryErrorCode, SourceProvider, VerificationMode } from "@workspace/db"
+import { DeliveryErrorCode, SourceProvider, VerificationMode } from "@hookscope/db"
 
 const VALID_SOURCES = new Set(Object.values(SourceProvider))
 const VALID_VERIFICATION_MODES = new Set(Object.values(VerificationMode))
@@ -308,7 +308,7 @@ export class EndpointController {
       const result = await this.service.getDeliveries(req.params.id, projectId, {
         page,
         limit,
-        status: statusRaw as import("@workspace/db").DeliveryStatus | undefined,
+        status: statusRaw as import("@hookscope/db").DeliveryStatus | undefined,
         errorCode: errorCodeRaw as DeliveryErrorCode | undefined,
         search: searchRaw?.trim() || undefined,
       })

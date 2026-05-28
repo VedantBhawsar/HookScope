@@ -1,5 +1,5 @@
-import { Badge } from "@workspace/ui/components/badge"
-import type { DeliveryStatus } from "@workspace/db"
+import { Badge } from "@hookscope/ui/components/badge"
+import type { DeliveryStatus } from "@hookscope/db"
 
 const CONFIG: Record<
   DeliveryStatus,

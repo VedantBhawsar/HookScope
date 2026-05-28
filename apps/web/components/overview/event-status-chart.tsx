@@ -7,7 +7,7 @@ import {
   ChartTooltip,
   ChartTooltipContent,
   type ChartConfig,
-} from "@workspace/ui/components/chart"
+} from "@hookscope/ui/components/chart"
 import { useWebhookEventsQuery } from "@/hooks/use-webhook-events"
 
 const STATUS_CONFIG: ChartConfig = {

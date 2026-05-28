@@ -2,7 +2,7 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { http, unwrapResponse, type ApiResponse } from "@/lib/http"
-import type { EventStatus, DeliveryStatus, SourceProvider } from "@workspace/db"
+import type { EventStatus, DeliveryStatus, SourceProvider } from "@hookscope/db"
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 

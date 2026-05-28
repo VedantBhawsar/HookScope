@@ -1,7 +1,7 @@
 import fp from "fastify-plugin"
 import type { FastifyPluginAsync } from "fastify"
 import type { Queue } from "bullmq"
-import { toConnectionOptions } from "@workspace/redis"
+import { toConnectionOptions } from "@hookscope/redis"
 import { createStripeQueue } from "../queues/stripe-event.queue.js"
 import { createGitHubQueue } from "../queues/github-event.queue.js"
 import type { StripeEventJob } from "../queues/stripe-event.queue.js"

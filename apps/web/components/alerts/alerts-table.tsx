@@ -3,15 +3,15 @@
 import * as React from "react"
 import { toast } from "sonner"
 import { MoreHorizontal, Pencil, Power, PowerOff, Trash2 } from "lucide-react"
-import { Badge } from "@workspace/ui/components/badge"
-import { Button } from "@workspace/ui/components/button"
+import { Badge } from "@hookscope/ui/components/badge"
+import { Button } from "@hookscope/ui/components/button"
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@workspace/ui/components/dropdown-menu"
+} from "@hookscope/ui/components/dropdown-menu"
 import {
   Table,
   TableBody,
@@ -19,8 +19,8 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@workspace/ui/components/table"
-import { ConfirmDeleteDialog } from "@workspace/ui/components/confirm-delete-dialog"
+} from "@hookscope/ui/components/table"
+import { ConfirmDeleteDialog } from "@hookscope/ui/components/confirm-delete-dialog"
 import {
   useAlertsQuery,
   useDeleteAlertMutation,

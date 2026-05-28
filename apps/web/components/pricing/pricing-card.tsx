@@ -1,9 +1,9 @@
 import Link from "next/link"
 import { Check, X, Minus, Loader2 } from "lucide-react"
-import { Card, CardContent, CardHeader } from "@workspace/ui/components/card"
-import { Badge } from "@workspace/ui/components/badge"
-import { Button } from "@workspace/ui/components/button"
-import { cn } from "@workspace/ui/lib/utils"
+import { Card, CardContent, CardHeader } from "@hookscope/ui/components/card"
+import { Badge } from "@hookscope/ui/components/badge"
+import { Button } from "@hookscope/ui/components/button"
+import { cn } from "@hookscope/ui/lib/utils"
 import type { Plan, BillingInterval } from "./pricing-data"
 
 function FeatureRow({ label, included }: { label: string; included: boolean | string }) {

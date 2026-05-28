@@ -1,5 +1,5 @@
-import { getObject, getS3Client } from "@workspace/s3"
-import { DeliveryStatus, DeliveryErrorCode, EventStatus } from "@workspace/db"
+import { getObject, getS3Client } from "@hookscope/s3"
+import { DeliveryStatus, DeliveryErrorCode, EventStatus } from "@hookscope/db"
 import type { WebhookRepository } from "../repositories/webhook.repository"
 import type {
   WebhookEventListQuery,

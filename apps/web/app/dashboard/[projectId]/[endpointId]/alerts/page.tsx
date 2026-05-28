@@ -2,9 +2,9 @@
 
 import { useParams, usePathname, useRouter, useSearchParams } from "next/navigation"
 import * as React from "react"
-import { Badge } from "@workspace/ui/components/badge"
+import { Badge } from "@hookscope/ui/components/badge"
 import { Bell } from "lucide-react"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@workspace/ui/components/tabs"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@hookscope/ui/components/tabs"
 import {
   Table,
   TableBody,
@@ -12,7 +12,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@workspace/ui/components/table"
+} from "@hookscope/ui/components/table"
 import { useDashboardProjectContext } from "@/components/dashboard/dashboard-project-context"
 import { useEndpointsQuery } from "@/hooks/use-endpoints"
 import {

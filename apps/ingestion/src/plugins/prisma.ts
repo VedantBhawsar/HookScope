@@ -1,7 +1,7 @@
 import fp from "fastify-plugin"
 import type { FastifyInstance } from "fastify"
-import { prisma } from "@workspace/db"
-import type { Prisma } from "@workspace/db"
+import { prisma } from "@hookscope/db"
+import type { Prisma } from "@hookscope/db"
 
 declare module "fastify" {
   interface FastifyInstance {

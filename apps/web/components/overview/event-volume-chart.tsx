@@ -7,10 +7,10 @@ import {
   ChartTooltip,
   ChartTooltipContent,
   type ChartConfig,
-} from "@workspace/ui/components/chart"
+} from "@hookscope/ui/components/chart"
 import { useEndpointVolumeQuery } from "@/hooks/use-endpoints"
-import { Button } from "@workspace/ui/components/button"
-import { cn } from "@workspace/ui/lib/utils"
+import { Button } from "@hookscope/ui/components/button"
+import { cn } from "@hookscope/ui/lib/utils"
 
 const chartConfig: ChartConfig = {
   delivered: { label: "Delivered", color: "var(--chart-1)" },

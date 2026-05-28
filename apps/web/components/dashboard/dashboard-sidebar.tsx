@@ -23,7 +23,7 @@ import {
 import type { AuthUser } from "@/hooks/use-auth"
 import type { EndpointRecord } from "@/hooks/use-endpoints"
 import type { ProjectRecord } from "@/hooks/use-projects"
-import { Button } from "@workspace/ui/components/button"
+import { Button } from "@hookscope/ui/components/button"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -32,9 +32,9 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@workspace/ui/components/dropdown-menu"
-import { cn } from "@workspace/ui/lib/utils"
-import { Input } from "@workspace/ui/components/input"
+} from "@hookscope/ui/components/dropdown-menu"
+import { cn } from "@hookscope/ui/lib/utils"
+import { Input } from "@hookscope/ui/components/input"
 
 interface DashboardNavItem {
   label: string

@@ -1,15 +1,15 @@
 "use client"
 
 import * as React from "react"
-import { Badge } from "@workspace/ui/components/badge"
-import { Separator } from "@workspace/ui/components/separator"
+import { Badge } from "@hookscope/ui/components/badge"
+import { Separator } from "@hookscope/ui/components/separator"
 import {
   Sheet,
   SheetContent,
   SheetDescription,
   SheetHeader,
   SheetTitle,
-} from "@workspace/ui/components/sheet"
+} from "@hookscope/ui/components/sheet"
 import type { AlertTriggerWithAlert } from "@/hooks/use-alerts"
 
 function MetaRow({ label, value }: { label: string; value: React.ReactNode }) {

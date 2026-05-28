@@ -1,6 +1,6 @@
 // Generated with: stripe-webhooks skill
 import Stripe from "stripe"
-import { PlanTier, SubscriptionStatus } from "@workspace/db"
+import { PlanTier, SubscriptionStatus } from "@hookscope/db"
 import type { BillingRepository } from "./billing.repository"
 import type { CreateCheckoutDto } from "./billing.types"
 

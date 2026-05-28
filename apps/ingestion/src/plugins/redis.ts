@@ -1,7 +1,7 @@
 import fp from "fastify-plugin"
 import type { FastifyPluginAsync } from "fastify"
-import { getRedisClient } from "@workspace/redis"
-import type { Redis, RedisConfig } from "@workspace/redis"
+import { getRedisClient } from "@hookscope/redis"
+import type { Redis, RedisConfig } from "@hookscope/redis"
 
 declare module "fastify" {
   interface FastifyInstance {

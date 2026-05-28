@@ -1,4 +1,4 @@
-import type { SourceProvider, VerificationMode, DeliveryStatus, DeliveryErrorCode } from "@workspace/db"
+import type { SourceProvider, VerificationMode, DeliveryStatus, DeliveryErrorCode } from "@hookscope/db"
 
 // ─── Request DTOs ─────────────────────────────────────────────────────────────
 

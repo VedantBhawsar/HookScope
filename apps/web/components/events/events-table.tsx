@@ -2,18 +2,18 @@
 
 import * as React from "react"
 import { ChevronLeft, ChevronRight, LoaderCircle, Webhook, Trash2, RotateCcw } from "lucide-react"
-import { Button } from "@workspace/ui/components/button"
-import { Input } from "@workspace/ui/components/input"
-import { Checkbox } from "@workspace/ui/components/checkbox"
-import { ConfirmDeleteDialog } from "@workspace/ui/components/confirm-delete-dialog"
-import { toast } from "@workspace/ui/components/sonner"
+import { Button } from "@hookscope/ui/components/button"
+import { Input } from "@hookscope/ui/components/input"
+import { Checkbox } from "@hookscope/ui/components/checkbox"
+import { ConfirmDeleteDialog } from "@hookscope/ui/components/confirm-delete-dialog"
+import { toast } from "@hookscope/ui/components/sonner"
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@workspace/ui/components/select"
+} from "@hookscope/ui/components/select"
 import {
   Table,
   TableBody,
@@ -21,7 +21,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@workspace/ui/components/table"
+} from "@hookscope/ui/components/table"
 import { EventStatusBadge } from "./event-status-badge"
 import { EventDetailSheet } from "./event-detail-sheet"
 import {
@@ -30,7 +30,7 @@ import {
   useBatchDeleteMutation,
   type WebhookEventsQueryInput,
 } from "@/hooks/use-webhook-events"
-import type { EventStatus } from "@workspace/db"
+import type { EventStatus } from "@hookscope/db"
 
 const EVENT_STATUSES: EventStatus[] = [
   "RECEIVED",

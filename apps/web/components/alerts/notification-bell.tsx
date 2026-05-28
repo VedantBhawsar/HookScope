@@ -5,8 +5,8 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { Bell } from "lucide-react"
 import { toast } from "sonner"
-import { Badge } from "@workspace/ui/components/badge"
-import { Button } from "@workspace/ui/components/button"
+import { Badge } from "@hookscope/ui/components/badge"
+import { Button } from "@hookscope/ui/components/button"
 import {
   Popover,
   PopoverContent,
@@ -14,7 +14,7 @@ import {
   PopoverHeader,
   PopoverTitle,
   PopoverTrigger,
-} from "@workspace/ui/components/popover"
+} from "@hookscope/ui/components/popover"
 import { useAlertHistoryQuery } from "@/hooks/use-alerts"
 import {
   useAlertStream,

@@ -2,7 +2,7 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { http, unwrapResponse, type ApiResponse } from "@/lib/http"
-import type { DeliveryStatus, SourceProvider } from "@workspace/db"
+import type { DeliveryStatus, SourceProvider } from "@hookscope/db"
 
 export type EndpointSource = "STRIPE" | "GITHUB" | "SHOPIFY" | "SLACK" | "TWILIO" | "GENERIC"
 export type EndpointVerificationMode = "NONE" | "OPTIONAL" | "STRICT"

@@ -1,6 +1,6 @@
 "use client"
 
-import { Button } from "@workspace/ui/components/button"
+import { Button } from "@hookscope/ui/components/button"
 
 const API_BASE = process.env["NEXT_PUBLIC_API_URL"] ?? "http://localhost:5000"
 

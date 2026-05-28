@@ -5,7 +5,7 @@ import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
 import { Camera, LoaderCircle } from "lucide-react"
-import { Button } from "@workspace/ui/components/button"
+import { Button } from "@hookscope/ui/components/button"
 import {
   Form,
   FormControl,
@@ -13,9 +13,9 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from "@workspace/ui/components/form"
-import { Input } from "@workspace/ui/components/input"
-import { toast } from "@workspace/ui/components/sonner"
+} from "@hookscope/ui/components/form"
+import { Input } from "@hookscope/ui/components/input"
+import { toast } from "@hookscope/ui/components/sonner"
 import { AvatarUploadDialog } from "@/components/dashboard/avatar-upload-dialog"
 import { useUpdateProfileMutation, type AuthUser } from "@/hooks/use-auth"
 import { getRequestErrorMessage } from "@/lib/http"

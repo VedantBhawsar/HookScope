@@ -9,28 +9,24 @@
     "lint": "turbo lint",
     "format": "turbo format",
     "typecheck": "turbo typecheck",
-    "db:generate": "turbo run prisma:generate --filter=@workspace/db",
-    "db:migrate:dev": "turbo run prisma:migrate:dev --filter=@workspace/db",
-    "db:migrate:deploy": "turbo run prisma:migrate:deploy --filter=@workspace/db",
-    "db:push": "turbo run db:push --filter=@workspace/db",
-    "db:studio": "turbo run prisma:studio --filter=@workspace/db"
+    "db:generate": "turbo run prisma:generate --filter=@hookscope/db",
+    "db:migrate:dev": "turbo run prisma:migrate:dev --filter=@hookscope/db",
+    "db:migrate:deploy": "turbo run prisma:migrate:deploy --filter=@hookscope/db",
+    "db:push": "turbo run db:push --filter=@hookscope/db",
+    "db:studio": "turbo run prisma:studio --filter=@hookscope/db"
   },
   "devDependencies": {
-    "@workspace/eslint-config": "workspace:*",
-    "@workspace/typescript-config": "workspace:*",
+    "@hookscope/eslint-config": "workspace:*",
+    "@hookscope/typescript-config": "workspace:*",
     "prettier": "^3.8.1",
     "prettier-plugin-tailwindcss": "^0.7.2",
     "turbo": "^2.8.17",
     "typescript": "5.9.3"
   },
-  "packageManager": "bun@1.2.21",
+  "packageManager": "pnpm@11.4.0",
   "engines": {
     "node": ">=20"
   },
-  "workspaces": [
-    "apps/*",
-    "packages/*"
-  ],
   "dependencies": {
     "lucide-react": "^1.7.0"
   }

@@ -2,7 +2,7 @@
 
 import * as React from "react"
 import { ImageIcon, LoaderCircle, Upload, X } from "lucide-react"
-import { Button } from "@workspace/ui/components/button"
+import { Button } from "@hookscope/ui/components/button"
 import {
   Dialog,
   DialogContent,
@@ -10,9 +10,9 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@workspace/ui/components/dialog"
-import { toast } from "@workspace/ui/components/sonner"
-import { cn } from "@workspace/ui/lib/utils"
+} from "@hookscope/ui/components/dialog"
+import { toast } from "@hookscope/ui/components/sonner"
+import { cn } from "@hookscope/ui/lib/utils"
 import { getRequestErrorMessage } from "@/lib/http"
 import { useUploadAvatarMutation } from "@/hooks/use-auth"
 

@@ -1,4 +1,4 @@
-import { prisma, PlanTier, type SubscriptionStatus } from "@workspace/db"
+import { prisma, PlanTier, type SubscriptionStatus } from "@hookscope/db"
 
 export class BillingRepository {
   async findPlanByTier(tier: PlanTier) {

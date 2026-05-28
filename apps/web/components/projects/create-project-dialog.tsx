@@ -4,14 +4,14 @@ import * as React from "react"
 import { LoaderCircle } from "lucide-react"
 import { useForm } from "react-hook-form"
 import { z } from "zod"
-import { Button } from "@workspace/ui/components/button"
+import { Button } from "@hookscope/ui/components/button"
 import {
   Dialog,
   DialogContent,
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@workspace/ui/components/dialog"
+} from "@hookscope/ui/components/dialog"
 import {
   Form,
   FormControl,
@@ -19,10 +19,10 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from "@workspace/ui/components/form"
-import { Input } from "@workspace/ui/components/input"
-import { toast } from "@workspace/ui/components/sonner"
-import { Textarea } from "@workspace/ui/components/textarea"
+} from "@hookscope/ui/components/form"
+import { Input } from "@hookscope/ui/components/input"
+import { toast } from "@hookscope/ui/components/sonner"
+import { Textarea } from "@hookscope/ui/components/textarea"
 import { getRequestErrorMessage } from "@/lib/http"
 import { useCreateProjectMutation, type ProjectRecord } from "@/hooks/use-projects"
 

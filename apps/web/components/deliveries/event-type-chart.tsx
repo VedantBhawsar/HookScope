@@ -6,7 +6,7 @@ import {
   ChartContainer,
   ChartTooltip,
   type ChartConfig,
-} from "@workspace/ui/components/chart"
+} from "@hookscope/ui/components/chart"
 
 const chartConfig: ChartConfig = {
   count: { label: "Events", color: "var(--chart-1)" },

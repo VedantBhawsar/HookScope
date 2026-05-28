@@ -1,3 +1,3 @@
-import { nodeConfig } from "@workspace/eslint-config/node"
+import { nodeConfig } from "@hookscope/eslint-config/node"
 
 export default nodeConfig

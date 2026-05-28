@@ -1,5 +1,5 @@
 import type { FastifyPluginAsync } from "fastify"
-import { LogType } from "@workspace/db"
+import { LogType } from "@hookscope/db"
 import type Stripe from "stripe"
 import { verifyStripeSignature } from "../lib/stripe-verify.js"
 import { validateStripePaymentEvent } from "../lib/stripe-payment-validation.js"

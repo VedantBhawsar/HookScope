@@ -1,6 +1,6 @@
-import { prisma } from "@workspace/db/client"
-import { Prisma } from "@workspace/db"
-import { AlertSeverity, AlertType } from "@workspace/db"
+import { prisma } from "@hookscope/db/client"
+import { Prisma } from "@hookscope/db"
+import { AlertSeverity, AlertType } from "@hookscope/db"
 import type { AlertListQuery, CreateAlertDto, UpdateAlertDto } from "../types/alert"
 
 const ALERT_SELECT = {

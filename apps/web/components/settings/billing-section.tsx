@@ -3,9 +3,9 @@
 import * as React from "react"
 import { ExternalLink, Loader2, CreditCard, Zap, ArrowLeftRight } from "lucide-react"
 import { toast } from "sonner"
-import { Button } from "@workspace/ui/components/button"
-import { Badge } from "@workspace/ui/components/badge"
-import { Separator } from "@workspace/ui/components/separator"
+import { Button } from "@hookscope/ui/components/button"
+import { Badge } from "@hookscope/ui/components/badge"
+import { Separator } from "@hookscope/ui/components/separator"
 import { useSubscriptionQuery, usePortalMutation } from "@/hooks/use-billing"
 import { UpgradeDialog } from "@/components/pricing/upgrade-dialog"
 

@@ -11,16 +11,16 @@ import {
   Search,
   Trash2,
 } from "lucide-react"
-import { Badge } from "@workspace/ui/components/badge"
-import { Button } from "@workspace/ui/components/button"
-import { Input } from "@workspace/ui/components/input"
+import { Badge } from "@hookscope/ui/components/badge"
+import { Button } from "@hookscope/ui/components/button"
+import { Input } from "@hookscope/ui/components/input"
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@workspace/ui/components/dropdown-menu"
+} from "@hookscope/ui/components/dropdown-menu"
 import {
   Table,
   TableBody,
@@ -28,16 +28,16 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@workspace/ui/components/table"
+} from "@hookscope/ui/components/table"
 import {
   Pagination,
   PaginationContent,
   PaginationItem,
   PaginationNext,
   PaginationPrevious,
-} from "@workspace/ui/components/pagination"
-import { ConfirmDeleteDialog } from "@workspace/ui/components/confirm-delete-dialog"
-import { toast } from "@workspace/ui/components/sonner"
+} from "@hookscope/ui/components/pagination"
+import { ConfirmDeleteDialog } from "@hookscope/ui/components/confirm-delete-dialog"
+import { toast } from "@hookscope/ui/components/sonner"
 import { useProjectsQuery, useDeleteProjectMutation, type ProjectRecord } from "@/hooks/use-projects"
 import { getRequestErrorMessage, getRequestSuccessMessage } from "@/lib/http"
 import { CreateEndpointDialog } from "@/components/endpoints/create-endpoint-dialog"

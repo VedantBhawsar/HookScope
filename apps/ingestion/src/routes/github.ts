@@ -1,5 +1,5 @@
 import type { FastifyPluginAsync } from "fastify"
-import { LogType } from "@workspace/db"
+import { LogType } from "@hookscope/db"
 import { verifyGitHubSignature } from "../lib/github-verify.js"
 import { hashToken, findGitHubEndpoint, createWebhookEvent } from "../services/github-ingest.service.js"
 import type { GitHubWebhookEvent, GitHubIngestResponse } from "../types/github.js"

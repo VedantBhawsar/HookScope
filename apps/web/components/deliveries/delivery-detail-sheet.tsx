@@ -3,15 +3,15 @@
 import * as React from "react"
 import { LoaderCircle, RefreshCw } from "lucide-react"
 import { toast } from "sonner"
-import { Button } from "@workspace/ui/components/button"
-import { Separator } from "@workspace/ui/components/separator"
+import { Button } from "@hookscope/ui/components/button"
+import { Separator } from "@hookscope/ui/components/separator"
 import {
   Sheet,
   SheetContent,
   SheetDescription,
   SheetHeader,
   SheetTitle,
-} from "@workspace/ui/components/sheet"
+} from "@hookscope/ui/components/sheet"
 import { DeliveryStatusBadge } from "@/components/events/delivery-status-badge"
 import { useRetryWebhookMutation } from "@/hooks/use-webhook-events"
 import { getRequestErrorMessage } from "@/lib/http"

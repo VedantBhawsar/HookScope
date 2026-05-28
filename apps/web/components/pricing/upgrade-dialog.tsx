@@ -8,10 +8,10 @@ import {
   DialogHeader,
   DialogTitle,
   DialogDescription,
-} from "@workspace/ui/components/dialog"
+} from "@hookscope/ui/components/dialog"
 import { PricingCard } from "./pricing-card"
 import { PLANS, type BillingInterval } from "./pricing-data"
-import { cn } from "@workspace/ui/lib/utils"
+import { cn } from "@hookscope/ui/lib/utils"
 import { useCheckoutMutation, useChangePlanMutation } from "@/hooks/use-billing"
 import { useQueryClient } from "@tanstack/react-query"
 

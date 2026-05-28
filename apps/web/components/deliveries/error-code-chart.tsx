@@ -7,7 +7,7 @@ import {
   ChartTooltip,
   ChartTooltipContent,
   type ChartConfig,
-} from "@workspace/ui/components/chart"
+} from "@hookscope/ui/components/chart"
 
 const ERROR_LABELS: Record<string, string> = {
   SIGNATURE_INVALID: "Invalid Signature",

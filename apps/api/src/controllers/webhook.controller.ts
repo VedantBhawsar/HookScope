@@ -2,7 +2,7 @@ import type { Request, Response } from "express"
 import { badRequest, created, error, json, notFound } from "../lib/response"
 import type { AuthenticatedRequest } from "../middleware/require-auth"
 import type { WebhookService } from "../services/webhook.service"
-import { EventStatus, SourceProvider, DeliveryStatus } from "@workspace/db"
+import { EventStatus, SourceProvider, DeliveryStatus } from "@hookscope/db"
 
 const VALID_EVENT_STATUSES = new Set(Object.values(EventStatus))
 const VALID_SOURCE_PROVIDERS = new Set(Object.values(SourceProvider))

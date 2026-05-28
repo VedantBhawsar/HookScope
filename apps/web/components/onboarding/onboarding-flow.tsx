@@ -13,8 +13,8 @@ import {
   Zap,
 } from "lucide-react"
 import { toast } from "sonner"
-import { cn } from "@workspace/ui/lib/utils"
-import { Button } from "@workspace/ui/components/button"
+import { cn } from "@hookscope/ui/lib/utils"
+import { Button } from "@hookscope/ui/components/button"
 import { getRequestErrorMessage } from "@/lib/http"
 import { useMeQuery, useCompleteOnboardingMutation } from "@/hooks/use-auth"
 import { useCreateProjectMutation } from "@/hooks/use-projects"

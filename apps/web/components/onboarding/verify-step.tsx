@@ -3,13 +3,13 @@
 import * as React from "react"
 import { CheckCircle2, Loader2, Mail, RefreshCw, ShieldCheck } from "lucide-react"
 import { toast } from "sonner"
-import { cn } from "@workspace/ui/lib/utils"
-import { Button } from "@workspace/ui/components/button"
+import { cn } from "@hookscope/ui/lib/utils"
+import { Button } from "@hookscope/ui/components/button"
 import {
   InputOTP,
   InputOTPGroup,
   InputOTPSlot,
-} from "@workspace/ui/components/input-otp"
+} from "@hookscope/ui/components/input-otp"
 import { getRequestErrorMessage } from "@/lib/http"
 import { useSendVerificationOtpMutation, useVerifyEmailMutation } from "@/hooks/use-auth"
 

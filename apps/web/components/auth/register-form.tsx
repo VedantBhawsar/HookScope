@@ -5,8 +5,8 @@ import { useRouter } from "next/navigation"
 import * as React from "react"
 import { useForm } from "react-hook-form"
 import { LoaderCircle } from "lucide-react"
-import { Button } from "@workspace/ui/components/button"
-import { Input } from "@workspace/ui/components/input"
+import { Button } from "@hookscope/ui/components/button"
+import { Input } from "@hookscope/ui/components/input"
 import {
   Form,
   FormControl,
@@ -14,8 +14,8 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from "@workspace/ui/components/form"
-import { toast } from "@workspace/ui/components/sonner"
+} from "@hookscope/ui/components/form"
+import { toast } from "@hookscope/ui/components/sonner"
 import { getRequestErrorMessage } from "@/lib/http"
 import { useRegisterMutation } from "@/hooks/use-auth"
 import { PasswordField } from "@/components/auth/password-field"

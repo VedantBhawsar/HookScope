@@ -1,4 +1,4 @@
-import { prisma } from "@workspace/db/client"
+import { prisma } from "@hookscope/db/client"
 
 /**
  * Event expiration service — handles automatic deletion of old webhook events

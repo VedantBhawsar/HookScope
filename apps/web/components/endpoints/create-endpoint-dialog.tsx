@@ -4,7 +4,7 @@ import * as React from "react"
 import { useForm } from "react-hook-form"
 import { z } from "zod"
 import { LoaderCircle, Zap, CheckCircle2 } from "lucide-react"
-import { Button } from "@workspace/ui/components/button"
+import { Button } from "@hookscope/ui/components/button"
 import {
   Dialog,
   DialogContent,
@@ -12,9 +12,9 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@workspace/ui/components/dialog"
-import { Progress } from "@workspace/ui/components/progress"
-import { Separator } from "@workspace/ui/components/separator"
+} from "@hookscope/ui/components/dialog"
+import { Progress } from "@hookscope/ui/components/progress"
+import { Separator } from "@hookscope/ui/components/separator"
 import {
   Form,
   FormControl,
@@ -22,8 +22,8 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from "@workspace/ui/components/form"
-import { Input } from "@workspace/ui/components/input"
+} from "@hookscope/ui/components/form"
+import { Input } from "@hookscope/ui/components/input"
 import {
   Select,
   SelectContent,
@@ -32,9 +32,9 @@ import {
   SelectLabel,
   SelectTrigger,
   SelectValue,
-} from "@workspace/ui/components/select"
-import { toast } from "@workspace/ui/components/sonner"
-import { Textarea } from "@workspace/ui/components/textarea"
+} from "@hookscope/ui/components/select"
+import { toast } from "@hookscope/ui/components/sonner"
+import { Textarea } from "@hookscope/ui/components/textarea"
 import { getRequestErrorMessage } from "@/lib/http"
 import {
   useCreateEndpointMutation,

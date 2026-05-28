@@ -1,6 +1,6 @@
 import type { FastifyPluginAsync } from "fastify"
 import { randomUUID } from "node:crypto"
-import { putObject } from "@workspace/s3"
+import { putObject } from "@hookscope/s3"
 import type { WebhookPayload, IngestResponse } from "../types/index.js"
 
 const INGEST_BODY_SCHEMA = {

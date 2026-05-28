@@ -2,9 +2,9 @@
 
 import * as React from "react"
 import { Eye, EyeOff } from "lucide-react"
-import { Button } from "@workspace/ui/components/button"
-import { Input } from "@workspace/ui/components/input"
-import { cn } from "@workspace/ui/lib/utils"
+import { Button } from "@hookscope/ui/components/button"
+import { Input } from "@hookscope/ui/components/input"
+import { cn } from "@hookscope/ui/lib/utils"
 
 type PasswordFieldProps = Omit<React.ComponentProps<typeof Input>, "type">
 

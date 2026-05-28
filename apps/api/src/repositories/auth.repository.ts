@@ -1,5 +1,5 @@
-import { prisma } from "@workspace/db/client"
-import type { OAuthProvider } from "@workspace/db"
+import { prisma } from "@hookscope/db/client"
+import type { OAuthProvider } from "@hookscope/db"
 
 export class AuthRepository {
   findUserByEmail(email: string) {

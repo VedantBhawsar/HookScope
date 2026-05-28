@@ -2,8 +2,8 @@ import * as React from "react"
 import { useForm } from "react-hook-form"
 import { z } from "zod"
 import { LoaderCircle } from "lucide-react"
-import { Button } from "@workspace/ui/components/button"
-import { Input } from "@workspace/ui/components/input"
+import { Button } from "@hookscope/ui/components/button"
+import { Input } from "@hookscope/ui/components/input"
 import {
   Form,
   FormControl,
@@ -11,14 +11,14 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from "@workspace/ui/components/form"
+} from "@hookscope/ui/components/form"
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@workspace/ui/components/select"
+} from "@hookscope/ui/components/select"
 
 const COMPANY_SIZES = ["1-10", "11-50", "51-200", "201-500", "500+"] as const
 const COMPANY_ROLES = ["Engineering", "Product", "DevOps", "Founder", "Other"] as const

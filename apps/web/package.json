@@ -14,7 +14,7 @@
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",
     "@tanstack/react-query": "^5.97.0",
-    "@workspace/ui": "workspace:*",
+    "@hookscope/ui": "workspace:*",
     "axios": "^1.15.0",
     "lucide-react": "^1.7.0",
     "next": "16.1.6",
@@ -29,8 +29,8 @@
     "@types/node": "^25.1.0",
     "@types/react": "^19.2.10",
     "@types/react-dom": "^19.2.3",
-    "@workspace/eslint-config": "workspace:^",
-    "@workspace/typescript-config": "workspace:*",
+    "@hookscope/eslint-config": "workspace:^",
+    "@hookscope/typescript-config": "workspace:*",
     "eslint": "^9.39.2",
     "typescript": "^5.9.3"
   }

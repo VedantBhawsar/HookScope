@@ -1,5 +1,5 @@
 {
-  "name": "@workspace/redis",
+  "name": "@hookscope/redis",
   "version": "0.0.0",
   "type": "module",
   "private": true,
@@ -13,8 +13,8 @@
   },
   "devDependencies": {
     "@types/node": "^22.0.0",
-    "@workspace/eslint-config": "workspace:*",
-    "@workspace/typescript-config": "workspace:*",
+    "@hookscope/eslint-config": "workspace:*",
+    "@hookscope/typescript-config": "workspace:*",
     "eslint": "^9.39.2",
     "typescript": "^5.9.3"
   },

@@ -1,5 +1,5 @@
-import { prisma } from "@workspace/db/client"
-import { Prisma } from "@workspace/db"
+import { prisma } from "@hookscope/db/client"
+import { Prisma } from "@hookscope/db"
 import type { CreateEndpointDto, EndpointDeliveryListQuery, EndpointListQuery, UpdateEndpointDto } from "../types/endpoint"
 
 const ENDPOINT_SELECT = {

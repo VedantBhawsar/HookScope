@@ -1,4 +1,4 @@
-import type { EventStatus, SourceProvider, DeliveryStatus, LogStatus, LogType } from "@workspace/db"
+import type { EventStatus, SourceProvider, DeliveryStatus, LogStatus, LogType } from "@hookscope/db"
 
 // ─── Query Types ──────────────────────────────────────────────────────────────
 

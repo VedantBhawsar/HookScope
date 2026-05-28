@@ -1,5 +1,5 @@
-import { prisma } from "@workspace/db/client"
-import { DeliveryStatus, EventStatus, DeliveryErrorCode, LogType } from "@workspace/db"
+import { prisma } from "@hookscope/db/client"
+import { DeliveryStatus, EventStatus, DeliveryErrorCode, LogType } from "@hookscope/db"
 import type {
   WebhookEventListQuery,
   DeliveryListQuery,

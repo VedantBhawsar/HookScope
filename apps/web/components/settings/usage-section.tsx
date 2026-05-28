@@ -1,11 +1,11 @@
 "use client"
 
 import { Zap } from "lucide-react"
-import { Progress } from "@workspace/ui/components/progress"
-import { Badge } from "@workspace/ui/components/badge"
-import { Button } from "@workspace/ui/components/button"
-import { Skeleton } from "@workspace/ui/components/skeleton"
-import { Separator } from "@workspace/ui/components/separator"
+import { Progress } from "@hookscope/ui/components/progress"
+import { Badge } from "@hookscope/ui/components/badge"
+import { Button } from "@hookscope/ui/components/button"
+import { Skeleton } from "@hookscope/ui/components/skeleton"
+import { Separator } from "@hookscope/ui/components/separator"
 import { useUsageQuery } from "@/hooks/use-usage"
 import { usePricing } from "@/components/providers/pricing-provider"
 

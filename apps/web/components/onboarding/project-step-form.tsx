@@ -1,8 +1,8 @@
 import { useForm } from "react-hook-form"
 import { z } from "zod"
 import { LoaderCircle } from "lucide-react"
-import { Button } from "@workspace/ui/components/button"
-import { Input } from "@workspace/ui/components/input"
+import { Button } from "@hookscope/ui/components/button"
+import { Input } from "@hookscope/ui/components/input"
 import {
   Form,
   FormControl,
@@ -10,7 +10,7 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from "@workspace/ui/components/form"
+} from "@hookscope/ui/components/form"
 
 export const projectSchema = z.object({
   name: z

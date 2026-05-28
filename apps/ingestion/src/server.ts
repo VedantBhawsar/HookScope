@@ -2,7 +2,7 @@ import { loadEnv } from "./config/env.js"
 import { buildApp } from "./app.js"
 import { createStripeWorker } from "./workers/stripe-event.worker.js"
 import { createGitHubWorker } from "./workers/github-event.worker.js"
-import { toConnectionOptions } from "@workspace/redis"
+import { toConnectionOptions } from "@hookscope/redis"
 
 const env = loadEnv()
 const app = await buildApp(env)

@@ -1,13 +1,13 @@
 import type { Metadata } from "next"
 import { Geist_Mono, Inter, Space_Grotesk, Space_Mono } from "next/font/google"
 
-import "@workspace/ui/globals.css"
+import "@hookscope/ui/globals.css"
 import "./landing.css"
 import { ThemeProvider } from "@/components/theme-provider"
 import { QueryProvider } from "@/components/providers/query-provider"
 import { PricingProvider } from "@/components/providers/pricing-provider"
-import { Toaster } from "@workspace/ui/components/sonner"
-import { cn } from "@workspace/ui/lib/utils"
+import { Toaster } from "@hookscope/ui/components/sonner"
+import { cn } from "@hookscope/ui/lib/utils"
 import { APP_DESCRIPTION, APP_NAME, getMetadataBase } from "./metadata"
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-sans" })

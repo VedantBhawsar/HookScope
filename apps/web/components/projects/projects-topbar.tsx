@@ -7,7 +7,7 @@ import { ThemeToggle } from "@/components/theme-toggle"
 import { NotificationBell } from "@/components/alerts/notification-bell"
 import { useMeQuery, useLogoutMutation } from "@/hooks/use-auth"
 import { usePricing } from "@/components/providers/pricing-provider"
-import { Button } from "@workspace/ui/components/button"
+import { Button } from "@hookscope/ui/components/button"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -15,7 +15,7 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@workspace/ui/components/dropdown-menu"
+} from "@hookscope/ui/components/dropdown-menu"
 import Link from "next/link"
 
 function UserAvatar({ name }: { name: string }) {

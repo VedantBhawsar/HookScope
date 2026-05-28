@@ -1,4 +1,4 @@
-import { AlertType } from "@workspace/db"
+import { AlertType } from "@hookscope/db"
 import type { AlertRepository } from "./alert.repository"
 import { alertConfigByType } from "../types/alert"
 import type { AlertListQuery, AlertTriggeredEvent, CreateAlertDto, UpdateAlertDto } from "../types/alert"
