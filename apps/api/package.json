@@ -10,10 +10,10 @@
     "lint": "eslint",
     "format": "prettier --write \"**/*.{ts,js}\"",
     "typecheck": "tsc --noEmit",
-    "prisma:generate": "pnpm --filter @hookscope/db prisma:generate",
-    "prisma:migrate:dev": "pnpm --filter @hookscope/db prisma:migrate:dev",
-    "prisma:migrate:deploy": "pnpm --filter @hookscope/db prisma:migrate:deploy",
-    "prisma:studio": "pnpm --filter @hookscope/db prisma:studio"
+    "prisma:generate": "bun run --filter @hookscope/db prisma:generate",
+    "prisma:migrate:dev": "bun run --filter @hookscope/db prisma:migrate:dev",
+    "prisma:migrate:deploy": "bun run --filter @hookscope/db prisma:migrate:deploy",
+    "prisma:studio": "bun run --filter @hookscope/db prisma:studio"
   },
   "dependencies": {
     "@hookscope/db": "workspace:*",
