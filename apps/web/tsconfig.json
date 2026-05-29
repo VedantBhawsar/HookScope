@@ -4,6 +4,8 @@
     "ignoreDeprecations": "5.0",
     "paths": {
       "@/*": ["./*"],
+      "@hookscope/db": ["../../packages/db/src/index.ts"],
+      "@hookscope/db/*": ["../../packages/db/src/*"],
       "@hookscope/ui/*": ["../../packages/ui/src/*"]
     },
     "plugins": [
