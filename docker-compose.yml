@@ -66,6 +66,19 @@ services:
         condition: service_healthy
     restart: "no"
 
+  db-seed:
+    image: node:22-alpine
+    working_dir: /app
+    command: sh -c "npm install -g bun && bun run prisma/seed.ts"
+    volumes:
+      - ./packages/db:/app
+    environment:
+      DATABASE_URL: postgres://postgres:postgres@postgres:5432/webhook_db
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: "no"
+
 volumes:
   postgres_data:
   redis_data:
