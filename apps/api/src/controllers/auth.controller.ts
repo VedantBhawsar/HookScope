@@ -22,6 +22,16 @@ export class AuthController {
       if (body.password.length < 8) {
         return badRequest(res, "password must be at least 8 characters")
       }
+      if (body.password.length > 1024) {
+        return badRequest(res, "password is too long")
+      }
+      if (body.name.length > 255) {
+        return badRequest(res, "name is too long")
+      }
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+      if (!emailRegex.test(body.email)) {
+        return badRequest(res, "invalid email format")
+      }
 
       const result = await this.service.register(body as RegisterDto)
       setAuthCookies(res, result.tokens.accessToken, result.refreshToken)
@@ -41,6 +51,9 @@ export class AuthController {
       if (!body.email || !body.password) {
         return badRequest(res, "email and password are required")
       }
+      if (body.password.length > 1024) {
+        return badRequest(res, "password is too long")
+      }
 
       const result = await this.service.login(body as LoginDto)
       setAuthCookies(res, result.tokens.accessToken, result.refreshToken)
@@ -48,6 +61,12 @@ export class AuthController {
     } catch (err) {
       if (err instanceof Error && err.message === "INVALID_CREDENTIALS") {
         return unauthorized(res, "Invalid email or password")
+      }
+      if (err instanceof Error && err.message === "ACCOUNT_DISABLED") {
+        return unauthorized(res, "Account is disabled")
+      }
+      if (err instanceof Error && err.message === "EMAIL_NOT_VERIFIED") {
+        return unauthorized(res, "Please verify your email before logging in")
       }
       console.error("[AuthController.login]", err)
       error(res, "Login failed")
@@ -132,6 +151,12 @@ export class AuthController {
       if (body.name !== undefined && !body.name.trim()) {
         return badRequest(res, "name cannot be empty")
       }
+      if (body.name !== undefined && body.name.length > 255) {
+        return badRequest(res, "name is too long")
+      }
+      if (body.companyName !== undefined && body.companyName.length > 255) {
+        return badRequest(res, "companyName is too long")
+      }
 
       const user = await this.service.updateProfile(userId, body)
       json(res, { user }, 200, "Profile updated")
@@ -197,6 +222,7 @@ export class AuthController {
       const body = req.body as Partial<ResetPasswordDto>
       if (!body.token || !body.password) return badRequest(res, "token and password are required")
       if (body.password.length < 8) return badRequest(res, "password must be at least 8 characters")
+      if (body.password.length > 500) return badRequest(res, "password is too long")
 
       await this.service.resetPassword(body.token, body.password)
       json(res, null, 200, "Password updated. Please log in with your new password.")

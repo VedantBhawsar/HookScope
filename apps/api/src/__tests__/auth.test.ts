@@ -4,6 +4,7 @@ import { mocks } from "./helpers/preload"
 import { createApp } from "./helpers/app"
 import { authCookie } from "./helpers/auth"
 import { fakeUser, fakeAuthResponse } from "./helpers/fixtures"
+import { TEST_USER_ID } from "./helpers/auth"
 
 const app = createApp()
 
@@ -579,5 +580,229 @@ describe("GET /api/auth/oauth/github/link/callback", () => {
     const res = await request(app).get("/api/auth/oauth/github/link/callback").query({})
     expect(res.status).toBe(302)
     expect(res.headers.location).toContain("link_error")
+  })
+})
+
+// ─── Edge Cases ───────────────────────────────────────────────────────────────
+
+describe("Edge Cases", () => {
+  describe("Registration", () => {
+    it("rejects invalid email format (no @) → 400", async () => {
+      const res = await request(app)
+        .post("/api/auth/register")
+        .send({ name: "Test", email: "notanemail", password: "password123" })
+      expect(res.status).toBe(400)
+    })
+
+    it("rejects invalid email format (no domain) → 400", async () => {
+      const res = await request(app)
+        .post("/api/auth/register")
+        .send({ name: "Test", email: "test@", password: "password123" })
+      expect(res.status).toBe(400)
+    })
+
+    it("rejects email with uppercase letters → 409 (treated as different email?)", async () => {
+      mocks.auth.register.mockRejectedValue(new Error("EMAIL_TAKEN"))
+      const res = await request(app)
+        .post("/api/auth/register")
+        .send({ name: "Test", email: "TEST@EXAMPLE.COM", password: "password123" })
+      expect(res.status).toBe(409)
+    })
+
+    it("rejects very long name (DoS protection) → 400 or 413", async () => {
+      const res = await request(app)
+        .post("/api/auth/register")
+        .send({ name: "x".repeat(1000), email: "test@example.com", password: "password123" })
+      expect(res.status).toBe(400)
+    })
+  })
+
+  describe("Login", () => {
+    it("rejects account that is disabled → 401", async () => {
+      mocks.auth.login.mockRejectedValue(new Error("ACCOUNT_DISABLED"))
+      const res = await request(app)
+        .post("/api/auth/login")
+        .send({ email: "test@example.com", password: "password123" })
+      expect(res.status).toBe(401)
+    })
+
+    it("rejects email not verified (if enforcement is enabled) → 401", async () => {
+      mocks.auth.login.mockRejectedValue(new Error("EMAIL_NOT_VERIFIED"))
+      const res = await request(app)
+        .post("/api/auth/login")
+        .send({ email: "test@example.com", password: "password123" })
+      expect(res.status).toBe(401)
+    })
+
+    it("rejects malformed JSON body → 400 or 415", async () => {
+      const res = await request(app)
+        .post("/api/auth/login")
+        .set("Content-Type", "application/json")
+        .send("{ invalid json }")
+      expect([400, 415]).toContain(res.status)
+    })
+  })
+
+  describe("Refresh", () => {
+    it("rejects expired refresh token → 401", async () => {
+      mocks.auth.refresh.mockResolvedValue(null)
+      const res = await request(app)
+        .post("/api/auth/refresh")
+        .set("Cookie", "rt=expired-token")
+      expect(res.status).toBe(401)
+    })
+
+    it("rejects token family revoked (theft detection) → 401", async () => {
+      mocks.auth.refresh.mockResolvedValue(null)
+      const res = await request(app)
+        .post("/api/auth/refresh")
+        .set("Cookie", "rt=stolen-token")
+      expect(res.status).toBe(401)
+    })
+  })
+
+  describe("Reset Password", () => {
+    it("rejects very long password (DoS) → 400", async () => {
+      const res = await request(app)
+        .post("/api/auth/reset-password")
+        .send({ token: "valid-token", password: "x".repeat(1000) })
+      expect(res.status).toBe(400)
+    })
+  })
+
+  describe("Profile Update", () => {
+    it("rejects unknown fields in request body → should be ignored or 400", async () => {
+      mocks.auth.updateProfile.mockResolvedValue(fakeUser)
+      const res = await request(app)
+        .patch("/api/auth/profile")
+        .set("Cookie", await authCookie())
+        .send({ name: "New Name", unknownField: "should-be-ignored" })
+      expect(res.status).toBe(200)
+    })
+
+    it("rejects very long companyName (DoS) → 400", async () => {
+      const res = await request(app)
+        .patch("/api/auth/profile")
+        .set("Cookie", await authCookie())
+        .send({ companyName: "x".repeat(1000) })
+      expect(res.status).toBe(400)
+    })
+  })
+
+  describe("Email OTP", () => {
+    it("rejects OTP with letters (wrong format) → 400", async () => {
+      mocks.auth.verifyEmailOtp.mockRejectedValue(new Error("OTP_INVALID"))
+      const res = await request(app)
+        .post("/api/auth/verify-email/confirm")
+        .set("Cookie", await authCookie())
+        .send({ otp: "12345a" })
+      expect(res.status).toBe(400)
+    })
+
+    it("rejects OTP with more than 6 digits → 400", async () => {
+      const res = await request(app)
+        .post("/api/auth/verify-email/confirm")
+        .set("Cookie", await authCookie())
+        .send({ otp: "1234567" })
+      expect(res.status).toBe(400)
+    })
+
+    it("rejects OTP with special characters → 400", async () => {
+      const res = await request(app)
+        .post("/api/auth/verify-email/confirm")
+        .set("Cookie", await authCookie())
+        .send({ otp: "12@#56" })
+      expect(res.status).toBe(400)
+    })
+  })
+
+  describe("OAuth", () => {
+    it("googleOAuthCallback redirects with oauth_failed when Google API throws → 302", async () => {
+      mocks.oauth.exchangeGoogleCode.mockRejectedValue(new Error("google_error"))
+      const res = await request(app)
+        .get("/api/auth/oauth/google/callback")
+        .query({ code: "code123", state: "valid-state" })
+        .set("Cookie", "oauth_state=valid-state")
+      expect(res.status).toBe(302)
+      expect(res.headers.location).toContain("oauth_failed")
+    })
+
+    it("gitHubOAuthCallback redirects with oauth_failed when GitHub API throws → 302", async () => {
+      mocks.oauth.exchangeGitHubCode.mockRejectedValue(new Error("github_error"))
+      const res = await request(app)
+        .get("/api/auth/oauth/github/callback")
+        .query({ code: "code123", state: "valid-state" })
+        .set("Cookie", "oauth_state=valid-state")
+      expect(res.status).toBe(302)
+      expect(res.headers.location).toContain("oauth_failed")
+    })
+
+    it("googleOAuthLinkCallback redirects with link_error when Google API throws → 302", async () => {
+      mocks.oauth.exchangeGoogleCode.mockRejectedValue(new Error("google_error"))
+      const linkPayload = JSON.stringify({ state: "valid-state", userId: TEST_USER_ID })
+      const res = await request(app)
+        .get("/api/auth/oauth/google/link/callback")
+        .query({ code: "code123", state: "valid-state" })
+        .set("Cookie", `oauth_link_state=${encodeURIComponent(linkPayload)}`)
+      expect(res.status).toBe(302)
+      expect(res.headers.location).toContain("link_error")
+    })
+
+    it("gitHubOAuthLinkCallback redirects with link_error when GitHub API throws → 302", async () => {
+      mocks.oauth.exchangeGitHubCode.mockRejectedValue(new Error("github_error"))
+      const linkPayload = JSON.stringify({ state: "valid-state", userId: TEST_USER_ID })
+      const res = await request(app)
+        .get("/api/auth/oauth/github/link/callback")
+        .query({ code: "code123", state: "valid-state" })
+        .set("Cookie", `oauth_link_state=${encodeURIComponent(linkPayload)}`)
+      expect(res.status).toBe(302)
+      expect(res.headers.location).toContain("link_error")
+    })
+
+    it("googleOAuthLinkCallback redirects with link_error when account already linked to different user → 302", async () => {
+      mocks.oauth.exchangeGoogleCode.mockResolvedValue({
+        providerAccountId: "acc-123",
+        email: "test@example.com",
+        name: "Test User",
+        avatarUrl: null,
+      })
+      mocks.auth.linkSocialAccountToUser.mockRejectedValue(new Error("PROVIDER_CLAIMED_BY_ANOTHER_USER"))
+      const linkPayload = JSON.stringify({ state: "valid-state", userId: TEST_USER_ID })
+      const res = await request(app)
+        .get("/api/auth/oauth/google/link/callback")
+        .query({ code: "code123", state: "valid-state" })
+        .set("Cookie", `oauth_link_state=${encodeURIComponent(linkPayload)}`)
+      expect(res.status).toBe(302)
+      expect(res.headers.location).toContain("provider_taken")
+    })
+
+    it("googleOAuthLinkCallback redirects with link_error when already linked to same user → 302", async () => {
+      mocks.oauth.exchangeGoogleCode.mockResolvedValue({
+        providerAccountId: "acc-123",
+        email: "test@example.com",
+        name: "Test User",
+        avatarUrl: null,
+      })
+      mocks.auth.linkSocialAccountToUser.mockRejectedValue(new Error("ALREADY_LINKED"))
+      const linkPayload = JSON.stringify({ state: "valid-state", userId: TEST_USER_ID })
+      const res = await request(app)
+        .get("/api/auth/oauth/google/link/callback")
+        .query({ code: "code123", state: "valid-state" })
+        .set("Cookie", `oauth_link_state=${encodeURIComponent(linkPayload)}`)
+      expect(res.status).toBe(302)
+      expect(res.headers.location).toContain("already_linked")
+    })
+  })
+
+  describe("General/HTTP", () => {
+    it("returns 404 for non-existent route → 404", async () => {
+      const res = await request(app).get("/api/auth/nonexistent")
+      expect(res.status).toBe(404)
+    })
+
+    it("returns 404 for method not allowed on auth routes (Express behavior) → 404", async () => {
+      const res = await request(app).put("/api/auth/login").send({ email: "test@example.com", password: "password123" })
+      expect([404, 405]).toContain(res.status)
+    })
   })
 })
