@@ -5,13 +5,13 @@ import { requireAuth, type AuthenticatedRequest } from "../middleware/require-au
 import type { BillingService } from "./billing.service"
 
 const checkoutSchema = z.object({
-  planId: z.enum(["developer", "pro", "enterprise"]),
+  planId: z.enum(["starter", "pro"]),
   interval: z.enum(["monthly", "annual"]),
   returnTo: z.enum(["projects", "settings"]).optional(),
 })
 
 const changePlanSchema = z.object({
-  planId: z.enum(["developer", "pro", "enterprise"]),
+  planId: z.enum(["starter", "pro"]),
   interval: z.enum(["monthly", "annual"]),
 })
 
@@ -21,7 +21,6 @@ export class BillingController {
   createCheckout = [
     requireAuth,
     async (req: Request, res: Response): Promise<void> => {
-      console.log("helo")
       try {
         const { userId, email } = (req as AuthenticatedRequest).user
         const parsed = checkoutSchema.safeParse(req.body)
@@ -30,11 +29,8 @@ export class BillingController {
           return
         }
         const result = await this.service.createCheckoutSession(userId, email, parsed.data)
-        console.log("[BillingController.createCheckout] session created:", result)
         json(res, result)
       } catch (err) {
-        console.log("[BillingController.createCheckout] type:", err?.constructor?.name)
-        console.log("[BillingController.createCheckout] message:", err instanceof Error ? err.message : err)
         const message = err instanceof Error ? err.message : "Failed to create checkout session"
         error(res, message)
       }
@@ -88,13 +84,21 @@ export class BillingController {
   ]
 
   handleWebhook = async (req: Request, res: Response): Promise<void> => {
-    const sig = req.headers["stripe-signature"] as string
-    if (!sig) {
-      res.status(400).json({ error: "Missing stripe-signature header" })
+    const webhookId        = req.headers["webhook-id"] as string | undefined
+    const webhookTimestamp = req.headers["webhook-timestamp"] as string | undefined
+    const webhookSignature = req.headers["webhook-signature"] as string | undefined
+
+    if (!webhookId || !webhookTimestamp || !webhookSignature) {
+      res.status(400).json({ error: "Missing Dodo webhook headers" })
       return
     }
+
     try {
-      await this.service.handleWebhookEvent(req.body as Buffer, sig)
+      await this.service.handleWebhookEvent(req.body as Buffer, {
+        "webhook-id":        webhookId,
+        "webhook-timestamp": webhookTimestamp,
+        "webhook-signature": webhookSignature,
+      })
       res.json({ received: true })
     } catch (err) {
       console.error("[BillingController.handleWebhook]", err)

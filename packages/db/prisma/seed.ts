@@ -3,25 +3,25 @@ import { prisma, PlanTier } from "../src/index.js"
 async function main() {
   const plans = [
     {
-      tier: PlanTier.DEVELOPER,
-      eventsPerMonth: 250_000,
-      retentionDays: 14,
-      endpointLimit: 10,
-      priceCents: 1000,
+      tier: PlanTier.FREE,
+      eventsPerMonth: 10_000,
+      retentionDays: 1,    // 24h
+      endpointLimit: 1,    // 1 workspace
+      priceCents: 0,
+    },
+    {
+      tier: PlanTier.STARTER,
+      eventsPerMonth: 100_000,
+      retentionDays: 7,
+      endpointLimit: 3,    // 3 workspaces
+      priceCents: 1200,    // $12/mo
     },
     {
       tier: PlanTier.PRO,
-      eventsPerMonth: 2_000_000,
+      eventsPerMonth: 1_000_000,
       retentionDays: 30,
-      endpointLimit: 50,
-      priceCents: 3900,
-    },
-    {
-      tier: PlanTier.ENTERPRISE,
-      eventsPerMonth: 10_000_000,
-      retentionDays: 90,
-      endpointLimit: 999,
-      priceCents: 9900,
+      endpointLimit: 999,  // unlimited workspaces
+      priceCents: 3500,    // $35/mo
     },
   ]
 
@@ -38,7 +38,7 @@ async function main() {
     })
   }
 
-  console.log("✓ Plans seeded")
+  console.log("✓ Plans seeded (FREE / STARTER / PRO)")
 }
 
 main()

@@ -117,10 +117,10 @@ export const fakeAlertTrigger = {
 
 export const fakeSubscription = {
   status: "active",
-  tier: "DEVELOPER",
+  tier: "STARTER",
   currentPeriodEnd: "2026-02-01T00:00:00.000Z",
   cancelAtPeriodEnd: false,
-  stripeCustomerId: "cus_test123",
+  dodoCustomerId: "cust_test123",
 }
 
 export const fakeUsage = {

@@ -7,6 +7,18 @@
       "skillPath": "dodo-payments/best-practices/SKILL.md",
       "computedHash": "3eff4916cbee50e3508233c7ca5f631d85e1a11a59464e7a44af479c0eb4c35a"
     },
+    "find-skills": {
+      "source": "vercel-labs/skills",
+      "sourceType": "github",
+      "skillPath": "skills/find-skills/SKILL.md",
+      "computedHash": "9e1c8b3103f92fa8092568a44fe64858de7c5c9dc65ce4bea8f168080e889cfd"
+    },
+    "security-reviewer": {
+      "source": "jeffallan/claude-skills",
+      "sourceType": "github",
+      "skillPath": "skills/security-reviewer/SKILL.md",
+      "computedHash": "7a1ed4f4ca78a50b97e3e8c5725e494dc8aae0895bd1efde681a75ab22ff89d3"
+    },
     "turborepo": {
       "source": "vercel/turborepo",
       "sourceType": "github",

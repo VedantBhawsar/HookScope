@@ -1,127 +1,83 @@
-// Generated with: stripe-webhooks skill
-import Stripe from "stripe"
+import DodoPayments from "dodopayments"
 import { PlanTier, SubscriptionStatus } from "@hookscope/db"
 import type { BillingRepository } from "./billing.repository"
 import type { CreateCheckoutDto } from "./billing.types"
 
 const FRONTEND_URL = process.env["FRONTEND_URL"] ?? "http://localhost:3000"
 
-const PRICE_IDS: Record<string, Record<"monthly" | "annual", string>> = {
-  developer: {
-    monthly: process.env["STRIPE_DEVELOPER_MONTHLY_PRICE_ID"] ?? "",
-    annual: process.env["STRIPE_DEVELOPER_ANNUAL_PRICE_ID"] ?? "",
+// Dodo product IDs are created per plan/interval in the Dodo dashboard
+const PRODUCT_IDS: Record<string, Record<"monthly" | "annual", string>> = {
+  starter: {
+    monthly: process.env["DODO_STARTER_MONTHLY_PRODUCT_ID"] ?? "",
+    annual:  process.env["DODO_STARTER_ANNUAL_PRODUCT_ID"] ?? "",
   },
   pro: {
-    monthly: process.env["STRIPE_PRO_MONTHLY_PRICE_ID"] ?? "",
-    annual: process.env["STRIPE_PRO_ANNUAL_PRICE_ID"] ?? "",
-  },
-  enterprise: {
-    monthly: process.env["STRIPE_ENTERPRISE_MONTHLY_PRICE_ID"] ?? "",
-    annual: process.env["STRIPE_ENTERPRISE_ANNUAL_PRICE_ID"] ?? "",
+    monthly: process.env["DODO_PRO_MONTHLY_PRODUCT_ID"] ?? "",
+    annual:  process.env["DODO_PRO_ANNUAL_PRODUCT_ID"] ?? "",
   },
 }
 
 const PLAN_TIER_MAP: Record<string, PlanTier> = {
-  developer: PlanTier.DEVELOPER,
-  pro: PlanTier.PRO,
-  enterprise: PlanTier.ENTERPRISE,
+  starter: PlanTier.STARTER,
+  pro:     PlanTier.PRO,
 }
 
-// In Stripe v22, current_period_start/end moved from Subscription to SubscriptionItem
-function getSubscriptionPeriod(sub: Stripe.Subscription) {
-  const item = sub.items.data[0]
-  return {
-    currentPeriodStart: new Date((item?.current_period_start ?? sub.start_date) * 1000),
-    currentPeriodEnd: new Date((item?.current_period_end ?? sub.billing_cycle_anchor) * 1000),
-  }
-}
-
-// ─── TODO: Implement this function ──────────────────────────────────────────
-// Map a raw Stripe subscription status string to our internal SubscriptionStatus enum.
-//
-// Stripe statuses you'll encounter:
-//   'trialing' | 'active' | 'past_due' | 'canceled' | 'unpaid'
-//   'incomplete' | 'incomplete_expired' | 'paused'
-//
-// Our enum: TRIALING | ACTIVE | PAST_DUE | CANCELED | UNPAID
-//
-// Key trade-offs to decide:
-// - 'incomplete': first payment hasn't cleared yet — PAST_DUE (warn user) or ACTIVE (optimistic)?
-// - 'incomplete_expired': payment window closed — CANCELED makes sense, but does access cut off?
-// - 'paused': no direct match — does CANCELED cut access, or does UNPAID feel closer?
-//
-// This function is called for every incoming subscription webhook event.
-// ─────────────────────────────────────────────────────────────────────────────
-function mapStripeStatusToInternal(stripeStatus: string): SubscriptionStatus {
+function mapDodoStatusToInternal(dodoStatus: string): SubscriptionStatus {
   const map: Record<string, SubscriptionStatus> = {
-    trialing:            SubscriptionStatus.TRIALING,
-    active:              SubscriptionStatus.ACTIVE,
-    past_due:            SubscriptionStatus.PAST_DUE,
-    canceled:            SubscriptionStatus.CANCELED,
-    unpaid:              SubscriptionStatus.UNPAID,
-    paused:              SubscriptionStatus.PAUSED,
-    incomplete:          SubscriptionStatus.INCOMPLETE,
-    incomplete_expired:  SubscriptionStatus.CANCELED,
+    pending:   SubscriptionStatus.TRIALING,
+    active:    SubscriptionStatus.ACTIVE,
+    paused:    SubscriptionStatus.PAUSED,
+    cancelled: SubscriptionStatus.CANCELED,
+    failed:    SubscriptionStatus.PAST_DUE,
+    on_hold:   SubscriptionStatus.UNPAID,
   }
-  return map[stripeStatus] ?? SubscriptionStatus.ACTIVE
+  return map[dodoStatus] ?? SubscriptionStatus.ACTIVE
 }
 
 export class BillingService {
   constructor(private readonly repo: BillingRepository) {}
 
-  private get stripe(): Stripe {
-    const key = process.env["STRIPE_SECRET_KEY"]
-    if (!key) throw new Error("STRIPE_SECRET_KEY is not set in environment")
-    console.log("[billing] stripe key at request time:", key.slice(0, 12) + "...")
-    return new Stripe(key)
+  private get dodo(): DodoPayments {
+    const key = process.env["DODO_PAYMENTS_API_KEY"]
+    if (!key) throw new Error("DODO_PAYMENTS_API_KEY is not set in environment")
+    return new DodoPayments({
+      bearerToken: key,
+      environment: process.env["NODE_ENV"] === "production" ? "live_mode" : "test_mode",
+    })
   }
 
   async createCheckoutSession(userId: string, email: string, dto: CreateCheckoutDto) {
     const { planId, interval } = dto
 
-    const priceId = PRICE_IDS[planId]?.[interval]
-    if (!priceId) throw new Error(`No Stripe price configured for ${planId}/${interval}`)
+    const productId = PRODUCT_IDS[planId]?.[interval]
+    if (!productId) throw new Error(`No Dodo product configured for ${planId}/${interval}`)
 
     const planTier = PLAN_TIER_MAP[planId]
     if (!planTier) throw new Error(`Unknown plan: ${planId}`)
 
-    const existing = await this.repo.findSubscriptionByUserId(userId)
-    let customerId = existing?.stripeCustomerId ?? undefined
-
-    if (!customerId) {
-      const customer = await this.stripe.customers.create({ email, metadata: { userId } })
-      customerId = customer.id
-    }
-
     const returnBase = dto.returnTo === "projects" ? "/projects" : "/settings"
-    const session = await this.stripe.checkout.sessions.create({
-      customer: customerId,
-      mode: "subscription",
-      line_items: [{ price: priceId, quantity: 1 }],
-      subscription_data: {
-        trial_period_days: 7,
-        metadata: { userId, planTier },
-      },
+
+    const session = await this.dodo.checkoutSessions.create({
+      product_cart: [{ product_id: productId, quantity: 1 }],
+      customer: { email },
+      return_url: `${FRONTEND_URL}${returnBase}?billing=success`,
       metadata: { userId, planTier },
-      success_url: `${FRONTEND_URL}${returnBase}?billing=success`,
-      cancel_url: `${FRONTEND_URL}/pricing`,
     })
 
-    return { url: session.url! }
+    return { url: session.checkout_url }
   }
 
   async createPortalSession(userId: string) {
     const sub = await this.repo.findSubscriptionByUserId(userId)
-    if (!sub?.stripeCustomerId) {
+    if (!sub?.dodoCustomerId) {
       throw new Error("No billing account found. Complete checkout first.")
     }
 
-    const session = await this.stripe.billingPortal.sessions.create({
-      customer: sub.stripeCustomerId,
+    const portal = await this.dodo.customers.customerPortal.create(sub.dodoCustomerId, {
       return_url: `${FRONTEND_URL}/settings`,
     })
 
-    return { url: session.url }
+    return { url: portal.link }
   }
 
   async getSubscription(userId: string) {
@@ -133,65 +89,103 @@ export class BillingService {
       tier: sub.plan.tier,
       currentPeriodEnd: sub.currentPeriodEnd.toISOString(),
       cancelAtPeriodEnd: sub.cancelAtPeriodEnd,
-      stripeCustomerId: sub.stripeCustomerId,
+      dodoCustomerId: sub.dodoCustomerId,
     }
   }
 
-  async handleWebhookEvent(rawBody: Buffer, signature: string): Promise<void> {
-    const webhookSecret = process.env["STRIPE_WEBHOOK_SECRET"] ?? ""
-    const event = await this.stripe.webhooks.constructEventAsync(rawBody, signature, webhookSecret)
+  async handleWebhookEvent(rawBody: Buffer, headers: Record<string, string>): Promise<void> {
+    const webhookKey = process.env["DODO_PAYMENTS_WEBHOOK_KEY"]
+    if (!webhookKey) throw new Error("DODO_PAYMENTS_WEBHOOK_KEY is not set")
+
+    const client = new DodoPayments({
+      bearerToken: process.env["DODO_PAYMENTS_API_KEY"] ?? "",
+      webhookKey,
+      environment: process.env["NODE_ENV"] === "production" ? "live_mode" : "test_mode",
+    })
+
+    const event = client.webhooks.unwrap(rawBody.toString(), { headers })
 
     switch (event.type) {
-      case "checkout.session.completed": {
-        await this.handleCheckoutCompleted(event.data.object as Stripe.Checkout.Session)
+      case "subscription.active":
+      case "subscription.renewed": {
+        await this.syncSubscriptionById((event.data as { subscription_id: string }).subscription_id)
         break
       }
-      case "customer.subscription.updated": {
-        await this.syncSubscription(event.data.object as Stripe.Subscription)
-        break
-      }
-      case "customer.subscription.deleted": {
-        const sub = event.data.object as Stripe.Subscription
-        const periodDates = getSubscriptionPeriod(sub)
-        await this.repo.updateSubscriptionByStripeId(sub.id, {
+      case "subscription.cancelled": {
+        const data = event.data as { subscription_id: string }
+        await this.repo.updateSubscriptionByDodoId(data.subscription_id, {
           status: SubscriptionStatus.CANCELED,
-          ...periodDates,
-          cancelAtPeriodEnd: sub.cancel_at_period_end,
+          cancelAtPeriodEnd: false,
         })
         break
       }
+      case "subscription.failed": {
+        const data = event.data as { subscription_id: string }
+        await this.repo.updateSubscriptionByDodoId(data.subscription_id, {
+          status: SubscriptionStatus.PAST_DUE,
+          cancelAtPeriodEnd: false,
+        })
+        break
+      }
+      case "payment.succeeded": {
+        const data = event.data as { subscription_id?: string }
+        if (data.subscription_id) {
+          await this.syncSubscriptionById(data.subscription_id)
+        }
+        break
+      }
     }
   }
 
-  private async handleCheckoutCompleted(session: Stripe.Checkout.Session): Promise<void> {
-    const userId = session.metadata?.userId
-    const planTier = session.metadata?.planTier as PlanTier | undefined
-    if (!userId || !planTier) return
+  private async syncSubscriptionById(dodoSubscriptionId: string): Promise<void> {
+    const dodoSub = await this.dodo.subscriptions.retrieve(dodoSubscriptionId)
 
-    const stripeSubId = session.subscription as string
-    const stripeSub = await this.stripe.subscriptions.retrieve(stripeSubId)
+    const planTier = this.resolvePlanTierFromProductId(dodoSub.product_id)
+    const plan = planTier ? await this.repo.findPlanByTier(planTier) : null
 
-    const plan = await this.repo.findPlanByTier(planTier)
-    if (!plan) {
-      console.error(`[billing] No plan row found for tier ${planTier}. Run the seed script.`)
-      return
+    const currentPeriodStart = dodoSub.previous_billing_date
+      ? new Date(dodoSub.previous_billing_date)
+      : new Date()
+    const currentPeriodEnd = dodoSub.next_billing_date
+      ? new Date(dodoSub.next_billing_date)
+      : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
+
+    const existing = await this.repo.findSubscriptionByDodoId(dodoSubscriptionId)
+    if (existing) {
+      await this.repo.updateSubscriptionByDodoId(dodoSubscriptionId, {
+        status: mapDodoStatusToInternal(dodoSub.status),
+        currentPeriodStart,
+        currentPeriodEnd,
+        cancelAtPeriodEnd: dodoSub.cancel_at_next_billing_date,
+        ...(plan ? { planId: plan.id } : {}),
+      })
+    } else {
+      const userId = dodoSub.metadata?.userId
+      if (!userId) {
+        console.error("[billing] No userId in Dodo subscription metadata:", dodoSubscriptionId)
+        return
+      }
+      if (!plan) {
+        console.error("[billing] No plan found for product:", dodoSub.product_id)
+        return
+      }
+
+      await this.repo.upsertSubscription({
+        userId,
+        planId: plan.id,
+        status: mapDodoStatusToInternal(dodoSub.status),
+        dodoCustomerId: dodoSub.customer.customer_id,
+        dodoSubscriptionId,
+        currentPeriodStart,
+        currentPeriodEnd,
+        cancelAtPeriodEnd: dodoSub.cancel_at_next_billing_date,
+      })
     }
-
-    const periodDates = getSubscriptionPeriod(stripeSub)
-    await this.repo.upsertSubscription({
-      userId,
-      planId: plan.id,
-      status: mapStripeStatusToInternal(stripeSub.status),
-      stripeCustomerId: session.customer as string,
-      stripeSubscriptionId: stripeSubId,
-      ...periodDates,
-      cancelAtPeriodEnd: stripeSub.cancel_at_period_end,
-    })
   }
 
   async changePlan(userId: string, planId: string, interval: "monthly" | "annual") {
-    const priceId = PRICE_IDS[planId]?.[interval]
-    if (!priceId) throw new Error(`No Stripe price configured for ${planId}/${interval}`)
+    const productId = PRODUCT_IDS[planId]?.[interval]
+    if (!productId) throw new Error(`No Dodo product configured for ${planId}/${interval}`)
 
     const planTier = PLAN_TIER_MAP[planId]
     if (!planTier) throw new Error(`Unknown plan: ${planId}`)
@@ -200,47 +194,33 @@ export class BillingService {
     if (!plan) throw new Error(`Plan row not found for tier ${planTier}. Run the seed script.`)
 
     const sub = await this.repo.findSubscriptionByUserId(userId)
-    if (!sub?.stripeSubscriptionId) throw new Error("No active subscription found.")
+    if (!sub?.dodoSubscriptionId) throw new Error("No active subscription found.")
 
-    const stripeSub = await this.stripe.subscriptions.retrieve(sub.stripeSubscriptionId)
-    const itemId = stripeSub.items.data[0]?.id
-    if (!itemId) throw new Error("Could not find subscription item to update.")
-
-    // Update Stripe subscription and store planTier in metadata for webhook syncs
-    const updatedStripeSub = await this.stripe.subscriptions.update(sub.stripeSubscriptionId, {
-      items: [{ id: itemId, price: priceId }],
-      proration_behavior: "always_invoice",
-      metadata: { userId, planTier },
+    await this.dodo.subscriptions.changePlan(sub.dodoSubscriptionId, {
+      product_id: productId,
+      quantity: 1,
+      proration_billing_mode: "prorated_immediately",
+      effective_at: "immediately",
     })
 
-    // Sync all fields immediately so UI reflects the change without waiting for webhook
-    const periodDates = getSubscriptionPeriod(updatedStripeSub)
-    await this.repo.updateSubscriptionByStripeId(sub.stripeSubscriptionId, {
-      status: mapStripeStatusToInternal(updatedStripeSub.status),
-      ...periodDates,
-      cancelAtPeriodEnd: updatedStripeSub.cancel_at_period_end,
+    // Sync the plan tier locally so the UI reflects the change without waiting for the webhook
+    await this.repo.updateSubscriptionByDodoId(sub.dodoSubscriptionId, {
+      status: sub.status,
+      currentPeriodStart: sub.currentPeriodStart,
+      currentPeriodEnd: sub.currentPeriodEnd,
+      cancelAtPeriodEnd: sub.cancelAtPeriodEnd,
       planId: plan.id,
     })
 
     return { message: `Plan updated to ${planId} (${interval})` }
   }
 
-  private async syncSubscription(stripeSub: Stripe.Subscription): Promise<void> {
-    const periodDates = getSubscriptionPeriod(stripeSub)
-
-    // Sync plan from metadata if present (set on checkout + plan changes)
-    let planId: string | undefined
-    const metadataTier = stripeSub.metadata?.planTier as PlanTier | undefined
-    if (metadataTier) {
-      const plan = await this.repo.findPlanByTier(metadataTier)
-      if (plan) planId = plan.id
+  private resolvePlanTierFromProductId(productId: string): PlanTier | null {
+    for (const [planKey, intervals] of Object.entries(PRODUCT_IDS)) {
+      if (Object.values(intervals).includes(productId)) {
+        return PLAN_TIER_MAP[planKey] ?? null
+      }
     }
-
-    await this.repo.updateSubscriptionByStripeId(stripeSub.id, {
-      status: mapStripeStatusToInternal(stripeSub.status),
-      ...periodDates,
-      cancelAtPeriodEnd: stripeSub.cancel_at_period_end,
-      ...(planId ? { planId } : {}),
-    })
+    return null
   }
 }

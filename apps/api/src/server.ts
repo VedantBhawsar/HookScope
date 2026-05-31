@@ -16,9 +16,6 @@ import { json } from "./lib/response"
 const FRONTEND_URL = process.env["FRONTEND_URL"] ?? "http://localhost:3000"
 
 const startServer = () => {
-  const stripeKey = process.env["STRIPE_SECRET_KEY"]
-  console.log("[debug] STRIPE_SECRET_KEY loaded:", stripeKey ? `${stripeKey.slice(0, 12)}...` : "MISSING")
-
   const app = express()
 
   app.use(
@@ -28,7 +25,7 @@ const startServer = () => {
     })
   )
 
-  // Stripe webhook must receive the raw body — mount BEFORE express.json()
+  // Dodo webhook must receive the raw body for signature verification — mount BEFORE express.json()
   app.post("/api/billing/webhook", express.raw({ type: "application/json" }), billingController.handleWebhook)
 
   app.use((req, _res, next) => {

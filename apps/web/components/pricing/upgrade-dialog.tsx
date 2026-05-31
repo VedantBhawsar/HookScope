@@ -32,6 +32,8 @@ export function UpgradeDialog({ open, onOpenChange, reason, currentTier }: Upgra
   const isChangingPlan = Boolean(currentTier)
 
   function handleSelectPlan(planId: string, billingInterval: BillingInterval) {
+    if (planId === "free") return  // free plan — no checkout
+
     setLoadingPlanId(planId)
 
     if (isChangingPlan) {

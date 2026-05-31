@@ -62,9 +62,9 @@ enum LogType {
 }
 
 enum PlanTier {
-  DEVELOPER
+  FREE
+  STARTER
   PRO
-  ENTERPRISE
 }
 
 enum SubscriptionStatus {
@@ -445,15 +445,15 @@ model Subscription {
   planId String @map("plan_id")
   plan   Plan   @relation(fields: [planId], references: [id])
 
-  status               SubscriptionStatus @default(TRIALING)
-  stripeCustomerId     String?            @unique @map("stripe_customer_id")
-  stripeSubscriptionId String?            @unique @map("stripe_subscription_id")
+  status             SubscriptionStatus @default(TRIALING)
+  dodoCustomerId     String?            @unique @map("dodo_customer_id")
+  dodoSubscriptionId String?            @unique @map("dodo_subscription_id")
 
   currentPeriodStart DateTime @map("current_period_start")
   currentPeriodEnd   DateTime @map("current_period_end")
   cancelAtPeriodEnd  Boolean  @default(false) @map("cancel_at_period_end")
 
-  /// Timestamp of last successful Stripe status sync.
+  /// Timestamp of last successful Dodo Payments status sync.
   /// Monitor this: if now() - lastSyncedAt > threshold, treat status as stale.
   lastSyncedAt DateTime? @map("last_synced_at")
 

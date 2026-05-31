@@ -8,7 +8,7 @@ export interface SubscriptionRecord {
   tier: string
   currentPeriodEnd: string
   cancelAtPeriodEnd: boolean
-  stripeCustomerId: string | null
+  dodoCustomerId: string | null
 }
 
 async function fetchSubscription(): Promise<SubscriptionRecord | null> {

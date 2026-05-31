@@ -9,5 +9,5 @@ export interface SubscriptionResponse {
   tier: string
   currentPeriodEnd: string
   cancelAtPeriodEnd: boolean
-  stripeCustomerId: string | null
+  dodoCustomerId: string | null
 }

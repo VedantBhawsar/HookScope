@@ -12,12 +12,19 @@ export class BillingRepository {
     })
   }
 
+  async findSubscriptionByDodoId(dodoSubscriptionId: string) {
+    return prisma.subscription.findUnique({
+      where: { dodoSubscriptionId },
+      include: { plan: true },
+    })
+  }
+
   async upsertSubscription(data: {
     userId: string
     planId: string
     status: SubscriptionStatus
-    stripeCustomerId: string
-    stripeSubscriptionId: string
+    dodoCustomerId: string
+    dodoSubscriptionId: string
     currentPeriodStart: Date
     currentPeriodEnd: Date
     cancelAtPeriodEnd: boolean
@@ -31,8 +38,8 @@ export class BillingRepository {
       update: {
         planId: data.planId,
         status: data.status,
-        stripeCustomerId: data.stripeCustomerId,
-        stripeSubscriptionId: data.stripeSubscriptionId,
+        dodoCustomerId: data.dodoCustomerId,
+        dodoSubscriptionId: data.dodoSubscriptionId,
         currentPeriodStart: data.currentPeriodStart,
         currentPeriodEnd: data.currentPeriodEnd,
         cancelAtPeriodEnd: data.cancelAtPeriodEnd,
@@ -41,25 +48,18 @@ export class BillingRepository {
     })
   }
 
-  async updateSubscriptionPlanByUserId(userId: string, planId: string) {
-    return prisma.subscription.update({
-      where: { userId },
-      data: { planId, lastSyncedAt: new Date() },
-    })
-  }
-
-  async updateSubscriptionByStripeId(
-    stripeSubscriptionId: string,
+  async updateSubscriptionByDodoId(
+    dodoSubscriptionId: string,
     data: {
       status: SubscriptionStatus
-      currentPeriodStart: Date
-      currentPeriodEnd: Date
+      currentPeriodStart?: Date
+      currentPeriodEnd?: Date
       cancelAtPeriodEnd: boolean
       planId?: string
     }
   ) {
     return prisma.subscription.update({
-      where: { stripeSubscriptionId },
+      where: { dodoSubscriptionId },
       data: { ...data, lastSyncedAt: new Date() },
     })
   }

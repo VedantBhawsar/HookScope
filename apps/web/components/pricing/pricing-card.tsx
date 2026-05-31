@@ -44,11 +44,18 @@ interface PricingCardProps {
 
 export function PricingCard({ plan, interval, onSelect, isLoading, isCurrent }: PricingCardProps) {
   const isAnnual = interval === "annual"
-  const price = isAnnual ? plan.annualPrice : plan.monthlyPrice
-  const monthlyEquivalent =
-    isAnnual && plan.annualPrice !== null && plan.annualPrice > 0
-      ? Math.round(plan.annualPrice / 12)
+  const isFree = plan.id === "free"
+
+  const usdPrice = isAnnual ? plan.annualPriceUsd : plan.monthlyPriceUsd
+  const monthlyEquivalentUsd =
+    isAnnual && plan.annualPriceUsd !== null && plan.annualPriceUsd > 0
+      ? Math.round(plan.annualPriceUsd / 12)
       : null
+  const monthlyEquivalentInr =
+    isAnnual && plan.annualPriceInr !== null && plan.annualPriceInr > 0
+      ? Math.round(plan.annualPriceInr / 12)
+      : null
+  const inrPrice = isAnnual ? plan.annualPriceInr : plan.monthlyPriceInr
 
   return (
     <Card
@@ -78,27 +85,28 @@ export function PricingCard({ plan, interval, onSelect, isLoading, isCurrent }: 
 
         {/* Price */}
         <div>
-          <div className="flex items-end gap-2">
-            <span className="text-5xl font-bold tracking-tight">
-              ${monthlyEquivalent ?? price}
-            </span>
-            <div className="mb-1.5 flex flex-col items-start">
-              {plan.originalMonthlyPrice && !isAnnual && (
-                <span className="text-xs text-muted-foreground line-through">
-                  ${plan.originalMonthlyPrice}
-                </span>
-              )}
-              <span className="text-sm text-muted-foreground">/ mo</span>
-            </div>
-          </div>
-          {isAnnual && monthlyEquivalent ? (
-            <p className="mt-1 text-xs text-muted-foreground">
-              Billed ${plan.annualPrice}/yr &mdash; 2 months free
-            </p>
+          {isFree ? (
+            <>
+              <span className="text-5xl font-bold tracking-tight">Free</span>
+              <p className="mt-1 text-xs text-muted-foreground">No credit card required</p>
+            </>
           ) : (
-            <p className="mt-1 text-xs text-muted-foreground">
-              7-day free trial &mdash; no credit card needed
-            </p>
+            <>
+              <div className="flex items-end gap-2">
+                <span className="text-5xl font-bold tracking-tight">
+                  ${monthlyEquivalentUsd ?? usdPrice}
+                </span>
+                <span className="mb-1.5 text-sm text-muted-foreground">/ mo</span>
+              </div>
+              <p className="mt-0.5 text-xs text-muted-foreground">
+                ₹{monthlyEquivalentInr ?? inrPrice} / mo
+              </p>
+              {isAnnual && monthlyEquivalentUsd ? (
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Billed ${plan.annualPriceUsd}/yr &mdash; 2 months free
+                </p>
+              ) : null}
+            </>
           )}
         </div>
       </CardHeader>
