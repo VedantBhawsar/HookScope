@@ -48,9 +48,48 @@ describe("GET /api/webhooks", () => {
     expect(res.status).toBe(400)
   })
 
-  it("rejects limit=101 → 400", async () => {
-    const res = await request(app).get("/api/webhooks?limit=101").set("Cookie", await authCookie())
+  it("rejects page=-1 → 400", async () => {
+    const res = await request(app).get("/api/webhooks?page=-1").set("Cookie", await authCookie())
     expect(res.status).toBe(400)
+  })
+
+  it("rejects page=abc (non-integer) → 400", async () => {
+    const res = await request(app).get("/api/webhooks?page=abc").set("Cookie", await authCookie())
+    expect(res.status).toBe(400)
+  })
+
+  it("rejects limit=0 → 400", async () => {
+    const res = await request(app).get("/api/webhooks?limit=0").set("Cookie", await authCookie())
+    expect(res.status).toBe(400)
+  })
+
+  it("rejects limit=-1 → 400", async () => {
+    const res = await request(app).get("/api/webhooks?limit=-1").set("Cookie", await authCookie())
+    expect(res.status).toBe(400)
+  })
+
+  it("rejects limit=abc (non-integer) → 400", async () => {
+    const res = await request(app).get("/api/webhooks?limit=abc").set("Cookie", await authCookie())
+    expect(res.status).toBe(400)
+  })
+
+  it("rejects eventType exceeding 100 characters → 400", async () => {
+    const res = await request(app)
+      .get("/api/webhooks?eventType=" + "a".repeat(101))
+      .set("Cookie", await authCookie())
+    expect(res.status).toBe(400)
+  })
+
+  it("returns empty array when no events match filters → 200", async () => {
+    mocks.webhook.listByUser.mockResolvedValue({
+      data: [],
+      pagination: { page: 1, limit: 20, total: 0, totalPages: 0 },
+    })
+    const res = await request(app)
+      .get("/api/webhooks?search=nonexistent&projectId=p999")
+      .set("Cookie", await authCookie())
+    expect(res.status).toBe(200)
+    expect(res.body.data.data).toEqual([])
   })
 
   it("rejects unauthenticated request → 401", async () => {
@@ -70,13 +109,13 @@ describe("GET /api/webhooks/:id", () => {
       .get(`/api/webhooks/${fakeWebhookEvent.id}`)
       .set("Cookie", await authCookie())
     expect(res.status).toBe(200)
-    expect(res.body.data.id).toBe("evt-001")
+    expect(res.body.data.id).toBe(fakeWebhookEvent.id)
   })
 
   it("returns 404 for another user's event (service returns null)", async () => {
     mocks.webhook.getById.mockResolvedValue(null)
     const res = await request(app)
-      .get("/api/webhooks/other-user-evt")
+      .get("/api/webhooks/550e8400-e29b-41d4-a716-446655440099")
       .set("Cookie", await authCookie())
     expect(res.status).toBe(404)
   })
@@ -84,13 +123,27 @@ describe("GET /api/webhooks/:id", () => {
   it("returns 404 for non-existent event", async () => {
     mocks.webhook.getById.mockResolvedValue(null)
     const res = await request(app)
-      .get("/api/webhooks/nonexistent")
+      .get("/api/webhooks/550e8400-e29b-41d4-a716-446655440098")
       .set("Cookie", await authCookie())
     expect(res.status).toBe(404)
   })
 
   it("rejects unauthenticated request → 401", async () => {
-    const res = await request(app).get("/api/webhooks/evt-001")
+    const res = await request(app).get("/api/webhooks/550e8400-e29b-41d4-a716-446655440000")
+    expect(res.status).toBe(401)
+  })
+
+  it("rejects invalid UUID format → 400", async () => {
+    const res = await request(app)
+      .get("/api/webhooks/not-a-valid-uuid")
+      .set("Cookie", await authCookie())
+    expect(res.status).toBe(400)
+  })
+
+  it("rejects expired auth cookie → 401", async () => {
+    const res = await request(app)
+      .get("/api/webhooks/550e8400-e29b-41d4-a716-446655440000")
+      .set("Cookie", "ACCESS_TOKEN_COOKIE=expired.token.here")
     expect(res.status).toBe(401)
   })
 })
@@ -113,28 +166,75 @@ describe("GET /api/webhooks/:id/deliveries", () => {
 
   it("rejects invalid ?status → 400", async () => {
     const res = await request(app)
-      .get("/api/webhooks/evt-001/deliveries?status=BOGUS")
+      .get("/api/webhooks/550e8400-e29b-41d4-a716-446655440000/deliveries?status=BOGUS")
       .set("Cookie", await authCookie())
     expect(res.status).toBe(400)
   })
 
   it("rejects page=0 → 400", async () => {
     const res = await request(app)
-      .get("/api/webhooks/evt-001/deliveries?page=0")
+      .get("/api/webhooks/550e8400-e29b-41d4-a716-446655440000/deliveries?page=0")
+      .set("Cookie", await authCookie())
+    expect(res.status).toBe(400)
+  })
+
+  it("rejects page=-1 → 400", async () => {
+    const res = await request(app)
+      .get("/api/webhooks/550e8400-e29b-41d4-a716-446655440000/deliveries?page=-1")
+      .set("Cookie", await authCookie())
+    expect(res.status).toBe(400)
+  })
+
+  it("rejects page=abc (non-integer) → 400", async () => {
+    const res = await request(app)
+      .get("/api/webhooks/550e8400-e29b-41d4-a716-446655440000/deliveries?page=abc")
+      .set("Cookie", await authCookie())
+    expect(res.status).toBe(400)
+  })
+
+  it("rejects limit=0 → 400", async () => {
+    const res = await request(app)
+      .get("/api/webhooks/550e8400-e29b-41d4-a716-446655440000/deliveries?limit=0")
+      .set("Cookie", await authCookie())
+    expect(res.status).toBe(400)
+  })
+
+  it("rejects limit=-1 → 400", async () => {
+    const res = await request(app)
+      .get("/api/webhooks/550e8400-e29b-41d4-a716-446655440000/deliveries?limit=-1")
+      .set("Cookie", await authCookie())
+    expect(res.status).toBe(400)
+  })
+
+  it("rejects limit=abc (non-integer) → 400", async () => {
+    const res = await request(app)
+      .get("/api/webhooks/550e8400-e29b-41d4-a716-446655440000/deliveries?limit=abc")
       .set("Cookie", await authCookie())
     expect(res.status).toBe(400)
   })
 
   it("rejects limit=101 → 400", async () => {
     const res = await request(app)
-      .get("/api/webhooks/evt-001/deliveries?limit=101")
+      .get("/api/webhooks/550e8400-e29b-41d4-a716-446655440000/deliveries?limit=101")
       .set("Cookie", await authCookie())
     expect(res.status).toBe(400)
   })
 
   it("rejects unauthenticated request → 401", async () => {
-    const res = await request(app).get("/api/webhooks/evt-001/deliveries")
+    const res = await request(app).get("/api/webhooks/550e8400-e29b-41d4-a716-446655440000/deliveries")
     expect(res.status).toBe(401)
+  })
+
+  it("returns empty array when event belongs to another user → 200", async () => {
+    mocks.webhook.listDeliveries.mockResolvedValue({
+      data: [],
+      pagination: { page: 1, limit: 20, total: 0, totalPages: 0 },
+    })
+    const res = await request(app)
+      .get("/api/webhooks/other-user-evt/deliveries")
+      .set("Cookie", await authCookie())
+    expect(res.status).toBe(200)
+    expect(res.body.data.data).toEqual([])
   })
 })
 
@@ -149,28 +249,75 @@ describe("GET /api/webhooks/:id/logs", () => {
       pagination: { page: 1, limit: 50, total: 1, totalPages: 1 },
     })
     const res = await request(app)
-      .get("/api/webhooks/evt-001/logs")
+      .get("/api/webhooks/550e8400-e29b-41d4-a716-446655440000/logs")
       .set("Cookie", await authCookie())
     expect(res.status).toBe(200)
   })
 
   it("rejects page=0 → 400", async () => {
     const res = await request(app)
-      .get("/api/webhooks/evt-001/logs?page=0")
+      .get("/api/webhooks/550e8400-e29b-41d4-a716-446655440000/logs?page=0")
+      .set("Cookie", await authCookie())
+    expect(res.status).toBe(400)
+  })
+
+  it("rejects page=-1 → 400", async () => {
+    const res = await request(app)
+      .get("/api/webhooks/550e8400-e29b-41d4-a716-446655440000/logs?page=-1")
+      .set("Cookie", await authCookie())
+    expect(res.status).toBe(400)
+  })
+
+  it("rejects page=abc (non-integer) → 400", async () => {
+    const res = await request(app)
+      .get("/api/webhooks/550e8400-e29b-41d4-a716-446655440000/logs?page=abc")
+      .set("Cookie", await authCookie())
+    expect(res.status).toBe(400)
+  })
+
+  it("rejects limit=0 → 400", async () => {
+    const res = await request(app)
+      .get("/api/webhooks/550e8400-e29b-41d4-a716-446655440000/logs?limit=0")
+      .set("Cookie", await authCookie())
+    expect(res.status).toBe(400)
+  })
+
+  it("rejects limit=-1 → 400", async () => {
+    const res = await request(app)
+      .get("/api/webhooks/550e8400-e29b-41d4-a716-446655440000/logs?limit=-1")
+      .set("Cookie", await authCookie())
+    expect(res.status).toBe(400)
+  })
+
+  it("rejects limit=abc (non-integer) → 400", async () => {
+    const res = await request(app)
+      .get("/api/webhooks/550e8400-e29b-41d4-a716-446655440000/logs?limit=abc")
       .set("Cookie", await authCookie())
     expect(res.status).toBe(400)
   })
 
   it("rejects limit=101 → 400", async () => {
     const res = await request(app)
-      .get("/api/webhooks/evt-001/logs?limit=101")
+      .get("/api/webhooks/550e8400-e29b-41d4-a716-446655440000/logs?limit=101")
       .set("Cookie", await authCookie())
     expect(res.status).toBe(400)
   })
 
   it("rejects unauthenticated request → 401", async () => {
-    const res = await request(app).get("/api/webhooks/evt-001/logs")
+    const res = await request(app).get("/api/webhooks/550e8400-e29b-41d4-a716-446655440000/logs")
     expect(res.status).toBe(401)
+  })
+
+  it("returns empty array when event belongs to another user → 200", async () => {
+    mocks.webhook.listLogs.mockResolvedValue({
+      data: [],
+      pagination: { page: 1, limit: 50, total: 0, totalPages: 0 },
+    })
+    const res = await request(app)
+      .get("/api/webhooks/other-user-evt/logs")
+      .set("Cookie", await authCookie())
+    expect(res.status).toBe(200)
+    expect(res.body.data.data).toEqual([])
   })
 })
 
@@ -182,7 +329,7 @@ describe("POST /api/webhooks/:id/retry", () => {
   it("creates retry delivery → 201", async () => {
     mocks.webhook.retry.mockResolvedValue(fakeDelivery)
     const res = await request(app)
-      .post("/api/webhooks/evt-001/retry")
+      .post("/api/webhooks/550e8400-e29b-41d4-a716-446655440000/retry")
       .set("Cookie", await authCookie())
     expect(res.status).toBe(201)
   })
@@ -195,8 +342,16 @@ describe("POST /api/webhooks/:id/retry", () => {
     expect(res.status).toBe(404)
   })
 
+  it("returns 404 when event belongs to another user", async () => {
+    mocks.webhook.retry.mockResolvedValue(null)
+    const res = await request(app)
+      .post("/api/webhooks/other-user-evt/retry")
+      .set("Cookie", await authCookie())
+    expect(res.status).toBe(404)
+  })
+
   it("rejects unauthenticated request → 401", async () => {
-    const res = await request(app).post("/api/webhooks/evt-001/retry")
+    const res = await request(app).post("/api/webhooks/550e8400-e29b-41d4-a716-446655440000/retry")
     expect(res.status).toBe(401)
   })
 })
@@ -211,7 +366,7 @@ describe("POST /api/webhooks/batch/replay", () => {
     const res = await request(app)
       .post("/api/webhooks/batch/replay")
       .set("Cookie", await authCookie())
-      .send({ eventIds: ["evt-001", "evt-002"] })
+      .send({ eventIds: ["550e8400-e29b-41d4-a716-446655440000", "evt-002"] })
     expect(res.status).toBe(200)
     expect(res.body.data.successCount).toBe(2)
   })
@@ -228,7 +383,7 @@ describe("POST /api/webhooks/batch/replay", () => {
     const res = await request(app)
       .post("/api/webhooks/batch/replay")
       .set("Cookie", await authCookie())
-      .send({ eventIds: "evt-001" })
+      .send({ eventIds: "550e8400-e29b-41d4-a716-446655440000" })
     expect(res.status).toBe(400)
   })
 
@@ -243,8 +398,42 @@ describe("POST /api/webhooks/batch/replay", () => {
   it("rejects unauthenticated request → 401", async () => {
     const res = await request(app)
       .post("/api/webhooks/batch/replay")
-      .send({ eventIds: ["evt-001"] })
+      .send({ eventIds: ["550e8400-e29b-41d4-a716-446655440000"] })
     expect(res.status).toBe(401)
+  })
+
+  it("rejects duplicate eventIds → 200 (deduplicated)", async () => {
+    mocks.webhook.batchReplay.mockResolvedValue({ successCount: 2, failureCount: 0 })
+    const res = await request(app)
+      .post("/api/webhooks/batch/replay")
+      .set("Cookie", await authCookie())
+      .send({ eventIds: ["550e8400-e29b-41d4-a716-446655440000", "550e8400-e29b-41d4-a716-446655440000", "evt-002"] })
+    expect(res.status).toBe(200)
+  })
+
+  it("rejects eventIds as number instead of array → 400", async () => {
+    const res = await request(app)
+      .post("/api/webhooks/batch/replay")
+      .set("Cookie", await authCookie())
+      .send({ eventIds: 123 })
+    expect(res.status).toBe(400)
+  })
+
+  it("rejects missing eventIds in body → 400", async () => {
+    const res = await request(app)
+      .post("/api/webhooks/batch/replay")
+      .set("Cookie", await authCookie())
+      .send({})
+    expect(res.status).toBe(400)
+  })
+
+  it("returns partial success for mix of valid and invalid eventIds → 200", async () => {
+    mocks.webhook.batchReplay.mockResolvedValue({ successCount: 1, failureCount: 1 })
+    const res = await request(app)
+      .post("/api/webhooks/batch/replay")
+      .set("Cookie", await authCookie())
+      .send({ eventIds: ["evt-valid", "evt-invalid"] })
+    expect(res.status).toBe(200)
   })
 })
 
@@ -258,7 +447,7 @@ describe("POST /api/webhooks/batch/delete", () => {
     const res = await request(app)
       .post("/api/webhooks/batch/delete")
       .set("Cookie", await authCookie())
-      .send({ eventIds: ["evt-001", "evt-002"] })
+      .send({ eventIds: ["550e8400-e29b-41d4-a716-446655440000", "evt-002"] })
     expect(res.status).toBe(200)
     expect(res.body.data.deletedCount).toBe(2)
   })
@@ -287,10 +476,45 @@ describe("POST /api/webhooks/batch/delete", () => {
     expect(res.status).toBe(400)
   })
 
+  it("rejects duplicate eventIds → 200 (deduplicated)", async () => {
+    mocks.webhook.batchDelete.mockResolvedValue({ deletedCount: 2 })
+    const res = await request(app)
+      .post("/api/webhooks/batch/delete")
+      .set("Cookie", await authCookie())
+      .send({ eventIds: ["550e8400-e29b-41d4-a716-446655440000", "550e8400-e29b-41d4-a716-446655440000", "evt-002"] })
+    expect(res.status).toBe(200)
+    expect(res.body.data.deletedCount).toBe(2)
+  })
+
+  it("rejects eventIds as number instead of array → 400", async () => {
+    const res = await request(app)
+      .post("/api/webhooks/batch/delete")
+      .set("Cookie", await authCookie())
+      .send({ eventIds: 123 })
+    expect(res.status).toBe(400)
+  })
+
+  it("rejects missing eventIds in body → 400", async () => {
+    const res = await request(app)
+      .post("/api/webhooks/batch/delete")
+      .set("Cookie", await authCookie())
+      .send({})
+    expect(res.status).toBe(400)
+  })
+
+  it("returns partial success for mix of valid and invalid eventIds → 200", async () => {
+    mocks.webhook.batchDelete.mockResolvedValue({ deletedCount: 1, totalRequested: 2 })
+    const res = await request(app)
+      .post("/api/webhooks/batch/delete")
+      .set("Cookie", await authCookie())
+      .send({ eventIds: ["evt-valid", "evt-invalid"] })
+    expect(res.status).toBe(200)
+  })
+
   it("rejects unauthenticated request → 401", async () => {
     const res = await request(app)
       .post("/api/webhooks/batch/delete")
-      .send({ eventIds: ["evt-001"] })
+      .send({ eventIds: ["550e8400-e29b-41d4-a716-446655440000"] })
     expect(res.status).toBe(401)
   })
 })

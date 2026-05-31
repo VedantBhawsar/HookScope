@@ -38,6 +38,9 @@ export class WebhookController {
       if (sourceRaw && !VALID_SOURCE_PROVIDERS.has(sourceRaw as SourceProvider)) {
         return badRequest(res, `'source' must be one of: ${[...VALID_SOURCE_PROVIDERS].join(", ")}`)
       }
+      if (eventTypeRaw && eventTypeRaw.trim().length > 100) {
+        return badRequest(res, "'eventType' must be 100 characters or less")
+      }
 
       const result = await this.service.listByUser(userId, {
         page,
@@ -59,8 +62,14 @@ export class WebhookController {
   getById = async (req: Request<{ id: string }>, res: Response): Promise<void> => {
     try {
       const { userId } = (req as unknown as AuthenticatedRequest).user
-      const event = await this.service.getById(req.params.id, userId)
-      if (!event) return notFound(res, `Webhook event '${req.params.id}' not found`)
+      const { id } = req.params
+
+      if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)) {
+        return badRequest(res, "'id' must be a valid UUID")
+      }
+
+      const event = await this.service.getById(id, userId)
+      if (!event) return notFound(res, `Webhook event '${id}' not found`)
       json(res, event)
     } catch (err) {
       console.error("[WebhookController.getById]", err)

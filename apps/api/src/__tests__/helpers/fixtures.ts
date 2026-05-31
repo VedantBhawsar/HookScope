@@ -66,7 +66,7 @@ export const fakePaginatedEndpoints = {
 }
 
 export const fakeWebhookEvent = {
-  id: "evt-001",
+  id: "550e8400-e29b-41d4-a716-446655440000",
   endpointId: "ep-001",
   eventId: "github-evt-abc",
   eventType: "push",
