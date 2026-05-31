@@ -47,7 +47,7 @@ export type AlertConfig =
 
 // ─── Create / Update DTOs ─────────────────────────────────────────────────────
 
-export const createAlertSchema = z.object({
+const alertBaseSchema = z.object({
   name: z.string().min(1).max(100),
   type: z.nativeEnum(AlertType),
   severity: z.nativeEnum(AlertSeverity).default(AlertSeverity.WARNING),
@@ -56,7 +56,21 @@ export const createAlertSchema = z.object({
   isActive: z.boolean().default(true),
 })
 
-export const updateAlertSchema = createAlertSchema.partial()
+export const createAlertSchema = alertBaseSchema.superRefine((data, ctx) => {
+  const configSchema = alertConfigByType[data.type]
+  if (!configSchema) return
+  const result = configSchema.safeParse(data.config)
+  if (!result.success) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: result.error.issues.map((i) => i.message).join(", "),
+      path: ["config"],
+    })
+  }
+})
+
+// Partial base (no refinements) — config validation done at service level for updates
+export const updateAlertSchema = alertBaseSchema.partial()
 
 export type CreateAlertDto = z.infer<typeof createAlertSchema>
 export type UpdateAlertDto = z.infer<typeof updateAlertSchema>

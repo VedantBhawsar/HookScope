@@ -9,7 +9,10 @@
     "start": "bun ./dist/index.js",
     "lint": "eslint",
     "format": "prettier --write \"**/*.{ts,js}\"",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test": "bun test",
+    "test:watch": "bun test --watch",
+    "test:coverage": "bun test --coverage"
   },
   "dependencies": {
     "@hookscope/db": "workspace:*",

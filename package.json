@@ -18,8 +18,10 @@
   "devDependencies": {
     "@hookscope/eslint-config": "workspace:*",
     "@hookscope/typescript-config": "workspace:*",
+    "@types/supertest": "^7.2.0",
     "prettier": "^3.8.1",
     "prettier-plugin-tailwindcss": "^0.7.2",
+    "supertest": "^7.2.2",
     "turbo": "^2.8.17",
     "typescript": "5.9.3"
   },

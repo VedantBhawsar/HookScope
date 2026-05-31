@@ -23,8 +23,7 @@ export class MaintenanceController {
       const expectedSecret = process.env.MAINTENANCE_SECRET || ""
 
       if (!expectedSecret) {
-        res.status(503)
-        return error(res, "Maintenance endpoint not configured")
+        return error(res, "Maintenance endpoint not configured", 503)
       }
 
       if (secret !== expectedSecret) {
@@ -51,8 +50,7 @@ export class MaintenanceController {
       const expectedSecret = process.env.MAINTENANCE_SECRET || ""
 
       if (!expectedSecret) {
-        res.status(503)
-        return error(res, "Maintenance endpoint not configured")
+        return error(res, "Maintenance endpoint not configured", 503)
       }
 
       if (secret !== expectedSecret) {
