@@ -12,7 +12,7 @@
     "ioredis": "^5.6.1"
   },
   "devDependencies": {
-    "@types/node": "^22.0.0",
+    "@types/node": "^25.1.0",
     "@hookscope/eslint-config": "workspace:*",
     "@hookscope/typescript-config": "workspace:*",
     "eslint": "^9.39.2",

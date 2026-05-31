@@ -1,19 +1,15 @@
 {
-  "name": "api",
+  "name": "@hookscope/api",
   "module": "index.ts",
   "type": "module",
   "private": true,
   "scripts": {
-    "dev": "bun run --hot index.ts",
+    "dev": "bun --watch index.ts",
     "build": "bun build ./index.ts --outdir ./dist --target bun",
     "start": "bun ./dist/index.js",
     "lint": "eslint",
     "format": "prettier --write \"**/*.{ts,js}\"",
-    "typecheck": "tsc --noEmit",
-    "prisma:generate": "bun run --filter @hookscope/db prisma:generate",
-    "prisma:migrate:dev": "bun run --filter @hookscope/db prisma:migrate:dev",
-    "prisma:migrate:deploy": "bun run --filter @hookscope/db prisma:migrate:deploy",
-    "prisma:studio": "bun run --filter @hookscope/db prisma:studio"
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@hookscope/db": "workspace:*",
@@ -26,14 +22,13 @@
     "jose": "^6.2.2",
     "multer": "^2.1.1",
     "nodemailer": "^8.0.5",
-    "sonner": "^1.7.4",
     "stripe": "^22.0.2",
     "zod": "^4.1.12"
   },
   "devDependencies": {
     "@hookscope/eslint-config": "workspace:*",
     "@hookscope/typescript-config": "workspace:*",
-    "@types/bun": "latest",
+    "@types/bun": "^1.0.0",
     "@types/cookie-parser": "^1.4.10",
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.6",
@@ -45,8 +40,5 @@
   },
   "prisma": {
     "schema": "../../packages/db/prisma/schema.prisma"
-  },
-  "peerDependencies": {
-    "typescript": "^5"
   }
 }

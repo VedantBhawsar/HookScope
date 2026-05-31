@@ -5,8 +5,7 @@
     "module": "Preserve",
     "moduleResolution": "Bundler",
     "target": "ESNext",
-    "ignoreDeprecations": "5.0",
-    "types": ["bun-types"],
+    "types": ["bun"],
     "noEmit": true
   },
   "include": ["src", "index.ts"],

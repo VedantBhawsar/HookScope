@@ -6,6 +6,7 @@
   "scripts": {
     "lint": "eslint",
     "format": "prettier --write \"**/*.{ts,js}\"",
+    "build": "prisma generate --schema ./prisma/schema.prisma",
     "postinstall": "prisma generate --schema ./prisma/schema.prisma",
     "prisma:generate": "prisma generate --schema ./prisma/schema.prisma",
     "prisma:migrate:dev": "prisma migrate dev --schema ./prisma/schema.prisma",

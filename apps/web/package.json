@@ -1,5 +1,5 @@
 {
-  "name": "web",
+  "name": "@hookscope/web",
   "version": "0.0.1",
   "type": "module",
   "private": true,
@@ -27,7 +27,7 @@
     "zod": "^4.1.12"
   },
   "devDependencies": {
-    "@hookscope/eslint-config": "workspace:^",
+    "@hookscope/eslint-config": "workspace:*",
     "@hookscope/typescript-config": "workspace:*",
     "@tailwindcss/postcss": "^4.1.18",
     "@types/node": "^25.1.0",

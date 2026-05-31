@@ -1,5 +1,5 @@
 {
-  "name": "next-monorepo",
+  "name": "@hookscope/root",
   "version": "0.0.1",
   "private": true,
   "scripts": {
@@ -9,7 +9,7 @@
     "lint": "turbo lint",
     "format": "turbo format",
     "typecheck": "turbo typecheck",
-    "db:generate": "turbo run prisma:generate --filter=@hookscope/db",
+    "db:generate": "turbo run build --filter=@hookscope/db",
     "db:migrate:dev": "turbo run prisma:migrate:dev --filter=@hookscope/db",
     "db:migrate:deploy": "turbo run prisma:migrate:deploy --filter=@hookscope/db",
     "db:push": "turbo run db:push --filter=@hookscope/db",
@@ -22,9 +22,6 @@
     "prettier-plugin-tailwindcss": "^0.7.2",
     "turbo": "^2.8.17",
     "typescript": "5.9.3"
-  },
-  "dependencies": {
-    "lucide-react": "^1.7.0"
   },
   "packageManager": "bun@1.2.16",
   "workspaces": [

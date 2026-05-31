@@ -49,7 +49,7 @@ const startServer = () => {
   app.use("/api/billing", billingRouter)
   app.use("/api/maintenance", maintenanceRouter)
 
-  const PORT = 5002
+  const PORT = Number(process.env["PORT"]) || 5000
   app.listen(PORT, () => {
     console.log(`Server running on http://localhost:${PORT}`)
     initAlertEvaluator()

@@ -1,7 +1,6 @@
 {
   "extends": "@hookscope/typescript-config/nextjs.json",
   "compilerOptions": {
-    "ignoreDeprecations": "5.0",
     "paths": {
       "@/*": ["./*"],
       "@hookscope/db": ["../../packages/db/src/index.ts"],
