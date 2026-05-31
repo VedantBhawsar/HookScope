@@ -6,6 +6,7 @@ import { putObject } from "@hookscope/s3"
 import { DeliveryErrorCode, DeliveryStatus, EventStatus, LogType, prisma } from "@hookscope/db"
 import type { Redis } from "@hookscope/redis"
 import { createWebhookEvent } from "../services/stripe-ingest.service.js"
+import { assertSafeDestination } from "../lib/ssrf.js"
 import { STRIPE_EVENT_QUEUE } from "../queues/stripe-event.queue.js"
 import type { StripeEventJob } from "../queues/stripe-event.queue.js"
 import type Stripe from "stripe"
@@ -243,6 +244,8 @@ async function forwardAndPersist(
 
   const startedAt = Date.now()
   let fetchResponse: Response | undefined
+
+  await assertSafeDestination(destinationUrl)
 
   // ── Network call (isolated so timeout/abort errors hit the catch below) ──
   try {

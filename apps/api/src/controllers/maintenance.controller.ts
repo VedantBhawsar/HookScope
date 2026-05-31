@@ -1,5 +1,5 @@
 import type { Request, Response } from "express"
-import { json, error, badRequest } from "../lib/response"
+import { json, error, unauthorized } from "../lib/response"
 import type { EventExpirationService } from "../services/event-expiration.service"
 
 /**
@@ -27,7 +27,7 @@ export class MaintenanceController {
       }
 
       if (secret !== expectedSecret) {
-        return badRequest(res, "Invalid maintenance secret")
+        return unauthorized(res, "Invalid maintenance secret")
       }
 
       const result = await this.expirationService.expireOldEvents()
@@ -54,7 +54,7 @@ export class MaintenanceController {
       }
 
       if (secret !== expectedSecret) {
-        return badRequest(res, "Invalid maintenance secret")
+        return unauthorized(res, "Invalid maintenance secret")
       }
 
       const result = await this.expirationService.cleanupDeletedEventLogs()

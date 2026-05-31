@@ -1,5 +1,6 @@
 import express from "express"
 import cors from "cors"
+import helmet from "helmet"
 import cookieParser from "cookie-parser"
 import { authRouter } from "./routes/auth.router"
 import { endpointRouter } from "./routes/endpoint.router"
@@ -13,14 +14,18 @@ import { initAlertEvaluator } from "./lib/alert-evaluator"
 import { startEventExpirationCron } from "./services/event-cron.service"
 import { json } from "./lib/response"
 
-const FRONTEND_URL = process.env["FRONTEND_URL"] ?? "http://localhost:3000"
+const FRONTEND_URL = (process.env["FRONTEND_URL"] ?? "http://localhost:3000").replace(/\/$/, "")
 
 const startServer = () => {
   const app = express()
 
+  app.use(helmet({
+    crossOriginResourcePolicy: { policy: "cross-origin" },
+  }))
+
   app.use(
     cors({
-      origin: true,
+      origin: FRONTEND_URL,
       credentials: true,
     })
   )

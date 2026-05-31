@@ -433,6 +433,9 @@ export class AuthController {
       if (!ALLOWED_TYPES.includes(file.mimetype)) {
         return badRequest(res, "File must be a JPEG, PNG, WebP, or GIF image")
       }
+      if (!hasValidImageMagicBytes(file.buffer)) {
+        return badRequest(res, "File content does not match an allowed image type")
+      }
 
       const avatarUrl = await this.service.uploadAvatar(userId, file)
       json(res, { avatarUrl }, 200, "Avatar uploaded successfully")
@@ -441,4 +444,21 @@ export class AuthController {
       error(res, "Failed to upload avatar")
     }
   }
+}
+
+function hasValidImageMagicBytes(buf: Buffer): boolean {
+  if (buf.length < 4) return false
+  // JPEG: FF D8 FF
+  if (buf[0] === 0xff && buf[1] === 0xd8 && buf[2] === 0xff) return true
+  // PNG: 89 50 4E 47
+  if (buf[0] === 0x89 && buf[1] === 0x50 && buf[2] === 0x4e && buf[3] === 0x47) return true
+  // GIF: 47 49 46 38
+  if (buf[0] === 0x47 && buf[1] === 0x49 && buf[2] === 0x46 && buf[3] === 0x38) return true
+  // WebP: 52 49 46 46 ... 57 45 42 50 (RIFF....WEBP) — check bytes 0-3 and 8-11
+  if (
+    buf.length >= 12 &&
+    buf[0] === 0x52 && buf[1] === 0x49 && buf[2] === 0x46 && buf[3] === 0x46 &&
+    buf[8] === 0x57 && buf[9] === 0x45 && buf[10] === 0x42 && buf[11] === 0x50
+  ) return true
+  return false
 }

@@ -6,6 +6,7 @@ import { putObject } from "@hookscope/s3"
 import { DeliveryErrorCode, DeliveryStatus, EventStatus, LogType, prisma } from "@hookscope/db"
 import type { Redis } from "@hookscope/redis"
 import { createWebhookEvent } from "../services/github-ingest.service.js"
+import { assertSafeDestination } from "../lib/ssrf.js"
 import { GITHUB_EVENT_QUEUE } from "../queues/github-event.queue.js"
 import type { GitHubEventJob } from "../queues/github-event.queue.js"
 import type { GitHubWebhookEvent } from "../types/github.js"
@@ -255,6 +256,8 @@ async function forwardAndPersist(
       },
     }),
   ])
+
+  await assertSafeDestination(destinationUrl)
 
   const startedAt = Date.now()
   let fetchResponse: Response | undefined

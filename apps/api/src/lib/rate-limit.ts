@@ -1,5 +1,29 @@
 import { rateLimit } from "express-rate-limit"
 
+export const loginRateLimit = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: 20,
+  standardHeaders: "draft-7",
+  legacyHeaders: false,
+  message: {
+    success: false,
+    message: "Too many login attempts. Please wait 15 minutes and try again.",
+    data: null,
+  },
+})
+
+export const registerRateLimit = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  limit: 10,
+  standardHeaders: "draft-7",
+  legacyHeaders: false,
+  message: {
+    success: false,
+    message: "Too many registration attempts. Please try again later.",
+    data: null,
+  },
+})
+
 /**
  * Rate limiter for the forgot-password endpoint.
  *

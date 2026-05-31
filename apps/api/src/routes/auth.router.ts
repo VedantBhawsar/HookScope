@@ -4,7 +4,7 @@ import { AuthController } from "../controllers/auth.controller"
 import { AuthRepository } from "../repositories/auth.repository"
 import { AuthService } from "../services/auth.service"
 import { requireAuth } from "../middleware/require-auth"
-import { forgotPasswordRateLimit, oauthCallbackRateLimit, otpSendRateLimit } from "../lib/rate-limit"
+import { forgotPasswordRateLimit, loginRateLimit, oauthCallbackRateLimit, otpSendRateLimit, registerRateLimit } from "../lib/rate-limit"
 
 const repository = new AuthRepository()
 const service = new AuthService(repository)
@@ -18,8 +18,8 @@ const upload = multer({
 export const authRouter = Router()
 
 // ── Email/password ────────────────────────────────────────────────────────────
-authRouter.post("/register", controller.register)
-authRouter.post("/login", controller.login)
+authRouter.post("/register", registerRateLimit, controller.register)
+authRouter.post("/login", loginRateLimit, controller.login)
 authRouter.post("/refresh", controller.refresh)
 authRouter.post("/logout", controller.logout)
 authRouter.post("/logout-all", requireAuth, controller.logoutAll)

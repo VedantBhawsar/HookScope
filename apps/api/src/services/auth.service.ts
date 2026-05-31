@@ -1,3 +1,4 @@
+import { timingSafeEqual } from "node:crypto"
 import type { AuthRepository } from "../repositories/auth.repository"
 import {
   ACCESS_TOKEN_EXPIRES_IN,
@@ -167,7 +168,9 @@ export class AuthService {
     // requests arrive in quick succession.
     await this.repo.deleteAllOtpsForUser(userId)
 
-    const otp = String(Math.floor(100_000 + Math.random() * 900_000)) // 6-digit
+    const array = new Uint32Array(1)
+    crypto.getRandomValues(array)
+    const otp = String(100_000 + (array[0]! % 900_000)) // 6-digit, CSPRNG
     const expiresAt = new Date(Date.now() + 5 * 60 * 1000) // 5 minutes
 
     await this.repo.createEmailVerificationOtp({ userId, otp, expiresAt })
@@ -179,7 +182,10 @@ export class AuthService {
 
     if (!record) throw new Error("OTP_NOT_FOUND")
     if (record.expiresAt < new Date()) throw new Error("OTP_EXPIRED")
-    if (record.otp !== otp.trim()) throw new Error("OTP_INVALID")
+    const expected = Buffer.from(record.otp)
+    const provided = Buffer.from(otp.trim().slice(0, record.otp.length).padEnd(record.otp.length, "\0"))
+    const match = timingSafeEqual(expected, provided)
+    if (!match) throw new Error("OTP_INVALID")
 
     await Promise.all([
       this.repo.markOtpUsed(record.id),

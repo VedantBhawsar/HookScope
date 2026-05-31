@@ -5,6 +5,7 @@ import type { EndpointService } from "../services/endpoint.service"
 import type { UsageRepository } from "../usage/usage.repository"
 import type { CreateEndpointDto, UpdateEndpointDto } from "../types/endpoint"
 import { DeliveryErrorCode, SourceProvider, VerificationMode } from "@hookscope/db"
+import { isPrivateUrl } from "../lib/ssrf"
 
 const VALID_SOURCES = new Set(Object.values(SourceProvider))
 const VALID_VERIFICATION_MODES = new Set(Object.values(VerificationMode))
@@ -124,6 +125,9 @@ export class EndpointController {
       } catch {
         return badRequest(res, "'destinationUrl' must be a valid URL")
       }
+      if (isPrivateUrl(body.destinationUrl)) {
+        return badRequest(res, "'destinationUrl' must not point to a private or reserved address")
+      }
 
       if (body.verificationMode && !VALID_VERIFICATION_MODES.has(body.verificationMode)) {
         return badRequest(res, `'verificationMode' must be one of: ${[...VALID_VERIFICATION_MODES].join(", ")}`)
@@ -166,6 +170,9 @@ export class EndpointController {
           new URL(body.destinationUrl)
         } catch {
           return badRequest(res, "'destinationUrl' must be a valid URL")
+        }
+        if (isPrivateUrl(body.destinationUrl)) {
+          return badRequest(res, "'destinationUrl' must not point to a private or reserved address")
         }
       }
 
