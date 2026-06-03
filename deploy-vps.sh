@@ -34,15 +34,12 @@ check_cmd() {
 }
 
 check_cmd docker
-check_cmd docker-compose || check_cmd docker compose
 
 # ─── Detect compose command ───────────────────────────────────────────────────
-if command -v docker-compose >/dev/null 2>&1; then
-  COMPOSE="docker-compose"
-elif docker compose version >/dev/null 2>&1; then
+if docker compose version >/dev/null 2>&1; then
   COMPOSE="docker compose"
 else
-  error "docker-compose not found"
+  error "docker compose plugin not found. Install it first."
 fi
 
 # ─── Get deploy directory ─────────────────────────────────────────────────────
@@ -186,7 +183,7 @@ if [[ "$(pwd)" != "$DEPLOY_DIR" ]]; then
           --exclude='.turbo' \
           --exclude='.env' \
           --exclude='*.log' \
-          . "$DEPLOY_DIR/" 2>/dev/null || cp -r . "$DEPLOY_DIR/
+          . "$DEPLOY_DIR/" 2>/dev/null || cp -r . "$DEPLOY_DIR/"
 fi
 
 # ─── Generate .env files ──────────────────────────────────────────────────────
@@ -377,74 +374,11 @@ done
 success "Environment files generated"
 
 # ─── Update docker-compose.yml for MinIO (remove localstack references) ──────
-info "Updating docker-compose.yml..."
+info "Writing docker-compose.yml (app services only — infra expected to be already running)..."
 cat > "$DEPLOY_DIR/docker-compose.yml" << 'DCEOF'
 name: webhook-observability
 
 services:
-  postgres:
-    image: postgres:17-alpine
-    restart: unless-stopped
-    ports:
-      - "5432:5432"
-    environment:
-      POSTGRES_DB: webhook_db
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d webhook_db"]
-      interval: 5s
-      timeout: 5s
-      retries: 5
-      start_period: 10s
-
-  redis:
-    image: redis:7-alpine
-    restart: unless-stopped
-    ports:
-      - "6379:6379"
-    command: redis-server --appendonly yes
-    volumes:
-      - redis_data:/data
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 5s
-      timeout: 3s
-      retries: 5
-
-  minio:
-    image: minio/minio:latest
-    restart: unless-stopped
-    ports:
-      - "9000:9000"
-      - "9001:9001"
-    environment:
-      MINIO_ROOT_USER: MINIO_ACCESS_KEY_PLACEHOLDER
-      MINIO_ROOT_PASSWORD: MINIO_SECRET_KEY_PLACEHOLDER
-    volumes:
-      - minio_data:/data
-    command: server /data --console-address ":9001"
-    healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:9000/minio/health/live || exit 1"]
-      interval: 30s
-      timeout: 20s
-      retries: 3
-
-  minio-init:
-    image: minio/mc:latest
-    volumes:
-      - ./infra/minio/init:/init
-    environment:
-      MINIO_ROOT_USER: MINIO_ACCESS_KEY_PLACEHOLDER
-      MINIO_ROOT_PASSWORD: MINIO_SECRET_KEY_PLACEHOLDER
-    entrypoint: ["/bin/sh", "/init/01-create-buckets.sh"]
-    depends_on:
-      minio:
-        condition: service_healthy
-    restart: "no"
-
   api:
     build:
       context: .
@@ -454,13 +388,6 @@ services:
       - "5000:5000"
     env_file:
       - ./apps/api/.env
-    depends_on:
-      postgres:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-      minio:
-        condition: service_healthy
 
   ingestion:
     build:
@@ -471,13 +398,6 @@ services:
       - "3001:3001"
     env_file:
       - ./apps/ingestion/.env
-    depends_on:
-      postgres:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-      minio:
-        condition: service_healthy
 
   web:
     build:
@@ -488,32 +408,15 @@ services:
       - "3000:3000"
     env_file:
       - ./apps/web/.env
-
-volumes:
-  postgres_data:
-  redis_data:
-  minio_data:
 DCEOF
 
-sed -i "s|MINIO_ACCESS_KEY_PLACEHOLDER|${S3_ACCESS_KEY}|g" "$DEPLOY_DIR/docker-compose.yml"
-sed -i "s|MINIO_SECRET_KEY_PLACEHOLDER|${S3_SECRET_KEY}|g" "$DEPLOY_DIR/docker-compose.yml"
-
-success "docker-compose.yml updated with MinIO"
+success "docker-compose.yml written (api, ingestion, web only)"
 
 # ─── Build and start services ─────────────────────────────────────────────────
 cd "$DEPLOY_DIR"
 
-info "Building and starting services..."
-$COMPOSE up -d --build postgres redis minio
-
-info "Waiting for postgres to be ready..."
-sleep 10
-
-info "Initializing MinIO buckets..."
-$COMPOSE up minio-init
-
-info "Starting API, ingestion, and web services..."
-$COMPOSE up -d api ingestion web
+info "Building and starting app services..."
+$COMPOSE up -d --build api ingestion web
 
 success "All services started!"
 echo ""
@@ -525,8 +428,11 @@ echo "Services:"
 echo "  - API Server:       http://localhost:5000"
 echo "  - Ingestion Server: http://localhost:3001"
 echo "  - Web Frontend:     http://localhost:3000"
-echo "  - MinIO Console:    http://localhost:9001"
-echo "  - MinIO API:        http://localhost:9000"
+echo ""
+echo "  Infra expected to be running externally:"
+echo "  - Postgres:  ${DB_HOST}:${DB_PORT}"
+echo "  - Redis:     ${REDIS_HOST}:${REDIS_PORT}"
+echo "  - MinIO/S3:  ${S3_ENDPOINT}"
 echo ""
 echo "Deploy directory: $DEPLOY_DIR"
 echo ""
