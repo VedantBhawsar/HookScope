@@ -19,6 +19,7 @@
       "name": "@hookscope/api",
       "dependencies": {
         "@hookscope/db": "workspace:*",
+        "@hookscope/env": "workspace:*",
         "@hookscope/redis": "workspace:*",
         "@hookscope/s3": "workspace:*",
         "@types/helmet": "^4.0.0",
@@ -56,6 +57,7 @@
         "@fastify/helmet": "^12.0.1",
         "@fastify/sensible": "^6.0.3",
         "@hookscope/db": "workspace:*",
+        "@hookscope/env": "workspace:*",
         "@hookscope/redis": "workspace:*",
         "@hookscope/s3": "workspace:*",
         "bullmq": "^5.0.0",
@@ -105,6 +107,7 @@
       "name": "@hookscope/db",
       "version": "0.0.0",
       "dependencies": {
+        "@hookscope/env": "workspace:*",
         "@prisma/adapter-pg": "^7.6.0",
         "@prisma/client": "^7.0.0",
         "dotenv": "^17.3.1",
@@ -116,6 +119,21 @@
         "@types/pg": "^8.20.0",
         "eslint": "^9.39.2",
         "prisma": "^7.0.0",
+        "typescript": "^5.9.3",
+      },
+    },
+    "packages/env": {
+      "name": "@hookscope/env",
+      "version": "0.0.0",
+      "dependencies": {
+        "dotenv": "^17.3.1",
+        "zod": "^4.1.12",
+      },
+      "devDependencies": {
+        "@hookscope/eslint-config": "workspace:*",
+        "@hookscope/typescript-config": "workspace:*",
+        "@types/bun": "^1.0.0",
+        "eslint": "^9.39.2",
         "typescript": "^5.9.3",
       },
     },
@@ -457,6 +475,8 @@
     "@hookscope/api": ["@hookscope/api@workspace:apps/api"],
 
     "@hookscope/db": ["@hookscope/db@workspace:packages/db"],
+
+    "@hookscope/env": ["@hookscope/env@workspace:packages/env"],
 
     "@hookscope/eslint-config": ["@hookscope/eslint-config@workspace:packages/eslint-config"],
 

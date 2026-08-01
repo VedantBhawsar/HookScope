@@ -80,8 +80,11 @@ cd webhook-observability
 # 2. Install all workspace deps
 bun install
 
-# 3. Copy env templates (create .env files per app as needed)
-cp .env.example .env
+# 3. Copy env templates (one .env per app — see Environment Variables below)
+cp apps/api/.env.example apps/api/.env
+cp apps/ingestion/.env.example apps/ingestion/.env
+cp apps/web/.env.example apps/web/.env
+cp packages/db/.env.example packages/db/.env
 
 # 4. Start infrastructure (Postgres, Redis, LocalStack)
 docker compose up -d
@@ -112,41 +115,50 @@ bun run dev --filter=web
 
 ## Environment Variables
 
-Create an `.env` file per app. The key variables are:
+Every app/package reads its own `.env` (there is no root `.env`). Templates live at
+`apps/{api,ingestion,web}/.env.example` and `packages/db/.env.example` — they are
+generated from the central schemas in `packages/env`. Validate any app against its
+schema with `bun run check:env` (or `bun run dev` runs it automatically).
+
+Required variables per app:
 
 ### `apps/api`
 
-| Key                       | Required | Description                                         |
-| ------------------------- | :------: | --------------------------------------------------- |
-| `DATABASE_URL`            |    ✓     | Postgres connection string                          |
-| `JWT_SECRET`              |    ✓     | HS256 signing secret for access tokens              |
-| `ACCESS_TOKEN_TTL`        |          | Access-token lifetime (e.g. `15m`)                  |
-| `REFRESH_TOKEN_TTL_DAYS`  |          | Refresh-token lifetime in days (default `30`)       |
-| `API_BASE_URL`            |    ✓     | Public base URL of the API (OAuth callbacks)        |
-| `WEB_ORIGIN`              |    ✓     | Frontend origin for CORS (`http://localhost:3000`)  |
-| `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` |  | Google OAuth credentials                            |
-| `GITHUB_CLIENT_ID` / `GITHUB_CLIENT_SECRET` |  | GitHub OAuth credentials                            |
-| `SMTP_URL` / `SMTP_FROM`  |          | Transactional email (password reset)                |
+| Key                  | Required | Description                                                    |
+| -------------------- | :------: | -------------------------------------------------------------- |
+| `DATABASE_URL`       |    ✓     | Postgres connection string                                     |
+| `REDIS_URL`          |    ✓     | Redis connection string                                        |
+| `JWT_ACCESS_SECRET`  |    ✓     | Secret used to sign access tokens (e.g. `openssl rand -hex 32`)|
+| `MAINTENANCE_SECRET` |    ✓     | Secret for maintenance endpoints                               |
+| `API_BASE_URL`       |    ✓     | Public base URL of the API (OAuth callbacks)                   |
+| `FRONTEND_URL`       |    ✓     | Public URL of the web dashboard (CORS + redirects)             |
+| `INGESTION_BASE_URL` |    ✓     | Base URL of the ingestion server                               |
 
 ### `apps/ingestion`
 
-| Key                     | Required | Description                                    |
-| ----------------------- | :------: | ---------------------------------------------- |
-| `DATABASE_URL`          |    ✓     | Shared with api                                |
-| `REDIS_URL`             |    ✓     | `redis://localhost:6379`                       |
-| `S3_ENDPOINT`           |    ✓     | `http://localhost:4566` (LocalStack in dev)    |
-| `S3_BUCKET`             |    ✓     | Default `webhooks`                             |
-| `AWS_REGION`            |          | Default `us-east-1`                            |
-| `AWS_ACCESS_KEY_ID`     |    ✓     | `test` for LocalStack                          |
-| `AWS_SECRET_ACCESS_KEY` |    ✓     | `test` for LocalStack                          |
-| `PORT` / `HOST`         |          | Defaults `3001` / `0.0.0.0`                    |
-| `LOG_LEVEL`             |          | `info` \| `debug` \| `warn` \| `error`         |
+| Key                     | Required | Description                                  |
+| ----------------------- | :------: | -------------------------------------------- |
+| `DATABASE_URL`          |    ✓     | Postgres connection string                   |
+| `REDIS_URL`             |    ✓     | Redis connection string (queues + cache)     |
+| `S3_ENDPOINT`           |    ✓     | S3-compatible endpoint (MinIO/LocalStack)    |
+| `S3_BUCKET`             |    ✓     | Bucket for stored webhook payloads           |
+| `AWS_REGION`            |    ✓     | AWS region                                   |
+| `AWS_ACCESS_KEY_ID`     |    ✓     | S3 access key                                |
+| `AWS_SECRET_ACCESS_KEY` |    ✓     | S3 secret key                                |
 
 ### `apps/web`
 
-| Key                  | Required | Description                                           |
-| -------------------- | :------: | ----------------------------------------------------- |
-| `NEXT_PUBLIC_API_URL`|    ✓     | Management API base URL (`http://localhost:5000`)     |
+| Key                  | Required | Description                                       |
+| -------------------- | :------: | ------------------------------------------------- |
+| `NEXT_PUBLIC_API_URL`|    ✓     | Public URL of the API server (`http://localhost:5000`) |
+
+### `packages/db`
+
+| Key           | Required | Description                  |
+| ------------- | :------: | ---------------------------- |
+| `DATABASE_URL`|    ✓     | Postgres connection string   |
+
+To add, rename, or remove a variable, edit `packages/env/src/docs.ts` + `packages/env/src/schemas.ts` and run `bun run check:env generate` to regenerate the templates.
 
 ---
 

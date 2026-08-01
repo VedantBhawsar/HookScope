@@ -6,6 +6,8 @@
     "build": "turbo build",
     "start": "turbo start",
     "dev": "turbo dev",
+    "check:env": "bun packages/env/scripts/check.ts all",
+    "env:generate": "bun packages/env/scripts/check.ts generate",
     "lint": "turbo lint",
     "format": "turbo format",
     "typecheck": "turbo typecheck",

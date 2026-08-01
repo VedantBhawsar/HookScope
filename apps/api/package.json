@@ -4,6 +4,7 @@
   "type": "module",
   "private": true,
   "scripts": {
+    "check:env": "bun ../../packages/env/scripts/check.ts api --dotenv .env",
     "dev": "bun --watch index.ts",
     "build": "bun build ./index.ts --outdir ./dist --target bun",
     "start": "bun ./dist/index.js",
@@ -16,6 +17,7 @@
   },
   "dependencies": {
     "@hookscope/db": "workspace:*",
+    "@hookscope/env": "workspace:*",
     "@hookscope/redis": "workspace:*",
     "@hookscope/s3": "workspace:*",
     "@types/helmet": "^4.0.0",

@@ -13,6 +13,7 @@ COPY package.json bun.lock ./
 COPY packages/redis/package.json             ./packages/redis/
 COPY packages/s3/package.json                ./packages/s3/
 COPY packages/db/package.json                ./packages/db/
+COPY packages/env/package.json               ./packages/env/
 COPY packages/ui/package.json                ./packages/ui/
 COPY packages/typescript-config/package.json ./packages/typescript-config/
 COPY packages/typescript-config/base.json    ./packages/typescript-config/
@@ -42,6 +43,7 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY packages/redis/src    ./packages/redis/src
 COPY packages/s3/src       ./packages/s3/src
 COPY packages/db/src       ./packages/db/src
+COPY packages/env/src      ./packages/env/src
 COPY packages/db/generated ./packages/db/generated
 COPY packages/db/tsconfig.json ./packages/db/
 COPY packages/db/prisma.config.ts ./packages/db/

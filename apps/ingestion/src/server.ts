@@ -1,10 +1,10 @@
-import { loadEnv } from "./config/env.js"
+import { loadIngestionEnv } from "@hookscope/env"
 import { buildApp } from "./app.js"
 import { createStripeWorker } from "./workers/stripe-event.worker.js"
 import { createGitHubWorker } from "./workers/github-event.worker.js"
 import { toConnectionOptions } from "@hookscope/redis"
 
-const env = loadEnv()
+const env = loadIngestionEnv()
 const app = await buildApp(env)
 
 const connectionOptions = toConnectionOptions({ url: env.REDIS_URL })
