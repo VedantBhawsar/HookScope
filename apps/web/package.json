@@ -4,9 +4,10 @@
   "type": "module",
   "private": true,
   "scripts": {
-    "dev": "next dev --turbopack -p 3000",
+    "check:env": "bun ../../packages/env/scripts/check.ts web --dotenv .env",
+    "dev": "bun ../../packages/env/scripts/check.ts web --dotenv .env && next dev --turbopack -p 3000",
     "build": "next build",
-    "start": "next start -p 3000",
+    "start": "bun ../../packages/env/scripts/check.ts web --dotenv .env && next start -p 3000",
     "lint": "eslint",
     "format": "prettier --write \"**/*.{ts,tsx}\"",
     "typecheck": "tsc --noEmit"

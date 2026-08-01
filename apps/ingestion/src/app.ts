@@ -3,7 +3,7 @@ import cors from "@fastify/cors"
 import helmet from "@fastify/helmet"
 import sensible from "@fastify/sensible"
 import type { FastifyInstance } from "fastify"
-import type { Env } from "./config/env.js"
+import type { IngestionEnv } from "@hookscope/env"
 import redisPlugin from "./plugins/redis.js"
 import s3Plugin from "./plugins/s3.js"
 import prismaPlugin from "./plugins/prisma.js"
@@ -13,7 +13,7 @@ import healthRoute from "./routes/health.js"
 import stripeRoute from "./routes/stripe.js"
 import githubRoute from "./routes/github.js"
 
-export async function buildApp(env: Env): Promise<FastifyInstance> {
+export async function buildApp(env: IngestionEnv): Promise<FastifyInstance> {
   const fastify = Fastify({
     logger: {
       level: env.LOG_LEVEL,
