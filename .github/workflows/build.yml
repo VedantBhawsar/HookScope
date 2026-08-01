@@ -1,0 +1,37 @@
+name: Build
+
+on:
+  pull_request:
+    branches: [main]
+
+env:
+  NODE_ENV: development
+  DATABASE_URL: postgresql://postgres:postgres@localhost:5432/webhook_db
+  REDIS_URL: redis://localhost:6379
+  JWT_ACCESS_SECRET: ci-build-only-secret-change-me-1234567890abcd
+  MAINTENANCE_SECRET: ci-maintenance-secret
+  API_BASE_URL: http://localhost:5000
+  FRONTEND_URL: http://localhost:3000
+  INGESTION_BASE_URL: http://localhost:5001
+  S3_ENDPOINT: http://localhost:4566
+  S3_BUCKET: webhooks
+  AWS_REGION: us-east-1
+  AWS_ACCESS_KEY_ID: minioadmin
+  AWS_SECRET_ACCESS_KEY: minioadmin
+  NEXT_PUBLIC_API_URL: http://localhost:5000
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.2.16
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Build
+        run: bun run build
