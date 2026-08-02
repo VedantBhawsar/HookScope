@@ -1,6 +1,6 @@
 import type { Metadata } from "next"
 import type { ReactNode } from "react"
-import { DashboardShell } from "@/components/dashboard/dashboard-shell"
+import { AppShell } from "@/components/layout/app-shell"
 import { createPageMetadata } from "@/app/metadata"
 
 export async function generateMetadata({
@@ -19,5 +19,5 @@ export async function generateMetadata({
 }
 
 export default function DashboardLayout({ children }: { children: ReactNode }) {
-  return <DashboardShell>{children}</DashboardShell>
+  return <AppShell>{children}</AppShell>
 }

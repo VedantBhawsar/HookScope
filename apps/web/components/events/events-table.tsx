@@ -24,6 +24,7 @@ import {
 } from "@hookscope/ui/components/table"
 import { EventStatusBadge } from "./event-status-badge"
 import { EventDetailSheet } from "./event-detail-sheet"
+import { EmptyState } from "@/components/layout/empty-state"
 import {
   useWebhookEventsQuery,
   useBatchReplayMutation,
@@ -270,18 +271,12 @@ export function EventsTable({ endpointId }: EventsTableProps) {
               </TableRow>
             ) : events.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={7} className="py-16 text-center">
-                  <div className="flex flex-col items-center gap-2">
-                    <Webhook className="size-8 text-muted-foreground/40" />
-                    <p className="text-sm text-muted-foreground">
-                      No events found
-                    </p>
-                    {hasActiveFilters && (
-                      <p className="text-xs text-muted-foreground/70">
-                        Try clearing your filters
-                      </p>
-                    )}
-                  </div>
+                <TableCell colSpan={7} className="py-0 text-center">
+                  <EmptyState
+                    icon={Webhook}
+                    title="No events found"
+                    description={hasActiveFilters ? "Try clearing your filters" : "Send a webhook to your endpoint URL to see events appear here."}
+                  />
                 </TableCell>
               </TableRow>
             ) : (

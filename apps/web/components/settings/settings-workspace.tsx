@@ -2,6 +2,7 @@
 
 import { useMeQuery } from "@/hooks/use-auth"
 import { AppShell } from "@/components/layout/app-shell"
+import { PageHeader } from "@/components/layout/page-header"
 import { ProfileSection } from "@/components/settings/profile-section"
 import { WorkspaceSection } from "@/components/settings/workspace-section"
 import { AppearanceSection } from "@/components/settings/appearance-section"
@@ -18,12 +19,11 @@ export function SettingsWorkspace() {
     <AppShell pageTitle="Settings" pageLabel="Account">
       <UsageLimitBanner />
 
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Settings</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Manage your profile and workspace preferences.
-        </p>
-      </div>
+      <PageHeader
+        label="Account"
+        title="Settings"
+        description="Manage your profile and workspace preferences."
+      />
 
       {user && (
         <div className="space-y-6">

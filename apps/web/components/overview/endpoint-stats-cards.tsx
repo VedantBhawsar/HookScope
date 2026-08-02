@@ -29,7 +29,7 @@ function StatCard({ label, value, sub, icon: Icon, highlight = "neutral" }: Stat
   }[highlight]
 
   return (
-    <article className="rounded-2xl border border-border bg-card p-5 shadow-sm">
+    <article className="rounded-xl border border-border bg-card p-5 shadow-sm">
       <div className="flex items-center justify-between">
         <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">{label}</p>
         <Icon className={`size-4 ${iconColor}`} />
@@ -42,7 +42,7 @@ function StatCard({ label, value, sub, icon: Icon, highlight = "neutral" }: Stat
 
 function SkeletonCard() {
   return (
-    <article className="rounded-2xl border border-border bg-card p-5 shadow-sm">
+    <article className="rounded-xl border border-border bg-card p-5 shadow-sm">
       <div className="h-3 w-24 rounded bg-muted" />
       <div className="mt-4 h-8 w-16 rounded bg-muted" />
       <div className="mt-2 h-2.5 w-20 rounded bg-muted/60" />

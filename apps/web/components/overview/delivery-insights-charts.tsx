@@ -8,7 +8,7 @@ import { EventTypeChart } from "@/components/deliveries/event-type-chart"
 
 function ChartCard({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div className="rounded-2xl border border-border bg-card p-6 shadow-sm">
+    <div className="rounded-xl border border-border bg-card p-6 shadow-sm">
       <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">{title}</p>
       <div className="mt-4">{children}</div>
     </div>

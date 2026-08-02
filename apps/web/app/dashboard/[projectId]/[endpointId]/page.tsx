@@ -7,6 +7,7 @@ import { toast } from "sonner"
 import { Button } from "@hookscope/ui/components/button"
 import { Separator } from "@hookscope/ui/components/separator"
 import { useDashboardProjectContext } from "@/components/dashboard/dashboard-project-context"
+import { PageHeader } from "@/components/layout/page-header"
 import { EndpointStatsCards } from "@/components/overview/endpoint-stats-cards"
 import { DeliveryMetricsCards } from "@/components/overview/delivery-metrics-cards"
 import { DeliveryInsightsCharts } from "@/components/overview/delivery-insights-charts"
@@ -43,10 +44,11 @@ export default function ProjectDashboardPage() {
   if (projectLoading && !selectedProject) {
     return (
       <section className="space-y-6">
-        <header className="rounded-2xl border border-border bg-card p-6 shadow-sm">
-          <div className="h-3 w-24 rounded bg-muted" />
-          <div className="mt-3 h-8 w-56 rounded-lg bg-muted" />
-        </header>
+        <PageHeader
+          label="Overview"
+          title={<span className="inline-block h-7 w-56 rounded-lg bg-muted" />}
+          description={<span className="inline-block h-3 w-24 rounded bg-muted" />}
+        />
       </section>
     )
   }
@@ -54,13 +56,11 @@ export default function ProjectDashboardPage() {
   if (!selectedProject) {
     return (
       <section className="space-y-6">
-        <header className="rounded-2xl border border-border bg-card p-6 shadow-sm">
-          <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Overview</p>
-          <h1 className="mt-2 font-heading text-3xl font-semibold">Project not found</h1>
-          <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
-            Return to the project workspace and select another project.
-          </p>
-        </header>
+        <PageHeader
+          label="Overview"
+          title="Project not found"
+          description="Return to the project workspace and select another project."
+        />
       </section>
     )
   }
@@ -72,24 +72,18 @@ export default function ProjectDashboardPage() {
   return (
     <section className="space-y-6">
       {/* ── Header ── */}
-      <header className="rounded-2xl border border-border bg-card p-6 shadow-sm">
-        <div className="flex items-start justify-between gap-4">
-          <div className="min-w-0">
-            <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Overview</p>
-            <h1 className="mt-2 font-heading text-3xl font-semibold">
-              {endpointQuery.isLoading ? (
-                <span className="inline-block h-8 w-48 animate-pulse rounded-lg bg-muted" />
-              ) : (
-                endpoint?.name ?? selectedProject.name
-              )}
-            </h1>
-            {endpoint && (
-              <p className="mt-1 truncate text-sm text-muted-foreground">
-                {endpoint.destinationUrl}
-              </p>
-            )}
-          </div>
-          {endpoint && (
+      <PageHeader
+        label="Overview"
+        title={
+          endpointQuery.isLoading ? (
+            <span className="inline-block h-7 w-48 animate-pulse rounded-lg bg-muted" />
+          ) : (
+            endpoint?.name ?? selectedProject.name
+          )
+        }
+        description={endpoint?.destinationUrl}
+        actions={
+          endpoint ? (
             <Button
               variant="outline"
               size="sm"
@@ -106,9 +100,9 @@ export default function ProjectDashboardPage() {
               )}
               {isActive ? "Pause" : "Activate"}
             </Button>
-          )}
-        </div>
-      </header>
+          ) : null
+        }
+      />
 
       {/* ── Stat Cards ── */}
       <EndpointStatsCards projectId={projectId} endpointId={endpointId} />
@@ -118,7 +112,7 @@ export default function ProjectDashboardPage() {
       {/* ── Charts + Live Feed ── */}
       <div className="grid gap-6 lg:grid-cols-3">
         {/* Volume bar chart — 2/3 width */}
-        <div className="rounded-2xl border border-border bg-card p-6 shadow-sm lg:col-span-2">
+        <div className="rounded-xl border border-border bg-card p-6 shadow-sm lg:col-span-2">
           <div className="mb-4">
             <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">
               Event Volume
@@ -131,7 +125,7 @@ export default function ProjectDashboardPage() {
         </div>
 
         {/* Status donut — 1/3 width */}
-        <div className="rounded-2xl border border-border bg-card p-6 shadow-sm">
+        <div className="rounded-xl border border-border bg-card p-6 shadow-sm">
           <div className="mb-2">
             <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">
               Status Distribution
@@ -142,7 +136,7 @@ export default function ProjectDashboardPage() {
       </div>
 
       {/* ── Live Feed ── */}
-      <div className="rounded-2xl border border-border bg-card p-6 shadow-sm">
+      <div className="rounded-xl border border-border bg-card p-6 shadow-sm">
         <p className="mb-1 text-xs uppercase tracking-[0.18em] text-muted-foreground">
           Recent Events
         </p>

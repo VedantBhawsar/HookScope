@@ -42,6 +42,8 @@ import { useProjectsQuery, useDeleteProjectMutation, type ProjectRecord } from "
 import { getRequestErrorMessage, getRequestSuccessMessage } from "@/lib/http"
 import { CreateEndpointDialog } from "@/components/endpoints/create-endpoint-dialog"
 import { EditProjectDialog } from "@/components/projects/edit-project-dialog"
+import { ProjectLastEvent } from "@/components/projects/project-last-event"
+import { EmptyState } from "@/components/layout/empty-state"
 
 const PAGE_LIMIT = 10
 
@@ -151,23 +153,23 @@ export function ProjectsTableCard({
 
         {/* Empty state */}
         {!projectsQuery.isLoading && !hasProjects ? (
-          <div className="flex flex-col items-center gap-4 py-16 text-center">
-            <div className="flex size-12 items-center justify-center rounded-xl border border-dashed border-border bg-muted/30">
-              <FolderOpen className="size-5 text-muted-foreground/60" />
-            </div>
-            <div>
-              <p className="text-sm font-medium">{searchTerm ? "No results found" : "No projects yet"}</p>
-              <p className="mt-0.5 text-xs text-muted-foreground">
-                {searchTerm ? "Try a different search term." : "Create your first project to get started."}
-              </p>
-            </div>
-            {!searchTerm ? (
-              <Button size="sm" onClick={onCreateProject}>
-                <Plus className="size-3.5" />
-                New Project
-              </Button>
-            ) : null}
-          </div>
+          <EmptyState
+            icon={FolderOpen}
+            title={searchTerm ? "No results found" : "No projects yet"}
+            description={
+              searchTerm
+                ? "Try a different search term."
+                : "Create your first project to get started."
+            }
+            action={
+              !searchTerm ? (
+                <Button size="sm" onClick={onCreateProject}>
+                  <Plus className="size-3.5" />
+                  New Project
+                </Button>
+              ) : null
+            }
+          />
         ) : null}
 
         {/* Projects table */}
@@ -190,13 +192,16 @@ export function ProjectsTableCard({
               {projects.map((project) => (
                 <TableRow key={project.id} className="group transition-colors hover:bg-muted/30">
                   <TableCell className="px-5 py-3.5">
-                    <button
-                      type="button"
-                      className="text-left font-medium hover:underline hover:underline-offset-2 focus:outline-none"
-                      onClick={() => onOpenProject(project)}
-                    >
-                      {project.name}
-                    </button>
+                    <div className="min-w-0">
+                      <button
+                        type="button"
+                        className="text-left font-medium hover:underline hover:underline-offset-2 focus:outline-none"
+                        onClick={() => onOpenProject(project)}
+                      >
+                        {project.name}
+                      </button>
+                      <ProjectLastEvent projectId={project.id} />
+                    </div>
                   </TableCell>
                   <TableCell className="hidden max-w-xs truncate px-5 py-3.5 text-muted-foreground sm:table-cell">
                     {project.description ?? <span className="text-muted-foreground/40">—</span>}

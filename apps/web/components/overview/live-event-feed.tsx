@@ -5,6 +5,7 @@ import Link from "next/link"
 import { ArrowRight, LoaderCircle, Webhook } from "lucide-react"
 import { useQueryClient } from "@tanstack/react-query"
 import { EventStatusBadge } from "@/components/events/event-status-badge"
+import { EmptyState } from "@/components/layout/empty-state"
 import {
   useWebhookEventsQuery,
   webhookQueryKeys,
@@ -132,13 +133,12 @@ export function LiveEventFeed({ endpointId, projectId }: LiveEventFeedProps) {
           ))}
         </div>
       ) : events.length === 0 ? (
-        <div className="flex flex-1 flex-col items-center justify-center gap-2 py-10 text-center">
-          <Webhook className="size-8 text-muted-foreground/40" />
-          <p className="text-sm text-muted-foreground">Waiting for events…</p>
-          <p className="max-w-[220px] text-xs text-muted-foreground/70">
-            Send a webhook to your endpoint URL to see events appear here.
-          </p>
-        </div>
+        <EmptyState
+          icon={Webhook}
+          title="Waiting for events…"
+          description="Send a webhook to your endpoint URL to see events appear here."
+          className="py-10"
+        />
       ) : (
         <div className="flex-1 overflow-y-auto">
           {events.map((event) => (

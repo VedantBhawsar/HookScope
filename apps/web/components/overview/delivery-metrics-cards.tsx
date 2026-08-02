@@ -5,7 +5,7 @@ import { useEndpointDeliveryStatsQuery } from "@/hooks/use-endpoints"
 
 function StatCard({ label, value, sub }: { label: string; value: React.ReactNode; sub?: string }) {
   return (
-    <article className="rounded-2xl border border-border bg-card p-5 shadow-sm">
+    <article className="rounded-xl border border-border bg-card p-5 shadow-sm">
       <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">{label}</p>
       <div className="mt-3 text-2xl font-semibold">{value}</div>
       {sub && <p className="mt-1 text-xs text-muted-foreground">{sub}</p>}
@@ -15,7 +15,7 @@ function StatCard({ label, value, sub }: { label: string; value: React.ReactNode
 
 function SkeletonCard() {
   return (
-    <article className="rounded-2xl border border-border bg-card p-5 shadow-sm">
+    <article className="rounded-xl border border-border bg-card p-5 shadow-sm">
       <div className="h-3 w-20 rounded bg-muted" />
       <div className="mt-4 h-8 w-16 rounded bg-muted" />
     </article>

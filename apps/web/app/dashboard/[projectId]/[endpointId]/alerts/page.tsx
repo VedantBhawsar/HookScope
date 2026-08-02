@@ -15,6 +15,8 @@ import {
 } from "@hookscope/ui/components/table"
 import { useDashboardProjectContext } from "@/components/dashboard/dashboard-project-context"
 import { useEndpointsQuery } from "@/hooks/use-endpoints"
+import { PageHeader } from "@/components/layout/page-header"
+import { EmptyState } from "@/components/layout/empty-state"
 import {
   useAlertsQuery,
   useAlertHistoryQuery,
@@ -109,19 +111,13 @@ export default function EndpointAlertsPage() {
 
   return (
     <section className="space-y-6">
-      <header className="rounded-2xl border border-border bg-card p-6 shadow-sm">
-        <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
-          Alerts
-        </p>
-        <h1 className="mt-2 font-heading text-3xl font-semibold">
-          {endpoint?.name ?? "Alerts"}
-        </h1>
-        <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
-          Manage alert rules and inspect triggered notifications for this endpoint.
-        </p>
-      </header>
+      <PageHeader
+        label="Alerts"
+        title={endpoint?.name ?? "Alerts"}
+        description="Manage alert rules and inspect triggered notifications for this endpoint."
+      />
 
-      <div className="rounded-2xl border border-border bg-card p-6 shadow-sm">
+      <div className="rounded-xl border border-border bg-card p-6 shadow-sm">
         <Tabs value={tab} onValueChange={handleTabChange} className="w-full">
           <div className="flex items-center justify-between gap-3">
             <TabsList>
@@ -134,10 +130,11 @@ export default function EndpointAlertsPage() {
 
           <TabsContent value="rules" className="mt-4">
             {endpointAlerts.length === 0 && !alertsQuery.isLoading ? (
-              <div className="flex flex-col items-center justify-center rounded-lg border border-dashed py-16 text-center">
-                <Bell className="size-8 text-muted-foreground/40" />
-                <p className="mt-2 text-sm font-medium">No alerts configured</p>
-              </div>
+              <EmptyState
+                icon={Bell}
+                title="No alerts configured"
+                description="Create an alert rule to get notified about delivery failures and critical events."
+              />
             ) : (
               <AlertsTable alerts={endpointAlerts} isLoading={alertsQuery.isLoading} />
             )}
@@ -145,12 +142,11 @@ export default function EndpointAlertsPage() {
 
           <TabsContent value="history" className="mt-4">
             {historyRows.length === 0 && !historyQuery.isLoading ? (
-              <div className="flex flex-col items-center justify-center rounded-lg border border-dashed py-16 text-center">
-                <p className="text-sm font-medium">No trigger history yet</p>
-                <p className="mt-1 text-xs text-muted-foreground">
-                  Triggered alerts will appear here.
-                </p>
-              </div>
+              <EmptyState
+                icon={Bell}
+                title="No trigger history yet"
+                description="Triggered alerts will appear here."
+              />
             ) : (
               <div className="rounded-md border">
                 <Table>

@@ -130,7 +130,7 @@ export function EndpointSettingsForm({ projectId, endpoint }: EndpointSettingsFo
   }
 
   return (
-    <section className="rounded-2xl border border-border bg-card p-5 shadow-sm">
+    <section className="rounded-xl border border-border bg-card p-5 shadow-sm">
       <p className="text-xs tracking-[0.18em] text-muted-foreground uppercase">Editable Settings</p>
 
       <Form {...form}>

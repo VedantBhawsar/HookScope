@@ -8,6 +8,7 @@ import { Button } from "@hookscope/ui/components/button"
 import { useMeQuery } from "@/hooks/use-auth"
 import { type ProjectRecord } from "@/hooks/use-projects"
 import { AppShell } from "@/components/layout/app-shell"
+import { PageHeader } from "@/components/layout/page-header"
 import { CreateProjectDialog } from "@/components/projects/create-project-dialog"
 import { ProjectsTableCard } from "@/components/projects/projects-table-card"
 import { UsageLimitBanner } from "@/components/pricing/usage-limit-banner"
@@ -63,16 +64,15 @@ export function ProjectsWorkspace() {
     >
       <UsageLimitBanner />
 
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight">
-          {getGreeting()}{firstName ? `, ${firstName}` : ""}.
-        </h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          {companyName
+      <PageHeader
+        label="Workspace"
+        title={`${getGreeting()}${firstName ? `, ${firstName}` : ""}.`}
+        description={
+          companyName
             ? `${companyName} · HookScope`
-            : "Select a project to open its dashboard, or create a new one."}
-        </p>
-      </div>
+            : "Select a project to open its dashboard, or create a new one."
+        }
+      />
 
       {lastOpened ? (
         <div className="flex items-center justify-between rounded-xl border border-border bg-card px-5 py-4 shadow-sm">
