@@ -1,5 +1,6 @@
 import * as React from "react"
 import { useForm } from "react-hook-form"
+import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
 import { LoaderCircle } from "lucide-react"
 import { Button } from "@hookscope/ui/components/button"
@@ -49,6 +50,7 @@ interface CompanyStepFormProps {
 
 export function CompanyStepForm({ defaultValues, isPending, onBack, onSubmit }: CompanyStepFormProps) {
   const form = useForm<CompanyFormValues>({
+    resolver: zodResolver(companySchema),
     defaultValues,
   })
 
@@ -56,31 +58,9 @@ export function CompanyStepForm({ defaultValues, isPending, onBack, onSubmit }: 
     form.reset(defaultValues)
   }, [defaultValues, form])
 
-  const handleSubmit = async (values: CompanyFormValues) => {
-    form.clearErrors()
-    const parsedValues = companySchema.safeParse(values)
-
-    if (!parsedValues.success) {
-      for (const issue of parsedValues.error.issues) {
-        const fieldName = issue.path[0]
-        if (
-          fieldName === "companyName" ||
-          fieldName === "companyRole" ||
-          fieldName === "companySize" ||
-          fieldName === "useCase"
-        ) {
-          form.setError(fieldName, { type: "manual", message: issue.message })
-        }
-      }
-      return
-    }
-
-    await onSubmit(parsedValues.data)
-  }
-
   return (
     <Form {...form}>
-      <form className="mt-4 space-y-4" onSubmit={form.handleSubmit(handleSubmit)}>
+      <form className="mt-4 space-y-4" onSubmit={form.handleSubmit(onSubmit)}>
         <FormField
           control={form.control}
           name="companyName"
@@ -182,10 +162,10 @@ export function CompanyStepForm({ defaultValues, isPending, onBack, onSubmit }: 
         />
 
         <div className="mt-6 flex items-center justify-between gap-3">
-          <Button type="button" variant="outline" onClick={onBack}>
+          <Button type="button" variant="outline" className="min-h-11" onClick={onBack}>
             Back
           </Button>
-          <Button type="submit" disabled={isPending}>
+          <Button type="submit" className="min-h-11" disabled={isPending}>
             {isPending ? <LoaderCircle className="size-4 animate-spin" /> : null}
             {isPending ? "Saving..." : "Save and continue"}
           </Button>

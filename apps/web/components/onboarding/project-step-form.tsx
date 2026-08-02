@@ -1,8 +1,10 @@
 import { useForm } from "react-hook-form"
+import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
 import { LoaderCircle } from "lucide-react"
 import { Button } from "@hookscope/ui/components/button"
 import { Input } from "@hookscope/ui/components/input"
+import { Textarea } from "@hookscope/ui/components/textarea"
 import {
   Form,
   FormControl,
@@ -35,29 +37,13 @@ interface ProjectStepFormProps {
 
 export function ProjectStepForm({ disabled, isPending, onBack, onSubmit }: ProjectStepFormProps) {
   const form = useForm<ProjectFormValues>({
+    resolver: zodResolver(projectSchema),
     defaultValues: { name: "", description: "" },
   })
 
-  const handleSubmit = async (values: ProjectFormValues) => {
-    form.clearErrors()
-    const parsedValues = projectSchema.safeParse(values)
-
-    if (!parsedValues.success) {
-      for (const issue of parsedValues.error.issues) {
-        const fieldName = issue.path[0]
-        if (fieldName === "name" || fieldName === "description") {
-          form.setError(fieldName, { type: "manual", message: issue.message })
-        }
-      }
-      return
-    }
-
-    await onSubmit(parsedValues.data)
-  }
-
   return (
     <Form {...form}>
-      <form className="mt-4 space-y-4" onSubmit={form.handleSubmit(handleSubmit)}>
+      <form className="mt-4 space-y-4" onSubmit={form.handleSubmit(onSubmit)}>
         <FormField
           control={form.control}
           name="name"
@@ -84,8 +70,9 @@ export function ProjectStepForm({ disabled, isPending, onBack, onSubmit }: Proje
                 <span className="ml-1 text-xs font-normal text-muted-foreground">(optional)</span>
               </FormLabel>
               <FormControl>
-                <Input
+                <Textarea
                   placeholder="Capture and inspect Stripe events"
+                  rows={3}
                   {...field}
                   value={field.value ?? ""}
                 />
@@ -96,10 +83,10 @@ export function ProjectStepForm({ disabled, isPending, onBack, onSubmit }: Proje
         />
 
         <div className="mt-6 flex items-center justify-between gap-3">
-          <Button type="button" variant="outline" onClick={onBack}>
+          <Button type="button" variant="outline" className="min-h-11" onClick={onBack}>
             Back
           </Button>
-          <Button type="submit" disabled={isPending || disabled}>
+          <Button type="submit" className="min-h-11" disabled={isPending || disabled}>
             {isPending ? <LoaderCircle className="size-4 animate-spin" /> : null}
             {isPending ? "Creating project..." : "Create project"}
           </Button>

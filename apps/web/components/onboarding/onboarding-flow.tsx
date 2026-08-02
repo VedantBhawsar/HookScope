@@ -8,13 +8,14 @@ import {
   Building2,
   Check,
   FolderPlus,
-  Loader2,
   MailCheck,
   Zap,
 } from "lucide-react"
 import { toast } from "sonner"
+import { motion, AnimatePresence, useReducedMotion, type Variants } from "framer-motion"
 import { cn } from "@hookscope/ui/lib/utils"
 import { Button } from "@hookscope/ui/components/button"
+import { Skeleton } from "@hookscope/ui/components/skeleton"
 import { getRequestErrorMessage } from "@/lib/http"
 import { useMeQuery, useCompleteOnboardingMutation } from "@/hooks/use-auth"
 import { useCreateProjectMutation } from "@/hooks/use-projects"
@@ -24,6 +25,26 @@ import { ProjectStepForm, type ProjectFormValues } from "./project-step-form"
 import { VerifyStep } from "./verify-step"
 import { PlanStep } from "./plan-step"
 import type { BillingInterval } from "@/components/pricing/pricing-data"
+
+// ─── Motion presets ───────────────────────────────────────────────────────────
+
+const EASE_OUT: [number, number, number, number] = [0.22, 1, 0.36, 1]
+const EASE_IN: [number, number, number, number] = [0.55, 0.06, 0.68, 0.19]
+const spring = { type: "spring", stiffness: 400, damping: 30 } as const
+
+const stepSlideVariants: Variants = {
+  enter: (dir: number) => ({ x: dir * 36, opacity: 0 }),
+  center: {
+    x: 0,
+    opacity: 1,
+    transition: { duration: 0.28, ease: EASE_OUT },
+  },
+  exit: (dir: number) => ({
+    x: dir * -36,
+    opacity: 0,
+    transition: { duration: 0.16, ease: EASE_IN },
+  }),
+}
 
 // ─── Step definitions ─────────────────────────────────────────────────────────
 
@@ -65,44 +86,104 @@ function isValidStep(v: string | null): v is OnboardingStep {
 function StepItem({
   step,
   status,
+  onSelect,
 }: {
   step: (typeof STEPS)[number]
   status: "completed" | "active" | "pending"
+  onSelect?: () => void
 }) {
   const Icon = step.icon
+  const clickable = status !== "pending"
   return (
-    <div
+    <button
+      type="button"
+      onClick={clickable ? onSelect : undefined}
+      disabled={!clickable}
       className={cn(
-        "flex items-center gap-3 text-sm transition-colors",
+        "flex w-full items-center gap-3 rounded-lg p-1.5 text-left text-sm transition-colors outline-none",
+        clickable && "cursor-pointer hover:bg-muted/60 focus-visible:ring-2 focus-visible:ring-ring/50",
         status === "active"
           ? "text-foreground"
           : status === "completed"
-            ? "text-foreground/60"
-            : "text-muted-foreground/60"
+            ? "text-foreground/70"
+            : "text-muted-foreground/50"
       )}
     >
-      <div
+      <span
         className={cn(
-          "flex size-9 shrink-0 items-center justify-center rounded-full border-2 transition-all",
+          "relative flex size-9 shrink-0 items-center justify-center rounded-full border-2 transition-colors",
           status === "completed"
             ? "border-primary bg-primary text-primary-foreground"
             : status === "active"
-              ? "border-primary bg-background text-primary shadow-sm shadow-primary/20"
+              ? "border-primary bg-background text-primary"
               : "border-border bg-muted/30 text-muted-foreground"
         )}
       >
-        {status === "completed" ? (
-          <Check className="size-4" />
-        ) : (
-          <Icon className="size-4" />
+        <AnimatePresence mode="wait" initial={false}>
+          {status === "completed" ? (
+            <motion.span
+              key="check"
+              initial={{ scale: 0.4, opacity: 0, rotate: -30 }}
+              animate={{ scale: 1, opacity: 1, rotate: 0 }}
+              exit={{ scale: 0.4, opacity: 0 }}
+              transition={spring}
+            >
+              <Check className="size-4" />
+            </motion.span>
+          ) : (
+            <motion.span
+              key="icon"
+              initial={{ scale: 0.6, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.6, opacity: 0 }}
+              transition={{ duration: 0.15 }}
+            >
+              <Icon className="size-4" />
+            </motion.span>
+          )}
+        </AnimatePresence>
+        {status === "active" && (
+          <motion.span
+            layoutId="onboarding-active-step"
+            className="absolute -inset-1.5 rounded-full ring-2 ring-primary/50"
+            transition={spring}
+          />
         )}
-      </div>
-      <div>
-        <p className={cn("font-medium leading-snug", status === "active" && "text-foreground")}>
-          {step.label}
-        </p>
+      </span>
+      <span>
+        <p className="font-medium leading-snug">{step.label}</p>
         <p className="text-xs text-muted-foreground">{step.description}</p>
-      </div>
+      </span>
+    </button>
+  )
+}
+
+function OnboardingSkeleton() {
+  return (
+    <div className="min-h-dvh lg:grid lg:grid-cols-[340px_1fr]">
+      <aside className="hidden flex-col border-r bg-muted/20 px-8 py-10 lg:flex">
+        <Skeleton className="h-10 w-40" />
+        <div className="mt-12 flex-1 space-y-6">
+          {[0, 1, 2, 3].map((i) => (
+            <div key={i} className="flex items-center gap-3">
+              <Skeleton className="size-9 shrink-0 rounded-full" />
+              <div className="space-y-2">
+                <Skeleton className="h-4 w-28" />
+                <Skeleton className="h-3 w-20" />
+              </div>
+            </div>
+          ))}
+        </div>
+      </aside>
+      <main className="flex flex-col items-center justify-center px-6 py-12 lg:px-16">
+        <div className="w-full max-w-md space-y-5">
+          <Skeleton className="h-3 w-16" />
+          <Skeleton className="h-8 w-64" />
+          <Skeleton className="h-4 w-48" />
+          <Skeleton className="mt-6 h-24 w-full" />
+          <Skeleton className="h-11 w-full" />
+        </div>
+      </main>
     </div>
   )
 }
@@ -116,6 +197,7 @@ export function OnboardingFlow() {
   const onboardingMutation = useCompleteOnboardingMutation()
   const projectMutation = useCreateProjectMutation()
   const checkoutMutation = useCheckoutMutation()
+  const reduceMotion = useReducedMotion()
 
   const [loadingPlanId, setLoadingPlanId] = React.useState<string | null>(null)
 
@@ -123,6 +205,16 @@ export function OnboardingFlow() {
   const stepParam = searchParams.get("step")
   const currentStep: OnboardingStep = isValidStep(stepParam) ? stepParam : "verify"
   const currentIndex = STEPS.findIndex((s) => s.id === currentStep)
+
+  // Slide direction for step transitions
+  const prevIndexRef = React.useRef(currentIndex)
+  const [direction, setDirection] = React.useState(0)
+  React.useEffect(() => {
+    if (prevIndexRef.current !== currentIndex) {
+      setDirection(currentIndex > prevIndexRef.current ? 1 : -1)
+      prevIndexRef.current = currentIndex
+    }
+  }, [currentIndex])
 
   // ─── Guards ─────────────────────────────────────────────────────────────────
   React.useEffect(() => {
@@ -133,29 +225,17 @@ export function OnboardingFlow() {
       return
     }
 
-    const { companyName, hasCreatedProject } = user.onboarding
+    // "verify" and "company" are always reachable so users can edit / revisit them.
+    if (currentStep === "verify" || currentStep === "company") return
 
-    if (currentStep === "verify") return
-
-    if (currentStep === "company") {
-      if (companyName) router.replace("/onboarding?step=project")
-      return
-    }
-
-    if (!companyName) {
+    // "project" and "plan" require a company to exist first.
+    if (!user.onboarding.companyName) {
       router.replace("/onboarding?step=company")
-      return
     }
-
-    if (currentStep === "project") {
-      if (hasCreatedProject) router.replace("/onboarding?step=plan")
-      return
-    }
-    // "plan" step is always reachable after project is created
   }, [currentStep, router, user])
 
   const goTo = (step: OnboardingStep) =>
-    router.replace(`/onboarding?step=${step}`)
+    router.push(`/onboarding?step=${step}`)
 
   // ─── Handlers ───────────────────────────────────────────────────────────────
 
@@ -202,16 +282,12 @@ export function OnboardingFlow() {
 
   // ─── Loading ─────────────────────────────────────────────────────────────────
   if (meQuery.isLoading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center">
-        <Loader2 className="size-5 animate-spin text-muted-foreground" />
-      </div>
-    )
+    return <OnboardingSkeleton />
   }
 
   if (!user) {
     return (
-      <div className="flex min-h-screen items-center justify-center px-4">
+      <div className="flex min-h-dvh items-center justify-center px-4">
         <div className="w-full max-w-sm space-y-4 rounded-2xl border bg-card p-8 text-center shadow-sm">
           <h1 className="text-xl font-semibold">Sign in required</h1>
           <p className="text-sm text-muted-foreground">Please sign in to continue.</p>
@@ -227,21 +303,43 @@ export function OnboardingFlow() {
   const currentStepMeta = STEPS[currentIndex]!
   const isPlanStep = currentStep === "plan"
 
+  const headerDelay = reduceMotion ? 0 : 0.08
+  const bodyDelay = reduceMotion ? 0 : 0.18
+
+  const stepVariants = reduceMotion
+    ? {
+        enter: { x: 0, opacity: 0 },
+        center: { x: 0, opacity: 1, transition: { duration: 0 } },
+        exit: { x: 0, opacity: 0, transition: { duration: 0 } },
+      }
+    : stepSlideVariants
+
   // ─── Layout ──────────────────────────────────────────────────────────────────
   return (
-    <div className="min-h-screen lg:grid lg:grid-cols-[340px_1fr]">
+    <div className="min-h-dvh lg:grid lg:grid-cols-[340px_1fr]">
       {/* ── Left sidebar ────────────────────────────────────────────────────── */}
       <aside className="hidden flex-col border-r bg-muted/20 px-8 py-10 lg:flex">
-        {/* Logo */}
-        <div className="mb-12">
+        <Link href="/" className="mb-12 block w-fit" aria-label="HookScope home">
           <div className="relative h-10 w-40 overflow-hidden">
-            <Image src="/logo-light.png" alt="HookScope" fill className="object-cover object-center dark:hidden" />
-            <Image src="/logo-dark.png" alt="HookScope" fill className="object-cover object-center hidden dark:block" />
+            <Image
+              src="/logo-light.png"
+              alt="HookScope"
+              fill
+              priority
+              className="object-contain object-center dark:hidden"
+            />
+            <Image
+              src="/logo-dark.png"
+              alt="HookScope"
+              fill
+              priority
+              className="object-contain object-center hidden dark:block"
+            />
           </div>
-        </div>
+        </Link>
 
         {/* Step list */}
-        <nav className="flex-1 space-y-0.5">
+        <nav className="flex-1 space-y-0.5" aria-label="Onboarding progress">
           {STEPS.map((step, i) => {
             const status =
               i < currentIndex
@@ -251,13 +349,23 @@ export function OnboardingFlow() {
                   : "pending"
             return (
               <React.Fragment key={step.id}>
-                <StepItem step={step} status={status} />
+                <StepItem
+                  step={step}
+                  status={status}
+                  onSelect={() => goTo(step.id)}
+                />
                 {i < STEPS.length - 1 && (
-                  <div
-                    className={cn(
-                      "ml-[17px] h-7 w-px border-l-2 border-dashed",
-                      i < currentIndex ? "border-primary/40" : "border-border/60"
-                    )}
+                  <motion.div
+                    className="ml-[17px] h-7 w-0.5 rounded-full"
+                    initial={false}
+                    animate={{
+                      backgroundColor:
+                        i < currentIndex
+                          ? "var(--primary)"
+                          : "var(--border)",
+                      opacity: i < currentIndex ? 1 : 0.6,
+                    }}
+                    transition={{ duration: reduceMotion ? 0 : 0.3 }}
                   />
                 )}
               </React.Fragment>
@@ -278,108 +386,135 @@ export function OnboardingFlow() {
 
       {/* ── Right content ───────────────────────────────────────────────────── */}
       <main className="flex flex-col items-center justify-center px-6 py-12 lg:px-16">
-        {/* Mobile: pill progress bar */}
+        {/* Mobile: animated progress bar */}
         <div className="mb-8 w-full max-w-lg lg:hidden">
-          <div className="flex gap-1.5">
-            {STEPS.map((_, i) => (
-              <div
-                key={i}
-                className={cn(
-                  "h-1.5 flex-1 rounded-full transition-all duration-300",
-                  i <= currentIndex ? "bg-primary" : "bg-muted"
-                )}
-              />
-            ))}
+          <div className="relative h-1.5 w-full overflow-hidden rounded-full bg-muted">
+            <motion.div
+              className="absolute inset-y-0 left-0 rounded-full bg-primary"
+              initial={false}
+              animate={{ scaleX: (currentIndex + 1) / STEPS.length }}
+              style={{ originX: 0 }}
+              transition={reduceMotion ? { duration: 0 } : spring}
+            />
           </div>
           <p className="mt-2 text-xs text-muted-foreground">
             Step {currentIndex + 1} of {STEPS.length}
           </p>
         </div>
 
-        <div className={cn("w-full", isPlanStep ? "max-w-4xl" : "max-w-md")}>
-          {/* Step header */}
-          <div className="mb-8 space-y-1">
-            <p className="text-xs font-semibold uppercase tracking-widest text-primary">
-              Step {currentIndex + 1} / {STEPS.length}
-            </p>
-            <h1 className="text-2xl font-bold tracking-tight">
-              {currentStep === "verify" && "Welcome aboard"}
-              {currentStep === "company" && "Tell us about your team"}
-              {currentStep === "project" && "Create your first project"}
-              {currentStep === "plan" && "Start your free trial"}
-            </h1>
-            <p className="text-muted-foreground">
-              {currentStepMeta.description}
-            </p>
-          </div>
-
-          {/* Step content */}
-          {currentStep === "verify" && (
-            <VerifyStep
-              email={user.email}
-              emailVerified={user.onboarding.emailVerified}
-              onContinue={() => goTo("company")}
-            />
-          )}
-
-          {currentStep === "company" && (
-            companyName ? (
-              <div className="space-y-4">
-                <div className="flex items-start gap-3 rounded-xl border border-emerald-500/30 bg-emerald-500/5 p-4">
-                  <Check className="mt-0.5 size-4 shrink-0 text-emerald-600" />
-                  <p className="text-sm text-emerald-700">
-                    Company details saved for <strong>{companyName}</strong>.
+        <div className="w-full max-w-4xl">
+          <AnimatePresence mode="wait" custom={direction} initial={false}>
+            <motion.div
+              key={currentStep}
+              custom={direction}
+              variants={stepVariants}
+              initial="enter"
+              animate="center"
+              exit="exit"
+            >
+              <div className={cn("w-full", isPlanStep ? "" : "mx-auto max-w-md")}>
+                {/* Step header */}
+                <motion.div
+                  initial={{ opacity: 0, y: reduceMotion ? 0 : 14 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: headerDelay, duration: 0.3, ease: EASE_OUT }}
+                  className="mb-8 space-y-1"
+                >
+                  <p className="text-xs font-semibold uppercase tracking-widest text-primary">
+                    Step {currentIndex + 1} / {STEPS.length}
                   </p>
-                </div>
-                <div className="flex gap-3">
-                  <Button variant="outline" className="flex-1" onClick={() => goTo("verify")}>
-                    Back
-                  </Button>
-                  <Button className="flex-1" onClick={() => goTo("project")}>
-                    Continue
-                  </Button>
-                </div>
-              </div>
-            ) : (
-              <CompanyStepForm
-                defaultValues={{
-                  companyName: companyName ?? "",
-                  companyRole: user.onboarding.companyRole ?? "",
-                  companySize: user.onboarding.companySize ?? "",
-                  useCase: user.onboarding.useCase ?? "",
-                }}
-                isPending={onboardingMutation.isPending}
-                onBack={() => goTo("verify")}
-                onSubmit={handleSaveCompany}
-              />
-            )
-          )}
+                  <h1 className="text-2xl font-bold tracking-tight">
+                    {currentStep === "verify" && "Welcome aboard"}
+                    {currentStep === "company" && "Tell us about your team"}
+                    {currentStep === "project" && "Create your first project"}
+                    {currentStep === "plan" && "Start your free trial"}
+                  </h1>
+                  <p className="text-muted-foreground">
+                    {currentStepMeta.description}
+                  </p>
+                </motion.div>
 
-          {currentStep === "project" && (
-            hasCreatedProject ? (
-              <div className="flex items-start gap-3 rounded-xl border border-emerald-500/30 bg-emerald-500/5 p-4">
-                <Check className="mt-0.5 size-4 shrink-0 text-emerald-600" />
-                <p className="text-sm text-emerald-700">
-                  Your first project is ready. Redirecting to billing…
-                </p>
-              </div>
-            ) : (
-              <ProjectStepForm
-                disabled={!companyName}
-                isPending={projectMutation.isPending}
-                onBack={() => goTo("company")}
-                onSubmit={handleCreateProject}
-              />
-            )
-          )}
+                {/* Step content */}
+                <motion.div
+                  initial={{ opacity: 0, y: reduceMotion ? 0 : 18 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: bodyDelay, duration: 0.35, ease: EASE_OUT }}
+                >
+                  {currentStep === "verify" && (
+                    <VerifyStep
+                      email={user.email}
+                      emailVerified={user.onboarding.emailVerified}
+                      onContinue={() => goTo("company")}
+                    />
+                  )}
 
-          {currentStep === "plan" && (
-            <PlanStep
-              onSelect={handleSelectPlan}
-              loadingPlanId={loadingPlanId}
-              isPending={checkoutMutation.isPending}
-            />
-          )}
+                  {currentStep === "company" && (
+                    <CompanyStepForm
+                      defaultValues={{
+                        companyName: companyName ?? "",
+                        companyRole: user.onboarding.companyRole ?? "",
+                        companySize: user.onboarding.companySize ?? "",
+                        useCase: user.onboarding.useCase ?? "",
+                      }}
+                      isPending={onboardingMutation.isPending}
+                      onBack={() => goTo("verify")}
+                      onSubmit={handleSaveCompany}
+                    />
+                  )}
+
+                  {currentStep === "project" &&
+                    (hasCreatedProject ? (
+                      <div className="space-y-4">
+                        <motion.div
+                          initial={{ opacity: 0, y: reduceMotion ? 0 : 8 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ delay: headerDelay, duration: 0.3, ease: EASE_OUT }}
+                          className="flex items-start gap-3 rounded-xl border border-success/30 bg-success/5 p-4"
+                        >
+                          <motion.span
+                            initial={{ scale: 0 }}
+                            animate={{ scale: 1 }}
+                            transition={{ delay: reduceMotion ? 0 : 0.1, ...spring }}
+                          >
+                            <Check className="mt-0.5 size-4 shrink-0 text-success" />
+                          </motion.span>
+                          <p className="text-sm text-success">
+                            Your first project is ready. Ready for billing.
+                          </p>
+                        </motion.div>
+                        <div className="flex gap-3">
+                          <Button
+                            variant="outline"
+                            className="min-h-11 flex-1"
+                            onClick={() => goTo("company")}
+                          >
+                            Back
+                          </Button>
+                          <Button className="min-h-11 flex-1" onClick={() => goTo("plan")}>
+                            Continue
+                          </Button>
+                        </div>
+                      </div>
+                    ) : (
+                      <ProjectStepForm
+                        disabled={!companyName}
+                        isPending={projectMutation.isPending}
+                        onBack={() => goTo("company")}
+                        onSubmit={handleCreateProject}
+                      />
+                    ))}
+
+                  {currentStep === "plan" && (
+                    <PlanStep
+                      onSelect={handleSelectPlan}
+                      loadingPlanId={loadingPlanId}
+                      isPending={checkoutMutation.isPending}
+                    />
+                  )}
+                </motion.div>
+              </div>
+            </motion.div>
+          </AnimatePresence>
         </div>
       </main>
     </div>

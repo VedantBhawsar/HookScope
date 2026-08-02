@@ -1,5 +1,8 @@
+"use client"
+
 import Link from "next/link"
 import { Check, X, Minus, Loader2 } from "lucide-react"
+import { motion, useReducedMotion } from "framer-motion"
 import { Card, CardContent, CardHeader } from "@hookscope/ui/components/card"
 import { Badge } from "@hookscope/ui/components/badge"
 import { Button } from "@hookscope/ui/components/button"
@@ -43,6 +46,7 @@ interface PricingCardProps {
 }
 
 export function PricingCard({ plan, interval, onSelect, isLoading, isCurrent }: PricingCardProps) {
+  const reduceMotion = useReducedMotion()
   const isAnnual = interval === "annual"
   const isFree = plan.id === "free"
 
@@ -58,21 +62,26 @@ export function PricingCard({ plan, interval, onSelect, isLoading, isCurrent }: 
   const inrPrice = isAnnual ? plan.annualPriceInr : plan.monthlyPriceInr
 
   return (
-    <Card
-      className={cn(
-        "relative flex flex-col transition-shadow overflow-visible",
-        plan.highlight
-          ? "border-primary ring-2 ring-primary shadow-lg shadow-primary/10"
-          : "hover:shadow-md"
-      )}
+    <motion.div
+      className="h-full"
+      whileHover={reduceMotion ? undefined : { y: -4 }}
+      transition={{ type: "spring", stiffness: 350, damping: 28 }}
     >
-      {plan.badge && (
-        <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 z-[999]">
-          <Badge className="bg-primary text-primary-foreground px-3 py-1 text-xs font-semibold shadow-sm">
-            {plan.badge}
-          </Badge>
-        </div>
-      )}
+      <Card
+        className={cn(
+          "relative flex h-full flex-col transition-shadow overflow-visible",
+          plan.highlight
+            ? "border-primary ring-2 ring-primary shadow-lg shadow-primary/10"
+            : "hover:shadow-md"
+        )}
+      >
+        {plan.badge && (
+          <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 z-50">
+            <Badge className="bg-primary text-primary-foreground px-3 py-1 text-xs font-semibold shadow-sm">
+              {plan.badge}
+            </Badge>
+          </div>
+        )}
 
       <CardHeader className="px-7 pt-8 pb-0 space-y-5">
         {/* Plan name + description */}
@@ -117,7 +126,7 @@ export function PricingCard({ plan, interval, onSelect, isLoading, isCurrent }: 
           <Button
             size="lg"
             variant={isCurrent ? "secondary" : plan.highlight ? "default" : "outline"}
-            className="w-full"
+            className="min-h-11 w-full"
             onClick={() => !isCurrent && onSelect(plan.id, interval)}
             disabled={isLoading || isCurrent}
           >
@@ -134,7 +143,7 @@ export function PricingCard({ plan, interval, onSelect, isLoading, isCurrent }: 
             asChild
             size="lg"
             variant={plan.highlight ? "default" : "outline"}
-            className="w-full"
+            className="min-h-11 w-full"
           >
             <Link href={plan.ctaHref}>{plan.cta}</Link>
           </Button>
@@ -157,6 +166,7 @@ export function PricingCard({ plan, interval, onSelect, isLoading, isCurrent }: 
           ))}
         </ul>
       </CardContent>
-    </Card>
+      </Card>
+    </motion.div>
   )
 }

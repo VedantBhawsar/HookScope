@@ -44,7 +44,7 @@ export class AuthService {
   async login(dto: LoginDto): Promise<AuthResponse & { refreshToken: string }> {
     const user = await this.repo.findUserByEmail(dto.email)
     // Constant-time: always verify to prevent timing-based user enumeration.
-    const hashToCheck = user?.passwordHash ?? "$argon2id$v=19$m=65536,t=2,p=1$placeholder"
+    const hashToCheck = user?.passwordHash ?? "$argon2id$v=19$m=65536,t=2,p=1$wK8n2NFwU2cswlHRhEZU6RG1T7HZrltFegtDfDrAPQ8$F9ZJrfMWaM6dOW2Sa9RPLeSN67cmsLTGiDmj6w+pBSY"
     const valid = await verifyPassword(dto.password, hashToCheck)
     if (!user || !valid) throw new Error("INVALID_CREDENTIALS")
 

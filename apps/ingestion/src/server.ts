@@ -27,6 +27,8 @@ try {
   await app.listen({ port: env.PORT, host: env.HOST })
 } catch (err) {
   app.log.error(err)
+
+  console.log("error", err)
   process.exit(1)
 }
 
