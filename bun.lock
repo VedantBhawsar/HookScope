@@ -109,6 +109,7 @@
       "version": "0.0.0",
       "dependencies": {
         "@hookscope/env": "workspace:*",
+        "@hookscope/s3": "workspace:*",
         "@prisma/adapter-pg": "^7.6.0",
         "@prisma/client": "^7.0.0",
         "dotenv": "^17.3.1",

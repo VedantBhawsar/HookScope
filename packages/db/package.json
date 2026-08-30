@@ -16,10 +16,12 @@
     "db:push": "prisma db push --schema ./prisma/schema.prisma",
     "db:pull": "prisma db pull --schema ./prisma/schema.prisma",
     "db:seed": "bun run prisma/seed.ts",
+    "db:seed:demo": "bun run prisma/seed-demo.ts",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@hookscope/env": "workspace:*",
+    "@hookscope/s3": "workspace:*",
     "@prisma/adapter-pg": "^7.6.0",
     "@prisma/client": "^7.0.0",
     "dotenv": "^17.3.1",
