@@ -28,11 +28,12 @@ const url = (name: string) =>
 
 const secret = (name: string, min = 8) => requiredString(name, min)
 
-/** Boolean stored as a string ("true"/"false"). */
-const boolString = z
-  .union([z.literal("true"), z.literal("false")])
-  .default("false")
-  .transform((value) => value === "true")
+/** Boolean stored as a string ("true"/"false"), defaulting to the given value. */
+const boolString = (def: "true" | "false" = "false") =>
+  z
+    .union([z.literal("true"), z.literal("false")])
+    .default(def)
+    .transform((value) => value === "true")
 
 const optionalString = (name: string) =>
   z.string().optional().default("").describe(`${name} (optional)`)
@@ -95,10 +96,12 @@ export const apiEnvSchema = z.object({
 
   SMTP_HOST: requiredString("SMTP_HOST").default("smtp.ethereal.email"),
   SMTP_PORT: z.coerce.number().int().positive().default(587),
-  SMTP_SECURE: boolString,
+  SMTP_SECURE: boolString(),
   SMTP_USER: optionalString("SMTP_USER"),
   SMTP_PASS: optionalString("SMTP_PASS"),
   SMTP_FROM: requiredString("SMTP_FROM").default("noreply@hookscope.dev"),
+
+  BILLING_ENABLED: boolString("true"),
 
   DODO_PAYMENTS_API_KEY: optionalString("DODO_PAYMENTS_API_KEY"),
   DODO_PAYMENTS_WEBHOOK_KEY: optionalString("DODO_PAYMENTS_WEBHOOK_KEY"),

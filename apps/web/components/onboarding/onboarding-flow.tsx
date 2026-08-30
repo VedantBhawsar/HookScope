@@ -202,9 +202,11 @@ export function OnboardingFlow() {
   const [loadingPlanId, setLoadingPlanId] = React.useState<string | null>(null)
 
   const user = meQuery.data?.user
+  const billingEnabled = user?.billingEnabled ?? true
+  const steps = billingEnabled ? STEPS : STEPS.filter((s) => s.id !== "plan")
   const stepParam = searchParams.get("step")
   const currentStep: OnboardingStep = isValidStep(stepParam) ? stepParam : "verify"
-  const currentIndex = STEPS.findIndex((s) => s.id === currentStep)
+  const currentIndex = steps.findIndex((s) => s.id === currentStep)
 
   // Slide direction for step transitions
   const prevIndexRef = React.useRef(currentIndex)
@@ -231,8 +233,14 @@ export function OnboardingFlow() {
     // "project" and "plan" require a company to exist first.
     if (!user.onboarding.companyName) {
       router.replace("/onboarding?step=company")
+      return
     }
-  }, [currentStep, router, user])
+
+    // Billing is disabled — the "plan" step doesn't apply.
+    if (currentStep === "plan" && !billingEnabled) {
+      router.replace("/projects")
+    }
+  }, [billingEnabled, currentStep, router, user])
 
   const goTo = (step: OnboardingStep) =>
     router.push(`/onboarding?step=${step}`)
@@ -261,7 +269,11 @@ export function OnboardingFlow() {
         description: values.description?.trim() || undefined,
       })
       toast.success(message)
-      goTo("plan")
+      if (billingEnabled) {
+        goTo("plan")
+      } else {
+        router.replace("/projects")
+      }
     } catch (err) {
       toast.error(getRequestErrorMessage(err))
     }
@@ -300,7 +312,7 @@ export function OnboardingFlow() {
   }
 
   const { companyName, hasCreatedProject } = user.onboarding
-  const currentStepMeta = STEPS[currentIndex]!
+  const currentStepMeta = steps[currentIndex]!
   const isPlanStep = currentStep === "plan"
 
   const headerDelay = reduceMotion ? 0 : 0.08
@@ -340,7 +352,7 @@ export function OnboardingFlow() {
 
         {/* Step list */}
         <nav className="flex-1 space-y-0.5" aria-label="Onboarding progress">
-          {STEPS.map((step, i) => {
+          {steps.map((step, i) => {
             const status =
               i < currentIndex
                 ? "completed"
@@ -354,7 +366,7 @@ export function OnboardingFlow() {
                   status={status}
                   onSelect={() => goTo(step.id)}
                 />
-                {i < STEPS.length - 1 && (
+                {i < steps.length - 1 && (
                   <motion.div
                     className="ml-[17px] h-7 w-0.5 rounded-full"
                     initial={false}
@@ -392,13 +404,13 @@ export function OnboardingFlow() {
             <motion.div
               className="absolute inset-y-0 left-0 rounded-full bg-primary"
               initial={false}
-              animate={{ scaleX: (currentIndex + 1) / STEPS.length }}
+              animate={{ scaleX: (currentIndex + 1) / steps.length }}
               style={{ originX: 0 }}
               transition={reduceMotion ? { duration: 0 } : spring}
             />
           </div>
           <p className="mt-2 text-xs text-muted-foreground">
-            Step {currentIndex + 1} of {STEPS.length}
+            Step {currentIndex + 1} of {steps.length}
           </p>
         </div>
 
@@ -421,7 +433,7 @@ export function OnboardingFlow() {
                   className="mb-8 space-y-1"
                 >
                   <p className="text-xs font-semibold uppercase tracking-widest text-primary">
-                    Step {currentIndex + 1} / {STEPS.length}
+                    Step {currentIndex + 1} / {steps.length}
                   </p>
                   <h1 className="text-2xl font-bold tracking-tight">
                     {currentStep === "verify" && "Welcome aboard"}
@@ -479,7 +491,9 @@ export function OnboardingFlow() {
                             <Check className="mt-0.5 size-4 shrink-0 text-success" />
                           </motion.span>
                           <p className="text-sm text-success">
-                            Your first project is ready. Ready for billing.
+                            {billingEnabled
+                              ? "Your first project is ready. Ready for billing."
+                              : "Your first project is ready."}
                           </p>
                         </motion.div>
                         <div className="flex gap-3">
@@ -490,8 +504,11 @@ export function OnboardingFlow() {
                           >
                             Back
                           </Button>
-                          <Button className="min-h-11 flex-1" onClick={() => goTo("plan")}>
-                            Continue
+                          <Button
+                            className="min-h-11 flex-1"
+                            onClick={() => (billingEnabled ? goTo("plan") : router.replace("/projects"))}
+                          >
+                            {billingEnabled ? "Continue" : "Go to dashboard"}
                           </Button>
                         </div>
                       </div>

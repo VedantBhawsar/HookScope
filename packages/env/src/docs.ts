@@ -112,6 +112,12 @@ export const apiEnvDocs: EnvVarDoc[] = [
   { key: "SMTP_PASS", section: "Email (SMTP)", description: "SMTP password", secret: true },
   { key: "SMTP_FROM", section: "Email (SMTP)", description: "From address for outgoing email", example: "noreply@hookscope.dev" },
   {
+    key: "BILLING_ENABLED",
+    section: "Billing",
+    description: "Set false to skip payments entirely (no checkout gate, billing endpoints disabled)",
+    example: "true",
+  },
+  {
     key: "DODO_PAYMENTS_API_KEY",
     section: "Dodo Payments",
     description: "Dodo Payments API key",

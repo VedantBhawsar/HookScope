@@ -6,6 +6,7 @@ import { generateRefreshToken } from "../lib/tokens"
 import type { AuthService } from "../services/auth.service"
 import type { AuthenticatedRequest } from "../middleware/require-auth"
 import type { CompleteOnboardingDto, ConfirmEmailOtpDto, ForgotPasswordDto, LoginDto, RegisterDto, ResetPasswordDto, UpdateProfileDto } from "../types/auth"
+import { billingEnabled } from "../config"
 
 const FRONTEND_URL = (process.env["FRONTEND_URL"] ?? "http://localhost:3000").replace(/\/$/, "")
 const OAUTH_STATE_COOKIE = "oauth_state"
@@ -136,7 +137,7 @@ export class AuthController {
       const { userId } = (req as AuthenticatedRequest).user
       const result = await this.service.getSessionUser(userId)
       if (!result) return unauthorized(res)
-      json(res, { user: result.user, subscription: result.subscription })
+      json(res, { user: result.user, subscription: result.subscription, billingEnabled })
     } catch (err) {
       console.error("[AuthController.me]", err)
       error(res, "Failed to fetch session")
@@ -266,7 +267,8 @@ export class AuthController {
       // Route based on onboarding + payment status
       let dest = "/onboarding?step=verify"
       if (result.user.onboarding?.onboardingCompleted) {
-        dest = result.subscription?.status === "active" ? "/projects" : "/pricing?returnTo=/projects"
+        const requiresPayment = billingEnabled && result.subscription?.status !== "active"
+        dest = requiresPayment ? "/pricing?returnTo=/projects" : "/projects"
       }
       res.redirect(`${FRONTEND_URL}${dest}`)
     } catch (err) {
@@ -302,7 +304,8 @@ export class AuthController {
       // Route based on onboarding + payment status
       let dest = "/onboarding?step=verify"
       if (result.user.onboarding?.onboardingCompleted) {
-        dest = result.subscription?.status === "active" ? "/projects" : "/pricing?returnTo=/projects"
+        const requiresPayment = billingEnabled && result.subscription?.status !== "active"
+        dest = requiresPayment ? "/pricing?returnTo=/projects" : "/projects"
       }
       res.redirect(`${FRONTEND_URL}${dest}`)
     } catch (err) {

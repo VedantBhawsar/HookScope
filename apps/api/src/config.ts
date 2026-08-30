@@ -1,0 +1,1 @@
+export const billingEnabled = process.env["BILLING_ENABLED"] !== "false"

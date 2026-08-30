@@ -10,6 +10,7 @@ import { alertRouter } from "./routes/alert.router"
 import { usageRouter } from "./routes/usage.router"
 import { maintenanceRouter } from "./routes/maintenance.router"
 import { billingRouter, billingController } from "./billing/billing.router"
+import { billingEnabled } from "./config"
 import { initAlertEvaluator } from "./lib/alert-evaluator"
 import { startEventExpirationCron } from "./services/event-cron.service"
 import { json } from "./lib/response"
@@ -31,7 +32,9 @@ const startServer = () => {
   )
 
   // Dodo webhook must receive the raw body for signature verification — mount BEFORE express.json()
-  app.post("/api/billing/webhook", express.raw({ type: "application/json" }), billingController.handleWebhook)
+  if (billingEnabled) {
+    app.post("/api/billing/webhook", express.raw({ type: "application/json" }), billingController.handleWebhook)
+  }
 
   app.use((req, _res, next) => {
     console.log(`[req] ${req.method} ${req.path}`)

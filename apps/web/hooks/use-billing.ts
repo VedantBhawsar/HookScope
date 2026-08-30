@@ -15,7 +15,9 @@ async function fetchSubscription(): Promise<SubscriptionRecord | null> {
   const res = await http.get<{ success: boolean; message: string; data: SubscriptionRecord | null }>(
     "/api/billing/subscription"
   )
-  return unwrapResponse(res.data)
+  const data = unwrapResponse(res.data)
+  if (!data || typeof data.tier !== "string") return null
+  return data
 }
 
 async function createCheckoutSession(payload: {
@@ -27,7 +29,11 @@ async function createCheckoutSession(payload: {
     "/api/billing/checkout",
     payload
   )
-  return unwrapResponse(res.data)
+  const data = unwrapResponse(res.data)
+  if (typeof data.url !== "string") {
+    throw new Error("Billing is disabled")
+  }
+  return data
 }
 
 async function changePlan(payload: {
@@ -47,7 +53,11 @@ async function createPortalSession(): Promise<{ url: string }> {
     "/api/billing/portal",
     {}
   )
-  return unwrapResponse(res.data)
+  const data = unwrapResponse(res.data)
+  if (typeof data.url !== "string") {
+    throw new Error("Billing is disabled")
+  }
+  return data
 }
 
 export function useSubscriptionQuery() {

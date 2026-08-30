@@ -131,7 +131,7 @@ export function AppShell({ children, pageTitle, pageLabel }: AppShellProps) {
       return
     }
     const sub = user.subscription
-    const isActive = sub?.status === "ACTIVE" || sub?.status === "TRIALING"
+    const isActive = !user.billingEnabled || sub?.status === "ACTIVE" || sub?.status === "TRIALING"
     if (!isActive) {
       router.replace("/pricing")
     }
@@ -276,7 +276,7 @@ export function AppShell({ children, pageTitle, pageLabel }: AppShellProps) {
 
   const user = meQuery.data?.user
   const sub = user?.subscription
-  const isSubActive = sub?.status === "ACTIVE" || sub?.status === "TRIALING"
+  const isSubActive = !user?.billingEnabled || sub?.status === "ACTIVE" || sub?.status === "TRIALING"
 
   if (!user || !user.onboarding?.onboardingCompleted || !isSubActive) {
     return (

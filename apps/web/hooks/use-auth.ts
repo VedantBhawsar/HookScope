@@ -33,6 +33,7 @@ export interface AuthUser {
   avatarUrl: string | null
   onboarding: AuthOnboardingState
   subscription: SubscriptionInfo | null
+  billingEnabled: boolean
 }
 
 export interface AuthResult {
@@ -84,7 +85,11 @@ type RawAuthUser = Omit<AuthUser, "onboarding" | "subscription"> & {
   onboarding?: Partial<AuthOnboardingState> | null
 }
 
-function normalizeAuthUser(user: RawAuthUser, subscription?: RawSubscription): AuthUser {
+function normalizeAuthUser(
+  user: RawAuthUser,
+  subscription?: RawSubscription,
+  billingEnabled: boolean = true
+): AuthUser {
   const rawOnboarding = user.onboarding ?? {}
   const companyName = rawOnboarding.companyName ?? null
   const hasCreatedProject = Boolean(rawOnboarding.hasCreatedProject)
@@ -115,6 +120,7 @@ function normalizeAuthUser(user: RawAuthUser, subscription?: RawSubscription): A
     subscription: subscription
       ? { status: subscription.status, tier: subscription.plan.tier, currentPeriodEnd: subscription.currentPeriodEnd }
       : null,
+    billingEnabled,
   }
 }
 
@@ -122,9 +128,9 @@ export function useMeQuery() {
   return useQuery({
     queryKey: authQueryKeys.me,
     queryFn: async () => {
-      const response = await http.get<ApiResponse<{ user: RawAuthUser; subscription: RawSubscription }>>("/api/auth/me")
+      const response = await http.get<ApiResponse<{ user: RawAuthUser; subscription: RawSubscription; billingEnabled: boolean }>>("/api/auth/me")
       const data = unwrapResponse(response.data)
-      return { user: normalizeAuthUser(data.user, data.subscription) }
+      return { user: normalizeAuthUser(data.user, data.subscription, data.billingEnabled) }
     },
   })
 }

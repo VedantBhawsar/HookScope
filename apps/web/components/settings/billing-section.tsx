@@ -7,6 +7,7 @@ import { Button } from "@hookscope/ui/components/button"
 import { Badge } from "@hookscope/ui/components/badge"
 import { Separator } from "@hookscope/ui/components/separator"
 import { useSubscriptionQuery, usePortalMutation } from "@/hooks/use-billing"
+import { useMeQuery } from "@/hooks/use-auth"
 import { UpgradeDialog } from "@/components/pricing/upgrade-dialog"
 
 const STATUS_CONFIG: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
@@ -26,9 +27,11 @@ function formatDate(iso: string) {
 export function BillingSection() {
   const [upgradeOpen, setUpgradeOpen] = React.useState(false)
   const [changePlanOpen, setChangePlanOpen] = React.useState(false)
+  const meQuery = useMeQuery()
   const subQuery = useSubscriptionQuery()
   const portalMutation = usePortalMutation()
 
+  const billingEnabled = meQuery.data?.user?.billingEnabled ?? true
   const sub = subQuery.data
   const statusConfig = sub ? (STATUS_CONFIG[sub.status] ?? STATUS_CONFIG["ACTIVE"]) : null
 
@@ -36,6 +39,20 @@ export function BillingSection() {
     portalMutation.mutate(undefined, {
       onError: () => toast.error("No billing account found. Subscribe to a plan first."),
     })
+  }
+
+  if (!billingEnabled) {
+    return (
+      <section className="rounded-xl border bg-card p-6 space-y-1">
+        <h2 className="text-base font-semibold flex items-center gap-2">
+          <CreditCard className="size-4 text-muted-foreground" />
+          Billing
+        </h2>
+        <p className="text-sm text-muted-foreground">
+          Billing is currently disabled for this workspace — every feature is available at no charge.
+        </p>
+      </section>
+    )
   }
 
   return (
