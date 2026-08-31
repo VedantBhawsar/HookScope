@@ -30,8 +30,8 @@ function ThemeToggle() {
       className="gap-2"
       onClick={() => setTheme(isDark ? "light" : "dark")}
     >
-      {isDark ? <Sun className="size-4" /> : <Moon className="size-4" />}
-      {isDark ? "Light" : "Dark"}
+      {isDark ? <Moon className="size-4" /> : <Sun className="size-4" />}
+      {isDark ? "Dark" : "Light"}
     </Button>
   )
 }

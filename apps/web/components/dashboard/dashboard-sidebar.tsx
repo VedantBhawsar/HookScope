@@ -53,13 +53,13 @@ const DASHBOARD_NAV_ITEMS: readonly DashboardNavItem[] = [
   { label: "Events", segment: "/events", href: "/events", icon: Webhook },
   { label: "Deliveries", segment: "/deliveries", href: "/deliveries", icon: Activity },
   { label: "Alerts", segment: "/alerts", href: "/alerts", icon: Bell },
-  { label: "Settings", segment: "/settings", href: "/settings", icon: Settings },
+  { label: "Endpoint settings", segment: "/settings", href: "/settings", icon: Settings },
 ]
 
 const WORKSPACE_NAV_ITEMS: readonly NavItem[] = [
   { label: "Projects", href: "/projects", icon: FolderKanban },
   { label: "Billing", href: "/billing", icon: CreditCard },
-  { label: "Settings", href: "/settings", icon: Settings },
+  { label: "Account settings", href: "/settings", icon: Settings },
 ]
 
 interface SidebarContextProps {
@@ -94,8 +94,8 @@ function SidebarBranding() {
   return (
     <div className="mb-6 rounded-xl border border-border bg-card px-4 py-3">
       <div className="relative h-9 w-36 overflow-hidden">
-        <Image src="/logo-light.png" alt="HookScope" fill className="object-cover object-center dark:hidden" />
-        <Image src="/logo-dark.png" alt="HookScope" fill className="object-cover object-center hidden dark:block" />
+        <Image src="/logo-light.png" alt="HookScope" fill priority className="object-cover object-center dark:hidden" />
+        <Image src="/logo-dark.png" alt="HookScope" fill priority className="object-cover object-center hidden dark:block" />
       </div>
     </div>
   )
@@ -420,7 +420,7 @@ function SidebarUserMenu({ user, onOpenAvatarUpload, onLogout, isLogoutPending }
           <DropdownMenuItem asChild>
             <Link href="/settings">
               <Settings data-icon="inline-start" />
-              Settings
+              Account settings
             </Link>
           </DropdownMenuItem>
         </DropdownMenuGroup>

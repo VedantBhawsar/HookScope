@@ -50,44 +50,30 @@ export default function EndpointSettingsPage() {
         description="Configure and verify endpoint-level delivery behavior for this webhook destination."
       />
 
-      <div className="grid gap-4 lg:grid-cols-2">
-        <article className="rounded-xl border border-border bg-card p-5 shadow-sm">
-          <SectionLabel>General</SectionLabel>
-          <dl className="mt-4 space-y-3 text-sm">
-            <div>
-              <dt className="text-muted-foreground">Source</dt>
-              <dd className="font-medium">{endpoint.source}</dd>
-            </div>
-            <div>
-              <dt className="text-muted-foreground">Status</dt>
-              <dd className="font-medium">{endpoint.status}</dd>
-            </div>
-            <div>
-              <dt className="text-muted-foreground">Verification Mode</dt>
-              <dd className="font-medium">{endpoint.verificationMode}</dd>
-            </div>
-            <div>
-              <dt className="text-muted-foreground">Created At</dt>
-              <dd className="font-medium">{new Date(endpoint.createdAt).toLocaleString()}</dd>
-            </div>
-            <div>
-              <dt className="text-muted-foreground">Received Events</dt>
-              <dd className="font-medium">{endpoint._count.events}</dd>
-            </div>
-          </dl>
-        </article>
-
-        <article className="rounded-xl border border-border bg-card p-5 shadow-sm">
-          <SectionLabel>Destination</SectionLabel>
-          <div className="mt-4 space-y-2">
-            <p className="text-xs text-muted-foreground">Destination URL</p>
-            <p className="break-all rounded-lg border border-border bg-muted/20 px-3 py-2 text-sm">
-              {endpoint.destinationUrl}
-            </p>
+      <article className="rounded-xl border border-border bg-card p-5 shadow-sm">
+        <SectionLabel>General</SectionLabel>
+        <dl className="mt-4 grid gap-3 text-sm sm:grid-cols-4">
+          <div>
+            <dt className="text-muted-foreground">Source</dt>
+            <dd className="font-medium">{endpoint.source}</dd>
           </div>
-          <p className="mt-4 text-xs text-muted-foreground">Use the form below to edit and save endpoint configuration.</p>
-        </article>
-      </div>
+          <div>
+            <dt className="text-muted-foreground">Status</dt>
+            <dd className="font-medium">{endpoint.status}</dd>
+          </div>
+          <div>
+            <dt className="text-muted-foreground">Created At</dt>
+            <dd className="font-medium">{new Date(endpoint.createdAt).toLocaleString()}</dd>
+          </div>
+          <div>
+            <dt className="text-muted-foreground">Received Events</dt>
+            <dd className="font-medium">{endpoint._count.events}</dd>
+          </div>
+        </dl>
+        <p className="mt-4 text-xs text-muted-foreground">
+          Pause or resume delivery from the overview page. Verification mode and destination are editable below.
+        </p>
+      </article>
 
       {projectId ? <EndpointSettingsForm projectId={projectId} endpoint={endpoint} /> : null}
     </section>
