@@ -1,18 +1,10 @@
 import Link from "next/link"
 
-const T = {
-  bg: "#050a05",
-  border: "#1a2a1a",
-  text: "#c8d5c8",
-  muted: "#5a6a5a",
-  accent: "#39d353",
-}
-
 const navLinks = [
-  { label: "docs", href: "#" },
-  { label: "status", href: "#" },
-  { label: "pricing", href: "/pricing" },
-  { label: "github", href: "#" },
+  { label: "Features", href: "#features" },
+  { label: "Pricing", href: "/pricing" },
+  { label: "Docs", href: "#" },
+  { label: "Status", href: "#" },
 ]
 
 export function Navbar() {
@@ -24,10 +16,9 @@ export function Navbar() {
         left: 0,
         right: 0,
         zIndex: 50,
-        borderBottom: `1px solid ${T.border}`,
-        backgroundColor: `${T.bg}ee`,
-        backdropFilter: "blur(8px)",
-        fontFamily: "var(--font-display, monospace)",
+        borderBottom: "1px solid var(--ink-line)",
+        backgroundColor: "rgba(20,21,31,0.88)",
+        backdropFilter: "blur(10px)",
       }}
     >
       <div
@@ -35,69 +26,83 @@ export function Navbar() {
           maxWidth: 1280,
           margin: "0 auto",
           padding: "0 24px",
-          height: 56,
+          height: 64,
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
         }}
       >
-        {/* Logo */}
-        <Link href="/" className="term-link" style={{ display: "flex", alignItems: "center", gap: 10, color: T.text }}>
+        <Link
+          href="/"
+          className="manifest-link focus-ring"
+          style={{ display: "flex", alignItems: "center", gap: 10, color: "var(--text)" }}
+        >
           <div
-            className="phosphor-glow"
             style={{
-              width: 28,
-              height: 28,
-              border: `1px solid ${T.accent}`,
+              width: 30,
+              height: 30,
+              borderRadius: 4,
+              border: "1.5px solid var(--brass)",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              fontSize: 11,
-              color: T.accent,
-              fontWeight: 700,
-              letterSpacing: "0.05em",
+              fontSize: 12,
+              color: "var(--brass)",
+              fontWeight: 800,
+              fontFamily: "var(--font-stencil, sans-serif)",
+              transform: "rotate(-3deg)",
             }}
           >
             HS
           </div>
           <span
             style={{
-              fontSize: 13,
-              color: T.text,
+              fontSize: 18,
+              color: "var(--text)",
               fontWeight: 700,
-              letterSpacing: "0.08em",
-              textTransform: "uppercase",
+              fontFamily: "var(--font-stencil, sans-serif)",
+              letterSpacing: "0.01em",
             }}
           >
-            HOOKSCOPE
+            HookScope
           </span>
         </Link>
 
-        {/* Nav links */}
-        <nav style={{ display: "flex", alignItems: "center", gap: 32 }}>
-          {navLinks.map((link) => (
-            <Link
-              key={link.label}
-              href={link.href}
-              className="term-link"
-              style={{ fontSize: 12, letterSpacing: "0.06em" }}
-            >
-              {link.label}
-            </Link>
-          ))}
+        <nav style={{ display: "flex", alignItems: "center", gap: 28 }}>
+          <span className="nav-links" style={{ display: "flex", alignItems: "center", gap: 28 }}>
+            {navLinks.map((link) => (
+              <Link
+                key={link.label}
+                href={link.href}
+                className="manifest-link focus-ring"
+                style={{ fontSize: 13.5 }}
+              >
+                {link.label}
+              </Link>
+            ))}
+          </span>
+
+          <Link
+            href="/auth/login"
+            className="manifest-link focus-ring nav-links"
+            style={{ fontSize: 13.5 }}
+          >
+            Sign in
+          </Link>
 
           <Link
             href="/auth/register"
-            className="term-btn-primary phosphor-glow"
+            className="btn-stamp-primary focus-ring"
             style={{
-              fontSize: 12,
-              color: T.accent,
-              letterSpacing: "0.06em",
-              border: `1px solid ${T.accent}`,
-              padding: "6px 14px",
+              fontSize: 13,
+              fontWeight: 700,
+              color: "var(--ink)",
+              backgroundColor: "var(--brass)",
+              borderRadius: 4,
+              padding: "8px 16px",
             }}
           >
-            get_started →
+            Start monitoring
           </Link>
         </nav>
       </div>

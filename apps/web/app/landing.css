@@ -1,116 +1,220 @@
-/* ── Cathode Ray Landing — terminal aesthetic effects ── */
+/* ── The Manifest — webhook deliveries as inspected, stamped freight ── */
 
-@keyframes blink-cursor {
-  0%, 49% { opacity: 1; }
-  50%, 100% { opacity: 0; }
+:root {
+  --ink: #14151f;
+  --ink-2: #1b1c2a;
+  --ink-3: #0f1018;
+  --ink-line: #2a2c3d;
+  --paper: #f3efe4;
+  --paper-dim: #eae4d3;
+  --paper-line: #d9d2bc;
+  --text: #ece9df;
+  --text-muted: #9294ab;
+  --paper-text: #2a2818;
+  --paper-muted: #6b6652;
+  --brass: #e3a857;
+  --brass-deep: #c98a3a;
+  --teal: #4fa89b;
+  --rust: #c4573a;
 }
 
-@keyframes flicker {
-  0%, 100% { opacity: 1; }
-  92% { opacity: 1; }
-  93% { opacity: 0.85; }
-  94% { opacity: 1; }
-  96% { opacity: 0.9; }
-  97% { opacity: 1; }
+@keyframes stamp-impact {
+  0% {
+    transform: scale(2.6) rotate(var(--stamp-rotate, -6deg));
+    opacity: 0;
+  }
+  55% {
+    transform: scale(0.9) rotate(var(--stamp-rotate, -6deg));
+    opacity: 1;
+  }
+  72% {
+    transform: scale(1.08) rotate(var(--stamp-rotate, -6deg));
+  }
+  100% {
+    transform: scale(1) rotate(var(--stamp-rotate, -6deg));
+    opacity: 1;
+  }
 }
 
-@keyframes stream-in {
-  from { transform: translateY(6px); opacity: 0; }
-  to   { transform: translateY(0);   opacity: 1; }
+@keyframes impact-ring {
+  0% {
+    transform: scale(0.5);
+    opacity: 0;
+  }
+  12% {
+    opacity: 0.45;
+  }
+  65% {
+    transform: scale(1.9);
+    opacity: 0;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes rise-in {
+  from {
+    transform: translateY(10px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
 }
 
 @keyframes pulse-dot {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(57, 211, 83, 0.6); }
-  50%       { box-shadow: 0 0 0 5px rgba(57, 211, 83, 0); }
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(227, 168, 87, 0.55);
+  }
+  50% {
+    box-shadow: 0 0 0 5px rgba(227, 168, 87, 0);
+  }
 }
 
-/* Scanline overlay — pure CSS, zero JS */
-.crt-scanlines::before {
-  content: '';
-  position: fixed;
-  inset: 0;
-  background: repeating-linear-gradient(
-    to bottom,
-    transparent 0px,
-    transparent 1px,
-    rgba(0, 0, 0, 0.06) 1px,
-    rgba(0, 0, 0, 0.06) 2px
-  );
-  pointer-events: none;
-  z-index: 9999;
+.stamp-impact {
+  animation: stamp-impact 0.65s cubic-bezier(0.2, 0.9, 0.3, 1.1) 0.5s both;
 }
 
-/* CRT screen flicker */
-.crt-flicker {
-  animation: flicker 8s infinite;
+.impact-ring {
+  animation: impact-ring 0.8s ease-out 0.55s both;
 }
 
-/* Blinking block cursor */
-.cursor-blink::after {
-  content: '█';
-  color: #39d353;
-  animation: blink-cursor 1.1s step-end infinite;
-  margin-left: 2px;
-  font-size: 0.9em;
+.rise-in {
+  animation: rise-in 0.5s ease-out both;
 }
 
-/* Phosphor glow on accent text */
-.phosphor-glow {
-  text-shadow:
-    0 0 6px rgba(57, 211, 83, 0.9),
-    0 0 20px rgba(57, 211, 83, 0.4);
-}
-
-/* Streaming event rows */
-.event-stream-row {
-  animation: stream-in 0.25s ease-out forwards;
-}
-
-/* Live pulse dot */
 .pulse-dot {
-  animation: pulse-dot 1.8s ease-out infinite;
+  animation: pulse-dot 2.2s ease-out infinite;
 }
 
-/* Horizontal rule with terminal style */
-.term-rule {
-  border: none;
-  border-top: 1px solid #1a2a1a;
+@media (prefers-reduced-motion: reduce) {
+  .stamp-impact,
+  .impact-ring,
+  .rise-in,
+  .pulse-dot {
+    animation: none;
+  }
 }
 
-/* Hover-only styles (avoids onMouseOver in RSC) */
-.term-link {
-  color: #5a6a5a;
+/* Vertical perforation divider — ticket-stub style */
+.perforated {
+  background-image: repeating-linear-gradient(
+    to bottom,
+    var(--paper-line) 0 6px,
+    transparent 6px 13px
+  );
+  background-size: 1px 100%;
+  background-position: left top;
+  background-repeat: no-repeat;
+}
+
+/* Hover-only interactivity (kept out of inline styles for RSC) */
+.manifest-link {
+  color: var(--text-muted);
   text-decoration: none;
-  transition: color 0.15s;
+  transition: color 0.15s ease;
 }
-.term-link:hover {
-  color: #c8d5c8;
+.manifest-link:hover {
+  color: var(--text);
 }
 
-.term-btn-primary {
+.manifest-link-paper {
+  color: var(--paper-muted);
+  text-decoration: none;
+  transition: color 0.15s ease;
+}
+.manifest-link-paper:hover {
+  color: var(--paper-text);
+}
+
+.btn-stamp-primary {
   display: inline-flex;
   align-items: center;
   text-decoration: none;
-  transition: opacity 0.15s;
+  transition: transform 0.12s ease, box-shadow 0.12s ease, background-color 0.12s ease;
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.25);
 }
-.term-btn-primary:hover {
-  opacity: 0.88;
+.btn-stamp-primary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 10px rgba(227, 168, 87, 0.25);
+}
+.btn-stamp-primary:active {
+  transform: translateY(1px) scale(0.98);
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.2);
 }
 
-.term-btn-ghost {
+.btn-ghost-ink {
   display: inline-flex;
   align-items: center;
   text-decoration: none;
-  transition: color 0.15s, border-color 0.15s;
+  transition: color 0.15s ease, border-color 0.15s ease, background-color 0.15s ease;
 }
-.term-btn-ghost:hover {
-  color: #c8d5c8 !important;
-  border-color: #2a4a2a !important;
+.btn-ghost-ink:hover {
+  color: var(--text) !important;
+  border-color: var(--brass) !important;
+  background-color: rgba(227, 168, 87, 0.06);
 }
 
-.term-feature-cell {
-  transition: background-color 0.15s;
+.ledger-row {
+  transition: background-color 0.18s ease;
 }
-.term-feature-cell:hover {
-  background-color: rgba(57, 211, 83, 0.03);
+.ledger-row:hover {
+  background-color: rgba(227, 168, 87, 0.04);
+}
+
+.event-row {
+  transition: background-color 0.15s ease;
+}
+
+.focus-ring:focus-visible {
+  outline: 2px solid var(--brass);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+/* FAQ disclosures */
+.faq-item summary {
+  list-style: none;
+}
+.faq-item summary::-webkit-details-marker {
+  display: none;
+}
+.faq-item .faq-icon {
+  transition: transform 0.2s ease;
+}
+.faq-item[open] .faq-icon {
+  transform: rotate(45deg);
+}
+
+/* Responsive collapse for fixed-column layouts built with inline styles */
+@media (max-width: 860px) {
+  .hero-grid,
+  .two-col-grid {
+    grid-template-columns: 1fr !important;
+  }
+  .route-grid,
+  .stats-grid,
+  .provider-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+  .cta-box {
+    padding: 40px 28px !important;
+  }
+}
+
+@media (max-width: 640px) {
+  .nav-links {
+    display: none !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .route-grid,
+  .stats-grid,
+  .provider-grid {
+    grid-template-columns: 1fr !important;
+  }
 }

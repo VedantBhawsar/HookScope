@@ -1,27 +1,29 @@
 import Link from "next/link"
 
-const T = {
-  border: "#1a2a1a",
-  text: "#c8d5c8",
-  muted: "#5a6a5a",
-  accent: "#39d353",
-}
-
-const columns: Record<string, string[]> = {
-  PRODUCT: ["Features", "Changelog", "Pricing", "Status Page"],
-  DEVELOPERS: ["Documentation", "API Reference", "GitHub", "SDK"],
-  COMPANY: ["About", "Blog", "Privacy Policy", "Terms"],
+const columns: Record<string, { label: string; href: string }[]> = {
+  Product: [
+    { label: "Features", href: "#features" },
+    { label: "Pricing", href: "/pricing" },
+    { label: "Status", href: "#" },
+    { label: "Changelog", href: "#" },
+  ],
+  Developers: [
+    { label: "Docs", href: "#" },
+    { label: "API reference", href: "#" },
+    { label: "GitHub", href: "#" },
+    { label: "SDK", href: "#" },
+  ],
+  Company: [
+    { label: "About", href: "#" },
+    { label: "Blog", href: "#" },
+    { label: "Privacy policy", href: "#" },
+    { label: "Terms", href: "#" },
+  ],
 }
 
 export function Footer() {
   return (
-    <footer
-      style={{
-        borderTop: `1px solid ${T.border}`,
-        fontFamily: "var(--font-display, monospace)",
-        padding: "64px 24px 40px",
-      }}
-    >
+    <footer style={{ borderTop: "1px solid var(--ink-line)", padding: "72px 24px 40px" }}>
       <div style={{ maxWidth: 1280, margin: "0 auto" }}>
         <div
           style={{
@@ -31,50 +33,57 @@ export function Footer() {
             marginBottom: 56,
           }}
         >
-          {/* Brand */}
           <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
               <div
-                className="phosphor-glow"
                 style={{
-                  width: 24,
-                  height: 24,
-                  border: `1px solid ${T.accent}`,
+                  width: 26,
+                  height: 26,
+                  borderRadius: 4,
+                  border: "1.5px solid var(--brass)",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
-                  fontSize: 9,
-                  color: T.accent,
-                  fontWeight: 700,
-                  letterSpacing: "0.05em",
+                  fontSize: 10,
+                  color: "var(--brass)",
+                  fontWeight: 800,
+                  fontFamily: "var(--font-stencil, sans-serif)",
+                  transform: "rotate(-3deg)",
                 }}
               >
                 HS
               </div>
-              <span style={{ fontSize: 13, color: T.text, fontWeight: 700, letterSpacing: "0.08em" }}>
-                HOOKSCOPE
+              <span
+                style={{
+                  fontSize: 15,
+                  color: "var(--text)",
+                  fontWeight: 700,
+                  fontFamily: "var(--font-stencil, sans-serif)",
+                }}
+              >
+                HookScope
               </span>
             </div>
             <p
               style={{
                 margin: 0,
-                fontSize: 12,
-                lineHeight: 1.8,
-                color: T.muted,
-                letterSpacing: "0.02em",
-                maxWidth: 220,
+                fontSize: 13,
+                lineHeight: 1.75,
+                color: "var(--text-muted)",
+                maxWidth: 230,
               }}
             >
-              Webhook observability for engineering teams who ship.
+              Webhook observability for teams who need a receipt for everything
+              that happens.
             </p>
             <span
               style={{
-                fontSize: 11,
-                color: T.muted,
-                letterSpacing: "0.06em",
+                fontSize: 12,
+                color: "var(--text-muted)",
                 display: "flex",
                 alignItems: "center",
-                gap: 6,
+                gap: 7,
+                fontFamily: "var(--font-mono, monospace)",
               }}
             >
               <span
@@ -83,59 +92,53 @@ export function Footer() {
                   width: 5,
                   height: 5,
                   borderRadius: "50%",
-                  backgroundColor: T.accent,
+                  backgroundColor: "var(--teal)",
                   display: "inline-block",
                   flexShrink: 0,
                 }}
               />
-              ALL SYSTEMS OPERATIONAL
+              All systems operational
             </span>
           </div>
 
-          {/* Link columns */}
           {Object.entries(columns).map(([group, links]) => (
             <div key={group} style={{ display: "flex", flexDirection: "column", gap: 12 }}>
               <p
                 style={{
                   margin: "0 0 4px",
-                  fontSize: 10,
+                  fontSize: 11,
                   fontWeight: 700,
-                  color: T.accent,
-                  letterSpacing: "0.14em",
-                  textTransform: "uppercase",
+                  color: "var(--brass)",
+                  letterSpacing: "0.1em",
+                  fontFamily: "var(--font-mono, monospace)",
                 }}
               >
                 {group}
               </p>
               {links.map((link) => (
-                <Link
-                  key={link}
-                  href={link === "Pricing" ? "/pricing" : "#"}
-                  className="term-link"
-                  style={{ fontSize: 12, letterSpacing: "0.04em" }}
-                >
-                  {link}
+                <Link key={link.label} href={link.href} className="manifest-link focus-ring" style={{ fontSize: 13.5 }}>
+                  {link.label}
                 </Link>
               ))}
             </div>
           ))}
         </div>
 
-        {/* Bottom bar */}
         <div
           style={{
-            borderTop: `1px solid ${T.border}`,
+            borderTop: "1px solid var(--ink-line)",
             paddingTop: 24,
             display: "flex",
             alignItems: "center",
             justifyContent: "space-between",
-            fontSize: 11,
-            color: T.muted,
-            letterSpacing: "0.06em",
+            fontSize: 12.5,
+            color: "var(--text-muted)",
+            flexWrap: "wrap",
+            gap: 8,
           }}
         >
-          <span>© {new Date().getFullYear()} HOOKSCOPE. ALL RIGHTS RESERVED.</span>
-          <span style={{ opacity: 0.5 }}>BUILT FOR ENGINEERS WHO HATE BLIND SPOTS.</span>
+          <span>© {new Date().getFullYear()} HookScope. All rights reserved.</span>
+          <span style={{ opacity: 0.7 }}>Built for engineers who hate finding out the hard way.</span>
         </div>
       </div>
     </footer>

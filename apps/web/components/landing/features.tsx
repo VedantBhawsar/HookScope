@@ -1,161 +1,143 @@
-const T = {
-  border: "#1a2a1a",
-  text: "#c8d5c8",
-  muted: "#5a6a5a",
-  accent: "#39d353",
-}
+type Tone = "brass" | "teal" | "rust"
 
 type Feature = {
-  num: string
+  tag: string
+  tone: Tone
   title: string
   description: string
-  tag: string
+}
+
+const toneColor: Record<Tone, string> = {
+  brass: "var(--brass)",
+  teal: "var(--teal)",
+  rust: "var(--rust)",
 }
 
 const features: Feature[] = [
   {
-    num: "01",
-    title: "REAL-TIME STREAM",
+    tag: "RECEIVED",
+    tone: "brass",
+    title: "Real-time capture",
     description:
-      "Every event captured the moment it hits your endpoint. No polling, no delays — pure event push over WebSocket with sub-5ms delivery.",
-    tag: "INGEST",
+      "Every event is captured the instant it lands on your endpoint — no polling, no batching, no delay.",
   },
   {
-    num: "02",
-    title: "PAYLOAD INSPECTOR",
+    tag: "INSPECTED",
+    tone: "teal",
+    title: "Full payload inspection",
     description:
-      "Full headers, body, query params, and signatures. Search and filter across every field. Syntax-highlighted, diff-ready.",
-    tag: "INSPECT",
+      "See the complete headers, body, and signature for any event. Search across every field, highlighted and diff-ready.",
   },
   {
-    num: "03",
-    title: "ONE-CLICK REPLAY",
+    tag: "REPLAYED",
+    tone: "brass",
+    title: "One-click replay",
     description:
-      "Resend any event, any time — failed, successful, or historical. Exact same payload, headers, and timing. No re-triggering your provider.",
-    tag: "REPLAY",
+      "Resend any event — same payload, same headers — without asking the provider to try again.",
   },
   {
-    num: "04",
-    title: "SMART ALERTING",
+    tag: "ALERTED",
+    tone: "rust",
+    title: "Smart alerts",
     description:
-      "Failure patterns, latency spikes, missing heartbeats. Route alerts to Slack, PagerDuty, email, or any webhook URL.",
-    tag: "ALERT",
+      "Get told the moment something breaks: failure spikes, latency jumps, missing heartbeats. Routed to Slack, email, or PagerDuty.",
   },
   {
-    num: "05",
-    title: "SIGNATURE VERIFY",
+    tag: "VERIFIED",
+    tone: "teal",
+    title: "Signature verification",
     description:
-      "HMAC validation for Stripe, GitHub, Shopify, Twilio, and 37 more. Catch spoofed or tampered requests before they reach your app.",
-    tag: "SECURITY",
+      "HMAC checks for Stripe, GitHub, Shopify, Twilio, and 37 more. Catch a forged request before it reaches your app.",
   },
   {
-    num: "06",
-    title: "30-DAY HISTORY",
+    tag: "ARCHIVED",
+    tone: "brass",
+    title: "30-day searchable history",
     description:
-      "Full searchable log. Filter by status code, source domain, path, payload content, or time range. Export to CSV or replay in bulk.",
-    tag: "HISTORY",
+      "Every event stays on file. Filter by status, source, or path — export or replay in bulk.",
   },
 ]
 
 export function Features() {
   return (
-    <section
-      id="features"
-      style={{ fontFamily: "var(--font-display, monospace)" }}
-    >
-      {/* Section header */}
-      <div
-        style={{
-          maxWidth: 1280,
-          margin: "0 auto",
-          padding: "80px 24px 0",
-        }}
-      >
+    <section id="features">
+      <div style={{ maxWidth: 1280, margin: "0 auto", padding: "96px 24px 0" }}>
         <div
           style={{
             display: "flex",
             alignItems: "baseline",
             gap: 16,
-            marginBottom: 48,
+            marginBottom: 56,
             paddingBottom: 24,
-            borderBottom: `1px solid ${T.border}`,
+            borderBottom: "1px solid var(--ink-line)",
           }}
         >
           <span
             style={{
               fontSize: 11,
-              color: T.accent,
+              color: "var(--brass)",
               letterSpacing: "0.14em",
               textTransform: "uppercase",
+              fontFamily: "var(--font-mono, monospace)",
             }}
           >
-            CAPABILITIES
+            The ledger
           </span>
           <h2
             style={{
               margin: 0,
-              fontSize: "clamp(22px, 3vw, 32px)",
-              fontWeight: 700,
-              color: T.text,
+              fontSize: "clamp(24px, 3.4vw, 38px)",
+              fontWeight: 800,
+              color: "var(--text)",
               letterSpacing: "-0.01em",
+              textTransform: "uppercase",
+              fontFamily: "var(--font-stencil, sans-serif)",
             }}
           >
-            BUILT FOR PRODUCTION DEBUGGING
+            What gets logged on every delivery
           </h2>
         </div>
       </div>
 
-      {/* Feature grid — 2 columns, border-separated cells */}
       <div
+        className="two-col-grid"
         style={{
           maxWidth: 1280,
           margin: "0 auto",
-          padding: "0 24px 80px",
+          padding: "0 24px 96px",
           display: "grid",
           gridTemplateColumns: "1fr 1fr",
-          borderTop: `1px solid ${T.border}`,
-          borderLeft: `1px solid ${T.border}`,
+          gap: "0 48px",
         }}
       >
         {features.map((f) => (
           <div
-            key={f.num}
+            key={f.tag}
+            className="ledger-row"
             style={{
-              padding: "40px 36px",
-              borderRight: `1px solid ${T.border}`,
-              borderBottom: `1px solid ${T.border}`,
+              padding: "32px 8px",
+              borderTop: "1px solid var(--ink-line)",
               display: "flex",
               flexDirection: "column",
-              gap: 16,
+              gap: 14,
             }}
           >
-            {/* Number + tag */}
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-              }}
-            >
+            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
               <span
-                className="phosphor-glow"
                 style={{
-                  fontSize: 36,
-                  fontWeight: 700,
-                  color: `${T.accent}30`,
-                  lineHeight: 1,
-                  letterSpacing: "-0.02em",
+                  width: 9,
+                  height: 9,
+                  backgroundColor: toneColor[f.tone],
+                  borderRadius: 2,
+                  flexShrink: 0,
                 }}
-              >
-                {f.num}
-              </span>
+              />
               <span
                 style={{
-                  fontSize: 10,
-                  color: T.accent,
+                  fontSize: 10.5,
+                  color: toneColor[f.tone],
                   letterSpacing: "0.14em",
-                  border: `1px solid ${T.border}`,
-                  padding: "3px 8px",
+                  fontFamily: "var(--font-mono, monospace)",
                 }}
               >
                 {f.tag}
@@ -165,10 +147,9 @@ export function Features() {
             <h3
               style={{
                 margin: 0,
-                fontSize: 14,
+                fontSize: 19,
                 fontWeight: 700,
-                color: T.text,
-                letterSpacing: "0.08em",
+                color: "var(--text)",
               }}
             >
               {f.title}
@@ -177,10 +158,10 @@ export function Features() {
             <p
               style={{
                 margin: 0,
-                fontSize: 13,
-                lineHeight: 1.8,
-                color: T.muted,
-                letterSpacing: "0.02em",
+                fontSize: 14.5,
+                lineHeight: 1.75,
+                color: "var(--text-muted)",
+                maxWidth: 460,
               }}
             >
               {f.description}

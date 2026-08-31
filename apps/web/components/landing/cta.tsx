@@ -1,143 +1,132 @@
 import Link from "next/link"
 
-const T = {
-  bg: "#080d08",
-  border: "#1a2a1a",
-  text: "#c8d5c8",
-  muted: "#5a6a5a",
-  accent: "#39d353",
-}
-
-const commandLines = [
-  { prefix: "$", text: "hookscope init --endpoint https://api.yourapp.com", color: "#c8d5c8" },
-  { prefix: ">", text: "Connecting to event stream...", color: "#5a6a5a" },
-  { prefix: ">", text: "✓ Endpoint verified. Monitoring active.", color: "#39d353" },
-  { prefix: ">", text: "247 events/min · 0 failures · 12ms p50 latency", color: "#39d353" },
-]
+const steps = ["Create an endpoint", "Point your provider's webhook URL at it", "Watch events arrive — verified, logged, ready to replay"]
 
 export function CTA() {
   return (
     <section
       style={{
-        fontFamily: "var(--font-display, monospace)",
-        borderTop: `1px solid ${T.border}`,
-        backgroundColor: T.bg,
-        padding: "96px 24px",
+        borderTop: "1px solid var(--ink-line)",
+        backgroundColor: "var(--ink-3)",
+        padding: "100px 24px",
       }}
     >
       <div
+        className="cta-box"
         style={{
           maxWidth: 860,
           margin: "0 auto",
-          border: `1px solid ${T.border}`,
+          border: "1px solid var(--ink-line)",
+          borderRadius: 8,
           padding: "64px",
+          backgroundColor: "var(--ink-2)",
         }}
       >
-        {/* Section label */}
         <div
           style={{
             fontSize: 11,
-            color: T.accent,
+            color: "var(--brass)",
             letterSpacing: "0.14em",
             textTransform: "uppercase",
-            marginBottom: 28,
+            marginBottom: 24,
+            fontFamily: "var(--font-mono, monospace)",
           }}
         >
-          // GETTING STARTED
+          Getting started
         </div>
 
         <h2
           style={{
             margin: "0 0 16px",
-            fontSize: "clamp(24px, 3.5vw, 40px)",
-            fontWeight: 700,
-            color: T.text,
-            lineHeight: 1.1,
+            fontSize: "clamp(28px, 4vw, 44px)",
+            fontWeight: 800,
+            color: "var(--text)",
+            lineHeight: 1.08,
             letterSpacing: "-0.01em",
+            textTransform: "uppercase",
+            fontFamily: "var(--font-stencil, sans-serif)",
           }}
         >
-          START MONITORING
+          Point one URL.
           <br />
-          IN UNDER 5 MINUTES
-          <span className="cursor-blink" />
+          We&apos;ll take it from there.
         </h2>
 
         <p
           style={{
-            margin: "0 0 40px",
-            fontSize: 13,
-            lineHeight: 1.8,
-            color: T.muted,
+            margin: "0 0 36px",
+            fontSize: 15,
+            lineHeight: 1.75,
+            color: "var(--text-muted)",
             maxWidth: 480,
-            letterSpacing: "0.02em",
           }}
         >
-          Point your webhook URL to HookScope. No SDK, no agent, no code changes —
-          just a proxy URL that captures everything.
+          No SDK, no agent, no code changes — just a URL that captures everything
+          sent to it.
         </p>
 
-        {/* Terminal block */}
         <div
           style={{
-            backgroundColor: "#050a05",
-            border: `1px solid ${T.border}`,
-            padding: "20px 24px",
-            marginBottom: 36,
+            backgroundColor: "var(--paper)",
+            borderRadius: 6,
+            border: "1px solid var(--paper-line)",
+            padding: "22px 26px",
+            marginBottom: 32,
           }}
         >
-          {commandLines.map((line, i) => (
+          {steps.map((step, i) => (
             <div
-              key={i}
+              key={step}
               style={{
                 display: "flex",
-                gap: 10,
-                fontSize: 13,
-                lineHeight: 1.9,
-                fontFamily: "var(--font-display, monospace)",
+                gap: 14,
+                alignItems: "baseline",
+                fontSize: 14,
+                lineHeight: 2,
+                fontFamily: "var(--font-mono, monospace)",
+                borderBottom: i < steps.length - 1 ? "1px solid var(--paper-line)" : undefined,
               }}
             >
-              <span style={{ color: T.accent, userSelect: "none" }}>{line.prefix}</span>
-              <span style={{ color: line.color, letterSpacing: "0.02em" }}>{line.text}</span>
+              <span style={{ color: "var(--brass-deep)", fontWeight: 700, flexShrink: 0 }}>
+                {i + 1}.
+              </span>
+              <span style={{ color: "var(--paper-text)" }}>{step}</span>
             </div>
           ))}
         </div>
 
-        {/* Actions */}
-        <div style={{ display: "flex", gap: 12, flexWrap: "wrap", marginBottom: 28 }}>
+        <div style={{ display: "flex", gap: 12, flexWrap: "wrap", marginBottom: 24 }}>
           <Link
             href="/auth/register"
-            className="term-btn-primary"
+            className="btn-stamp-primary focus-ring"
             style={{
-              padding: "12px 28px",
-              backgroundColor: T.accent,
-              color: "#050a05",
-              fontSize: 12,
+              padding: "14px 30px",
+              backgroundColor: "var(--brass)",
+              color: "var(--ink)",
+              fontSize: 14,
               fontWeight: 700,
-              letterSpacing: "0.08em",
-              textTransform: "uppercase",
-              fontFamily: "var(--font-display, monospace)",
+              borderRadius: 4,
             }}
           >
-            CREATE FREE ACCOUNT →
+            Create a free account →
           </Link>
           <Link
             href="#"
-            className="term-btn-ghost"
+            className="btn-ghost-ink focus-ring"
             style={{
-              padding: "12px 28px",
-              border: `1px solid ${T.border}`,
-              color: T.muted,
-              fontSize: 12,
-              letterSpacing: "0.06em",
-              fontFamily: "var(--font-display, monospace)",
+              padding: "14px 30px",
+              border: "1px solid var(--ink-line)",
+              color: "var(--text-muted)",
+              fontSize: 14,
+              borderRadius: 4,
             }}
           >
-            read the docs
+            Read the docs
           </Link>
         </div>
 
-        <p style={{ margin: 0, fontSize: 11, color: T.muted, letterSpacing: "0.04em" }}>
-          Free tier: 100,000 events/month · No credit card required
+        <p style={{ margin: 0, fontSize: 12.5, color: "var(--text-muted)" }}>
+          Free up to 100,000 events a month. No credit card required.
         </p>
       </div>
     </section>

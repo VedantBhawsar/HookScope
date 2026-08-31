@@ -4,7 +4,10 @@ import { createPageMetadata } from "./metadata"
 import { Navbar } from "@/components/landing/navbar"
 import { Hero } from "@/components/landing/hero"
 import { Stats } from "@/components/landing/stats"
+import { HowItWorks } from "@/components/landing/how-it-works"
+import { Integrations } from "@/components/landing/integrations"
 import { Features } from "@/components/landing/features"
+import { FAQ } from "@/components/landing/faq"
 import { CTA } from "@/components/landing/cta"
 import { Footer } from "@/components/landing/footer"
 
@@ -24,19 +27,21 @@ export default async function Page() {
 
   return (
     <div
-      className="crt-scanlines crt-flicker"
       style={{
         minHeight: "100svh",
-        backgroundColor: "#050a05",
-        color: "#c8d5c8",
-        fontFamily: "var(--font-display, monospace)",
+        backgroundColor: "var(--ink)",
+        color: "var(--text)",
+        fontFamily: "var(--font-sans, sans-serif)",
       }}
     >
       <Navbar />
       <main>
         <Hero />
         <Stats />
+        <HowItWorks />
+        <Integrations />
         <Features />
+        <FAQ />
         <CTA />
       </main>
       <Footer />

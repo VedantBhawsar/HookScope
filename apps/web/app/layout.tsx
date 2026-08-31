@@ -1,5 +1,5 @@
 import type { Metadata } from "next"
-import { Geist_Mono, Inter, Space_Grotesk, Space_Mono } from "next/font/google"
+import { Big_Shoulders, Geist_Mono, Inter, Space_Grotesk, Space_Mono } from "next/font/google"
 
 import "@hookscope/ui/globals.css"
 import "./landing.css"
@@ -27,6 +27,12 @@ const spaceMono = Space_Mono({
 const fontMono = Geist_Mono({
   subsets: ["latin"],
   variable: "--font-mono",
+})
+
+const bigShoulders = Big_Shoulders({
+  subsets: ["latin"],
+  variable: "--font-stencil",
+  weight: ["600", "700", "800"],
 })
 
 export const metadata: Metadata = {
@@ -59,7 +65,14 @@ export default function RootLayout({
     <html
       lang="en"
       suppressHydrationWarning
-      className={cn("antialiased", fontMono.variable, inter.variable, spaceGrotesk.variable, spaceMono.variable)}
+      className={cn(
+        "antialiased",
+        fontMono.variable,
+        inter.variable,
+        spaceGrotesk.variable,
+        spaceMono.variable,
+        bigShoulders.variable,
+      )}
     >
       <body>
         <ThemeProvider defaultTheme="system">
