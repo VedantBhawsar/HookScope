@@ -341,7 +341,13 @@ function ProjectSwitcher({ selectedProjectId, onSelectProject }: ProjectSwitcher
   )
 }
 
-function EndpointNav({ selectedProjectId }: { selectedProjectId: string | null }) {
+function EndpointNav({
+  selectedProjectId,
+  selectedEndpointId,
+}: {
+  selectedProjectId: string | null
+  selectedEndpointId: string | null
+}) {
   const pathname = usePathname()
 
   return (
@@ -349,12 +355,14 @@ function EndpointNav({ selectedProjectId }: { selectedProjectId: string | null }
       <SectionLabel className="mb-2 px-3">Endpoint</SectionLabel>
       <nav className="flex flex-col gap-1">
         {DASHBOARD_NAV_ITEMS.map((item) => {
-          const projectBaseHref = selectedProjectId
-            ? `/dashboard/${selectedProjectId}`
-            : "/projects"
-          const href = selectedProjectId
-            ? `${projectBaseHref}${item.segment}`
-            : item.href
+          const projectBaseHref =
+            selectedProjectId && selectedEndpointId
+              ? `/dashboard/${selectedProjectId}/${selectedEndpointId}`
+              : "/projects"
+          const href =
+            selectedProjectId && selectedEndpointId
+              ? `${projectBaseHref}${item.segment}`
+              : item.href
           const isActive =
             item.segment === ""
               ? pathname === href
@@ -454,7 +462,10 @@ function DashboardContextNav(props: SidebarDashboardProps) {
         onCreateEndpoint={props.onCreateEndpoint}
       />
       <div className="my-1 h-px bg-border/60" />
-      <EndpointNav selectedProjectId={selectedProject?.id ?? null} />
+      <EndpointNav
+        selectedProjectId={selectedProject?.id ?? null}
+        selectedEndpointId={selectedEndpointId}
+      />
       <div className="my-1 h-px bg-border/60" />
     </>
   )
