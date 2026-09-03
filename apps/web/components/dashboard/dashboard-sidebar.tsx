@@ -2,7 +2,7 @@
 
 import Image from "next/image"
 import Link from "next/link"
-import { usePathname } from "next/navigation"
+import { usePathname, useRouter } from "next/navigation"
 import * as React from "react"
 import type { ComponentType } from "react"
 import {
@@ -15,14 +15,17 @@ import {
   LayoutDashboard,
   LoaderCircle,
   LogOut,
+  MoreHorizontal,
+  Pencil,
   Search,
   Settings,
+  Trash2,
   UserCircle,
   Webhook,
 } from "lucide-react"
 import type { AuthUser } from "@/hooks/use-auth"
 import type { EndpointRecord } from "@/hooks/use-endpoints"
-import type { ProjectRecord } from "@/hooks/use-projects"
+import { useDeleteProjectMutation, type ProjectRecord } from "@/hooks/use-projects"
 import { Button } from "@hookscope/ui/components/button"
 import {
   DropdownMenu,
@@ -35,8 +38,12 @@ import {
 } from "@hookscope/ui/components/dropdown-menu"
 import { cn } from "@hookscope/ui/lib/utils"
 import { Input } from "@hookscope/ui/components/input"
+import { ConfirmDeleteDialog } from "@hookscope/ui/components/confirm-delete-dialog"
+import { toast } from "@hookscope/ui/components/sonner"
 import { useDashboardProjectContext } from "@/components/dashboard/dashboard-project-context"
 import { SectionLabel } from "@/components/layout/section-label"
+import { EditProjectDialog } from "@/components/projects/edit-project-dialog"
+import { getRequestErrorMessage, getRequestSuccessMessage } from "@/lib/http"
 
 interface NavItem {
   label: string
@@ -275,14 +282,61 @@ interface ProjectSwitcherProps {
 }
 
 function ProjectSwitcher({ selectedProjectId, onSelectProject }: ProjectSwitcherProps) {
+  const router = useRouter()
   const { projects, isLoading } = useDashboardProjectContext()
+  const deleteProjectMutation = useDeleteProjectMutation()
+  const [editOpen, setEditOpen] = React.useState(false)
+  const [deleteOpen, setDeleteOpen] = React.useState(false)
 
   const selectedProject =
     projects.find((project) => project.id === selectedProjectId) ?? null
 
+  const confirmDelete = async () => {
+    if (!selectedProject) return
+    try {
+      const response = await deleteProjectMutation.mutateAsync(selectedProject.id)
+      toast.success(getRequestSuccessMessage(response))
+      setDeleteOpen(false)
+      router.push("/projects")
+    } catch (error) {
+      toast.error(getRequestErrorMessage(error))
+    }
+  }
+
   return (
     <div className="rounded-xl border border-border bg-card p-2.5">
-      <SectionLabel className="px-1">Project</SectionLabel>
+      <div className="flex items-center justify-between">
+        <SectionLabel className="px-1">Project</SectionLabel>
+        {selectedProject ? (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button type="button" variant="ghost" size="icon" className="size-6">
+                <MoreHorizontal className="size-3.5" />
+                <span className="sr-only">Project actions</span>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-44">
+              <DropdownMenuItem onSelect={() => setEditOpen(true)}>
+                <Pencil className="size-3.5" />
+                Edit Project
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                disabled={deleteProjectMutation.isPending}
+                className="text-destructive focus:text-destructive"
+                onSelect={() => setDeleteOpen(true)}
+              >
+                {deleteProjectMutation.isPending ? (
+                  <LoaderCircle className="size-3.5 animate-spin" />
+                ) : (
+                  <Trash2 className="size-3.5" />
+                )}
+                Delete Project
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        ) : null}
+      </div>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button
@@ -337,6 +391,27 @@ function ProjectSwitcher({ selectedProjectId, onSelectProject }: ProjectSwitcher
           </DropdownMenuGroup>
         </DropdownMenuContent>
       </DropdownMenu>
+
+      <EditProjectDialog
+        open={editOpen}
+        onOpenChange={setEditOpen}
+        project={selectedProject}
+      />
+
+      <ConfirmDeleteDialog
+        open={deleteOpen}
+        onOpenChange={setDeleteOpen}
+        entityName="Project"
+        entityLabel={selectedProject?.name}
+        requireConfirmText={selectedProject ? `sudo delete ${selectedProject.name}` : undefined}
+        warning={
+          selectedProject && selectedProject.endpointCount > 0
+            ? `This will also permanently delete ${selectedProject.endpointCount} endpoint${selectedProject.endpointCount === 1 ? "" : "s"} associated with this project.`
+            : undefined
+        }
+        onConfirm={confirmDelete}
+        isPending={deleteProjectMutation.isPending}
+      />
     </div>
   )
 }
